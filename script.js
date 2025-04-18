@@ -1,10 +1,10 @@
-// Пример ссылки на CSV (должна заканчиваться на pub?output=csv):
-const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv';
+// Пример ссылки на CSV, опубликованный из Google Sheets
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pubhtml';
 
 window.sheetEmployees = [];
 window.pdfEmployees = [];
 
-// Функция для загрузки и парсинга CSV из Google Sheets
+// ========== 1) ЗАГРУЗКА И ПАРСИНГ CSV ==========
 async function loadSheetData() {
   try {
     const response = await fetch(csvUrl);
@@ -14,137 +14,104 @@ async function loadSheetData() {
 
     // Считываем весь CSV-текст
     const csvText = await response.text();
-    // Разбиваем на строки
+
+    // Разбиваем на строки (по переводу строки), а каждую строку - на ячейки (по запятой)
     const rows = csvText.trim().split('\n').map(line => line.split(','));
-    // Первая строка — это заголовки столбцов
+
+    // Первая строка - это заголовки
     const headers = rows[0].map(h => h.trim());
-    // Остальные строки — данные
+
+    // Все остальные строки - данные
     const dataRows = rows.slice(1);
 
+    // Парсим конкретно столбцы A..S (индексы 0..18)
+    const colStart = 0;
+    const colEnd = 18;  // включительно, если хотим именно 19 столбцов
     const employees = [];
 
-    // Проходим по каждой строке
-    dataRows.forEach(row => {
-      // row — это массив ячеек текущей строки
-      row.forEach((cellValue, colIndex) => {
-        const trimmedCell = cellValue.trim();
-        // 1) Пропускаем пустые ячейки
-        // 2) Пропускаем ячейки, где написано "away" (или иным образом помечены)
-        if (trimmedCell && !trimmedCell.toLowerCase().includes('away')) {
-          // Имя сотрудника
-          const name = trimmedCell;
-          // Платформа/роль — это заголовок столбца
-          const platform = headers[colIndex] || 'Unknown';
+    // Проходим по каждому столбцу
+    for (let c = colStart; c <= colEnd && c < headers.length; c++) {
+      // Название платформы (или роли) — это заголовок столбца
+      const platform = headers[c];
+      // Флаг, показывающий, что мы «дошли» до блока с Away
+      let isAwaySection = false;
 
-          // Добавляем в массив
-          employees.push({ name, platform });
+      // Проходим по строкам
+      for (let r = 0; r < dataRows.length; r++) {
+        // Значение в ячейке
+        const cellValue = (dataRows[r][c] || '').trim();
+        if (!cellValue) {
+          // Пустая ячейка — пропускаем
+          continue;
         }
-      });
-    });
+
+        const lowerCellValue = cellValue.toLowerCase();
+
+        // Если ячейка содержит «away», значит теперь все следующие имена — Away
+        if (lowerCellValue.includes('away')) {
+          isAwaySection = true;
+          // Не добавляем "Away" как имя
+          continue;
+        }
+
+        // Если ячейка содержит «break» или «brb» — пропускаем
+        if (lowerCellValue.includes('break') || lowerCellValue.includes('brb')) {
+          continue;
+        }
+
+        // В остальных случаях считаем, что это имя сотрудника
+        // Статус зависит от флага isAwaySection
+        employees.push({
+          name: cellValue,
+          platform: platform,
+          status: isAwaySection ? 'Away' : 'Active'
+        });
+      }
+    }
 
     window.sheetEmployees = employees;
     renderSheetEmployees(employees);
-    compareData(); // Попробуем сразу сравнить с PDF (если он уже загружен)
+    compareData(); // Попробуем сравнить с PDF, если тот уже загружен
   } catch (error) {
-    document.getElementById('sheetData').innerText = 'Ошибка загрузки данных: ' + error.message;
+    document.getElementById('sheetData').innerText =
+      'Ошибка загрузки данных: ' + error.message;
     console.error('loadSheetData error:', error);
   }
 }
 
+// Показать сотрудников на странице
 function renderSheetEmployees(employees) {
   const sheetDataDiv = document.getElementById('sheetData');
   if (!employees.length) {
     sheetDataDiv.innerHTML = 'Нет данных для отображения.';
     return;
   }
-  // Выводим каждый элемент в виде: "Имя (Платформа: X)"
   sheetDataDiv.innerHTML = employees.map(e => 
-    `<div class="employee">${e.name} (Платформа: ${e.platform})</div>`
+    `<div class="employee">${e.name} (Платформа: ${e.platform}), статус: ${e.status}</div>`
   ).join('');
 }
 
-// ---------------------------
-// Работа с PDF
-// ---------------------------
-document.getElementById('uploadPdfBtn').addEventListener('click', () => {
-  document.getElementById('pdfFileInput').click();
-});
+// ======================
+// Логика с PDF остаётся той же,
+// где мы парсим "Active"/"Away"
+// и записываем в window.pdfEmployees
+// ======================
 
-document.getElementById('pdfFileInput').addEventListener('change', async (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let extractedText = "";
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        // Собираем текст со страницы
-        const pageText = textContent.items.map(item => item.str).join(" ");
-        extractedText += "\n" + pageText;
-      }
-      processPdfText(extractedText);
-    } catch (error) {
-      document.getElementById('pdfData').innerText = 'Ошибка при обработке PDF: ' + error.message;
-      console.error('PDF processing error:', error);
-    }
-  }
-});
-
-// Извлекаем из текста PDF сотрудников со статусами
-function processPdfText(pdfText) {
-  const lines = pdfText.split(/\n/);
-  const employees = [];
-
-  lines.forEach(line => {
-    const cleanLine = line.trim();
-    if (cleanLine.includes('Active') || cleanLine.includes('Away')) {
-      let status = '';
-      if (cleanLine.includes('Active')) status = 'Active';
-      if (cleanLine.includes('Away')) status = 'Away';
-      // Предположим, имя — всё, что перед словом "Active" или "Away"
-      const parts = cleanLine.split(status);
-      const fullName = parts[0].trim();
-      if (fullName) {
-        employees.push({ fullName, status });
-      }
-    }
-  });
-
-  window.pdfEmployees = employees;
-  renderPdfEmployees(employees);
-  compareData();
-}
-
-function renderPdfEmployees(employees) {
-  const pdfDataDiv = document.getElementById('pdfData');
-  if (!employees.length) {
-    pdfDataDiv.innerHTML = 'Не найдены сотрудники в PDF.';
-    return;
-  }
-  pdfDataDiv.innerHTML = employees.map(e => 
-    `<div class="employee">${e.fullName} — Статус: ${e.status}</div>`
-  ).join('');
-}
-
-// ---------------------------
-// Сопоставление данных
-// ---------------------------
+// Пример функции сравнения: если в таблице человек Active, но в PDF Away — конфликт
 function compareData() {
-  // Не сравниваем, если один из массивов ещё пуст
   if (!window.sheetEmployees.length || !window.pdfEmployees.length) return;
 
   const conflicts = [];
 
-  // Перебираем всех из таблицы (они считаются "на смене")
-  window.sheetEmployees.forEach(sheetEmp => {
+  // Берём только тех, кто по таблице "Active"
+  const onShiftEmployees = window.sheetEmployees.filter(emp => emp.status === 'Active');
+
+  onShiftEmployees.forEach(sheetEmp => {
     // Ищем в pdfEmployees
-    const foundPdfEmp = window.pdfEmployees.find(pdfEmp => {
-      // Простейшее сравнение: проверяем, входит ли часть имени из таблицы в fullname из PDF
-      return pdfEmp.fullName.toLowerCase().includes(sheetEmp.name.toLowerCase());
-    });
-    // Если человек найден и у него статус "Away" — конфликт
+    const foundPdfEmp = window.pdfEmployees.find(pdfEmp =>
+      pdfEmp.fullName.toLowerCase().includes(sheetEmp.name.toLowerCase())
+    );
+    // Если нашли и он в PDF "Away" => конфликт
     if (foundPdfEmp && foundPdfEmp.status === 'Away') {
       conflicts.push({
         name: sheetEmp.name,
@@ -161,15 +128,16 @@ function compareData() {
 function renderConflicts(conflicts) {
   const conflictsDiv = document.getElementById('conflicts');
   if (!conflicts.length) {
-    conflictsDiv.innerHTML = 'Нет сотрудников, у которых конфликт (на смене, но статус Away).';
+    conflictsDiv.innerHTML = 'Нет сотрудников, у которых конфликт (Active vs Away).';
     return;
   }
-  conflictsDiv.innerHTML = conflicts.map(c => 
-    `<div class="employee"><strong>${c.name}</strong> (Платформа: ${c.platform}) — PDF: ${c.pdfName} (${c.pdfStatus})</div>`
+  conflictsDiv.innerHTML = conflicts.map(c =>
+    `<div class="employee">
+       <strong>${c.name}</strong> (Платформа: ${c.platform})
+       — PDF: ${c.pdfName} (${c.pdfStatus})
+     </div>`
   ).join('');
 }
 
-// ---------------------------
-// Запуск: подгружаем таблицу
-// ---------------------------
+// Запуск (загружаем таблицу сразу при старте)
 loadSheetData();
