@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support Shift Dashboard</title>
+  <!-- Подключаем PDF.js (через CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1, h2 { color: #333; }
+    .section { margin-bottom: 30px; }
+    .employee { border-bottom: 1px solid #ccc; padding: 5px 0; }
+    button { padding: 10px 20px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Support Shift Dashboard</h1>
+
+  <!-- Раздел для загрузки PDF -->
+  <div class="section">
+    <button id="uploadPdfBtn">Загрузить PDF (дашборд)</button>
+    <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" />
+  </div>
+
+  <!-- Раздел для отображения данных из Google Sheets -->
+  <div class="section">
+    <h2>Сотрудники на смене (Google Sheets)</h2>
+    <div id="sheetData">Загрузка данных из таблицы...</div>
+  </div>
+
+  <!-- Раздел для отображения данных из PDF -->
+  <div class="section">
+    <h2>Данные из PDF</h2>
+    <div id="pdfData">Загрузите PDF для отображения данных дашборда.</div>
+  </div>
+
+  <!-- Раздел для отображения найденных конфликтов (сотрудники on-shift, но статус Away) -->
+  <div class="section">
+    <h2>Сотрудники, числящиеся на смене, но со статусом <i>Away</i></h2>
+    <div id="conflicts">Здесь будут показаны результаты сравнения.</div>
+  </div>
+
+  <!-- Подключаем наш JavaScript код -->
+  <script src="script.js"></script>
+</body>
+</html>
