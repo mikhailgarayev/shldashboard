@@ -1,44 +1,53 @@
-// ======================
-// 1) Глобальные переменные
-// ======================
+// Пример ссылки на CSV (должна заканчиваться на pub?output=csv):
 const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv';
 
 window.sheetEmployees = [];
 window.pdfEmployees = [];
 
-// ======================
-// 2) Функция загрузки данных из Google Sheets
-// ======================
+// Функция для загрузки и парсинга CSV из Google Sheets
 async function loadSheetData() {
   try {
     const response = await fetch(csvUrl);
     if (!response.ok) {
       throw new Error('Ошибка загрузки таблицы. Статус: ' + response.status);
     }
-    const csvText = await response.text();
 
-    // Парсинг CSV (предположим, что данные разделены запятыми, а первая строка – заголовки)
+    // Считываем весь CSV-текст
+    const csvText = await response.text();
+    // Разбиваем на строки
     const rows = csvText.trim().split('\n').map(line => line.split(','));
-    const headers = rows[0];
+    // Первая строка — это заголовки столбцов
+    const headers = rows[0].map(h => h.trim());
+    // Остальные строки — данные
     const dataRows = rows.slice(1);
 
-    // Например, если структура таблицы: Name, Platform, OnShift
-    const employees = dataRows.map(row => {
-      return {
-        name: row[0].trim(),
-        platform: row[1].trim(),
-        // Предполагаем, что в третьем столбце написано "Yes" если сотрудник на смене, иначе что-то другое.
-        onShift: row[2].trim().toLowerCase() === 'yes'
-      };
+    const employees = [];
+
+    // Проходим по каждой строке
+    dataRows.forEach(row => {
+      // row — это массив ячеек текущей строки
+      row.forEach((cellValue, colIndex) => {
+        const trimmedCell = cellValue.trim();
+        // 1) Пропускаем пустые ячейки
+        // 2) Пропускаем ячейки, где написано "away" (или иным образом помечены)
+        if (trimmedCell && !trimmedCell.toLowerCase().includes('away')) {
+          // Имя сотрудника
+          const name = trimmedCell;
+          // Платформа/роль — это заголовок столбца
+          const platform = headers[colIndex] || 'Unknown';
+
+          // Добавляем в массив
+          employees.push({ name, platform });
+        }
+      });
     });
 
     window.sheetEmployees = employees;
     renderSheetEmployees(employees);
-    // Если данные из PDF уже загружены, выполняем сравнение
-    compareData();
+    compareData(); // Попробуем сразу сравнить с PDF (если он уже загружен)
   } catch (error) {
     document.getElementById('sheetData').innerText = 'Ошибка загрузки данных: ' + error.message;
-    console.error('Ошибка loadSheetData:', error);
+    console.error('loadSheetData error:', error);
   }
 }
 
@@ -48,14 +57,15 @@ function renderSheetEmployees(employees) {
     sheetDataDiv.innerHTML = 'Нет данных для отображения.';
     return;
   }
+  // Выводим каждый элемент в виде: "Имя (Платформа: X)"
   sheetDataDiv.innerHTML = employees.map(e => 
-    `<div class="employee">${e.name} (Платформа: ${e.platform}), OnShift: ${e.onShift ? 'Yes' : 'No'}</div>`
+    `<div class="employee">${e.name} (Платформа: ${e.platform})</div>`
   ).join('');
 }
 
-// ======================
-// 3) Логика работы с PDF
-// ======================
+// ---------------------------
+// Работа с PDF
+// ---------------------------
 document.getElementById('uploadPdfBtn').addEventListener('click', () => {
   document.getElementById('pdfFileInput').click();
 });
@@ -70,19 +80,19 @@ document.getElementById('pdfFileInput').addEventListener('change', async (event)
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
+        // Собираем текст со страницы
         const pageText = textContent.items.map(item => item.str).join(" ");
         extractedText += "\n" + pageText;
       }
-      // Вызов функции для парсинга текста PDF
       processPdfText(extractedText);
     } catch (error) {
       document.getElementById('pdfData').innerText = 'Ошибка при обработке PDF: ' + error.message;
-      console.error('Ошибка при загрузке PDF:', error);
+      console.error('PDF processing error:', error);
     }
   }
 });
 
-// Функция парсинга текста из PDF для извлечения списка сотрудников и их статуса
+// Извлекаем из текста PDF сотрудников со статусами
 function processPdfText(pdfText) {
   const lines = pdfText.split(/\n/);
   const employees = [];
@@ -93,8 +103,7 @@ function processPdfText(pdfText) {
       let status = '';
       if (cleanLine.includes('Active')) status = 'Active';
       if (cleanLine.includes('Away')) status = 'Away';
-      
-      // Предположим, что имя сотрудника располагается перед словом со статусом
+      // Предположим, имя — всё, что перед словом "Active" или "Away"
       const parts = cleanLine.split(status);
       const fullName = parts[0].trim();
       if (fullName) {
@@ -111,7 +120,7 @@ function processPdfText(pdfText) {
 function renderPdfEmployees(employees) {
   const pdfDataDiv = document.getElementById('pdfData');
   if (!employees.length) {
-    pdfDataDiv.innerHTML = 'Сотрудники не найдены в PDF.';
+    pdfDataDiv.innerHTML = 'Не найдены сотрудники в PDF.';
     return;
   }
   pdfDataDiv.innerHTML = employees.map(e => 
@@ -119,25 +128,29 @@ function renderPdfEmployees(employees) {
   ).join('');
 }
 
-// ======================
-// 4) Сопоставление данных
-// ======================
+// ---------------------------
+// Сопоставление данных
+// ---------------------------
 function compareData() {
+  // Не сравниваем, если один из массивов ещё пуст
   if (!window.sheetEmployees.length || !window.pdfEmployees.length) return;
 
   const conflicts = [];
-  const onShiftEmployees = window.sheetEmployees.filter(emp => emp.onShift);
 
-  onShiftEmployees.forEach(sheetEmp => {
+  // Перебираем всех из таблицы (они считаются "на смене")
+  window.sheetEmployees.forEach(sheetEmp => {
+    // Ищем в pdfEmployees
     const foundPdfEmp = window.pdfEmployees.find(pdfEmp => {
+      // Простейшее сравнение: проверяем, входит ли часть имени из таблицы в fullname из PDF
       return pdfEmp.fullName.toLowerCase().includes(sheetEmp.name.toLowerCase());
     });
+    // Если человек найден и у него статус "Away" — конфликт
     if (foundPdfEmp && foundPdfEmp.status === 'Away') {
       conflicts.push({
         name: sheetEmp.name,
         platform: sheetEmp.platform,
-        pdfStatus: foundPdfEmp.status,
-        pdfName: foundPdfEmp.fullName
+        pdfName: foundPdfEmp.fullName,
+        pdfStatus: foundPdfEmp.status
       });
     }
   });
@@ -148,7 +161,7 @@ function compareData() {
 function renderConflicts(conflicts) {
   const conflictsDiv = document.getElementById('conflicts');
   if (!conflicts.length) {
-    conflictsDiv.innerHTML = 'Нет сотрудников с конфликтом (OnShift, но статус Away).';
+    conflictsDiv.innerHTML = 'Нет сотрудников, у которых конфликт (на смене, но статус Away).';
     return;
   }
   conflictsDiv.innerHTML = conflicts.map(c => 
@@ -156,7 +169,7 @@ function renderConflicts(conflicts) {
   ).join('');
 }
 
-// ======================
-// 5) Инициализация: загрузка данных из Google Sheets
-// ======================
+// ---------------------------
+// Запуск: подгружаем таблицу
+// ---------------------------
 loadSheetData();
