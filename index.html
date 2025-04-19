@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>SUMO Dashboard</title>
-  <!-- Подключаем Bootstrap для базовых стилей -->
+  <!-- Подключаем Bootstrap для базовых стилей (опционально) -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
     /* Общий сброс и фон */
@@ -80,8 +80,7 @@
       font-size: 0.9rem;
       color: #343a40;
     }
-
-    /* Горизонтальный ряд карточек платформ (одна строка, без переноса) */
+    /* Горизонтальная лента карточек платформ (одна строка, без переноса) */
     .platforms-row {
       display: flex;
       flex-wrap: nowrap;
@@ -92,13 +91,12 @@
       gap: 10px;
     }
     .platform-card {
-      flex: 1 1 220px;      /* карточка растягивается, но не меньше 220px */
+      flex: 1 1 220px;  /* карточка растягивается при наличии места, но не меньше 220px */
       min-width: 220px;
       box-sizing: border-box;
       background: #ffffff;
       border-radius: 16px;
       padding: 20px;
-      /* gap задаёт отступы */
       box-shadow: 0 4px 16px rgba(0,0,0,0.08);
       transition: transform 0.2s, box-shadow 0.2s;
       white-space: normal;
@@ -148,7 +146,6 @@
     .platform-card ul li:last-child {
       border-bottom: none;
     }
-
     /* Раздел Upcoming Breaks (одна карточка) */
     #breaks-section {
       margin-top: 40px;
@@ -197,8 +194,7 @@
     .break-card ul li:last-child {
       border-bottom: none;
     }
-    
-    /* Раздел Shift Summary (диапазон AB:AR) оформленный как карточка */
+    /* Раздел Shift Summary как карточка (из диапазона AB:AR) */
     .shift-summary-card {
       background: #ffffff;
       border-radius: 16px;
@@ -227,8 +223,7 @@
       border-collapse: collapse;
       table-layout: auto;
     }
-    .shift-summary-grid th,
-    .shift-summary-grid td {
+    .shift-summary-grid th, .shift-summary-grid td {
       border: 1px solid #dee2e6;
       padding: 8px;
       text-align: center;
@@ -238,8 +233,7 @@
       background-color: #f8f9fa;
       font-weight: 600;
     }
-    
-    /* Скролл для горизонтальной ленты */
+    /* Скролл для горизонтальной ленты карточек */
     ::-webkit-scrollbar {
       height: 8px;
     }
@@ -258,7 +252,7 @@
 </head>
 <body>
   <div class="dashboard-container">
-    <h1>Support Monitoring Dashboard</h1>
+    <h1>SUMO Dashboard</h1>
     
     <!-- Панель кнопок и статуса -->
     <div class="status-bar">
@@ -268,9 +262,9 @@
       <span>Auto refresh in <span id="countdown">10</span> seconds...</span>
     </div>
     
-    <!-- Карточка Shift Summary (данные из диапазона AB:AR) -->
+    <!-- Карточка Shift Summary (данные из диапазона AB:AR, начиная с AB6) -->
     <div id="shift-summary" class="shift-summary-card">
-      <div class="shift-summary-title">Employees by platform</div>
+      <div class="shift-summary-title">Shift Summary</div>
       <table class="shift-summary-grid" id="summary-table"></table>
     </div>
     
@@ -296,19 +290,7 @@
     let countdownTimer = null;
     let countdownValue = refreshInterval;
     
-    // Конфигурация платформ
-    const platforms = [
-      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
-    ];
-    
-    // Основные данные дашборда
+    // Рендер данных из основного CSV
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -317,7 +299,7 @@
           const data = results.data;
           renderDashboard(data);
           showUpdatedStatus();
-          renderShiftSummary(data);  // Shift Summary из столбцов AB:AR
+          renderShiftSummary(data);  // Shift Summary
           fetchBreaksData();
           if (autoRefreshEnabled) resetAutoRefresh();
         },
@@ -330,6 +312,17 @@
     function renderDashboard(data) {
       const container = document.getElementById("app");
       let html = "";
+      // Используем конфигурацию платформ (определена локально)
+      const platforms = [
+        { name: "CS", colIndexNames: 3, colIndexData: 4, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+        { name: "CS/Post order", colIndexNames: 5, colIndexData: 6, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+        { name: "PSR", colIndexNames: 7, colIndexData: 8, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+        { name: "SiMo", colIndexNames: 9, colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+        { name: "Aircall", colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+        { name: "Venue", colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+        { name: "Trainee", colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+        { name: "ST", colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+      ];
       platforms.forEach(platform => {
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
@@ -347,16 +340,12 @@
           <div class="platform-card">
             <h5>${platform.name}</h5>
             <p><small>Активные (${activeNames.length})</small></p>
-            <ul>
-              ${activeNames.map(n => `<li>${n}</li>`).join("")}
-            </ul>
+            <ul>${activeNames.map(n => `<li>${n}</li>`).join("")}</ul>
             <p><small>Away (${awayData.length})</small></p>
-            <ul>
-              ${awayData.map(item => {
-                const extra = item.reason ? " - " + item.reason : "";
-                return `<li>${item.name}${extra}</li>`;
-              }).join("")}
-            </ul>
+            <ul>${awayData.map(item => {
+              const extra = item.reason ? " - " + item.reason : "";
+              return `<li>${item.name}${extra}</li>`;
+            }).join("")}</ul>
           </div>
         `;
       });
@@ -364,28 +353,29 @@
     }
     
     function showUpdatedStatus() {
-      const updateStatusEl = document.getElementById("update-status");
-      updateStatusEl.textContent = "Updated";
-      updateStatusEl.style.backgroundColor = "#28a745";
+      const el = document.getElementById("update-status");
+      el.textContent = "Updated";
+      el.style.backgroundColor = "#28a745";
     }
     
-    // Shift Summary: отображение данных из диапазона AB:AR (индексы 27...43)
+    // Shift Summary: берем данные начиная с AB6 (т.е. row индекс 5) и столбцы AB:AR (индексы 27-43)
     function renderShiftSummary(data) {
       const tableEl = document.getElementById("summary-table");
-      let html = "<tr>";
-      data.forEach((row, rowIndex) => {
-        // Если первая строка – заголовок, можно её обработать отдельно.
-        // Здесь для примера пройдёмся по каждой строке,
-        // но вы можете выбрать нужные строки.
-        const subset = row.slice(27, 44);  // AB:AR (индексы 27 до 43, slice до 44)
-        // Если строка пустая, пропускаем
-        if (subset.every(cell => !cell)) return;
+      let html = "";
+      // Начинаем с rowIndex = 5 (т.е. 6-я строка)
+      for (let i = 5; i < data.length; i++) {
+        const row = data[i];
+        // Берем диапазон столбцов от 27 до 44 (44 не включаем)
+        const subset = row.slice(27, 44);
+        // Если все ячейки пусты или содержат слово "Dashboard", пропускаем строку
+        if (subset.every(cell => !cell.trim()) || subset.some(cell => cell.trim() === "Dashboard")) continue;
         html += "<tr>";
         subset.forEach(cell => {
-          html += `<td>${cell || ""}</td>`;
+          const val = cell.trim() || "";
+          html += `<td>${val}</td>`;
         });
         html += "</tr>";
-      });
+      }
       tableEl.innerHTML = html;
     }
     
@@ -404,13 +394,13 @@
     }
     function renderBreaks(breaksData) {
       const now = new Date();
-      const currentMinutes = now.getHours()*60 + now.getMinutes();
-      const horizon = currentMinutes + 60;
+      const currMinutes = now.getHours()*60 + now.getMinutes();
+      const horizon = currMinutes + 60;
       const upcoming = breaksData.filter(item => {
         if (!item["Break Time"]) return false;
         const timeStr = item["Break Time"].trim();
         const minutes = parseTimeToMinutes(timeStr);
-        return (minutes > currentMinutes) && (minutes <= horizon);
+        return (minutes > currMinutes) && (minutes <= horizon);
       });
       upcoming.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
       let html = `<div class="break-card">
@@ -430,10 +420,10 @@
     }
     function parseTimeToMinutes(timeStr) {
       const [hh, mm] = timeStr.trim().split(":");
-      return parseInt(hh, 10)*60 + parseInt(mm, 10);
+      return parseInt(hh, 10) * 60 + parseInt(mm, 10);
     }
     
-    // Auto Refresh
+    // AUTOREFRESH
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
@@ -442,9 +432,7 @@
       refreshTimer = setTimeout(fetchData, refreshInterval * 1000);
       countdownTimer = setInterval(() => {
         countdownValue--;
-        if (countdownValue <= 0) {
-          clearInterval(countdownTimer);
-        }
+        if (countdownValue <= 0) clearInterval(countdownTimer);
         updateCountdownDisplay();
       }, 1000);
     }
