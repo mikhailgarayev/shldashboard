@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Support Monitoring Dashboard</title>
+  <title>Dashboard in One Row - 8 Platforms</title>
   <!-- Bootstrap для удобного оформления -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
@@ -15,8 +15,18 @@
       max-width: 1200px;
       margin: auto;
     }
+    /* Контейнер, который размещает карточки в одну горизонтальную строку */
+    .platforms-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
     .platform-card {
-      margin: 10px;
+      flex: 0 0 auto;
+      width: 200px;  /* Ширину можно настраивать */
+      margin-right: 10px;
       padding: 10px;
       border-radius: 8px;
       background-color: #ffffff;
@@ -45,7 +55,7 @@
     ul li:last-child {
       border-bottom: none;
     }
-    /* Статусная панель */
+    /* Стили для верхней панели со статусом и кнопками */
     .status-bar {
       display: flex;
       align-items: center;
@@ -65,51 +75,40 @@
 <body>
   <div class="dashboard-container">
     <h1 class="text-center mb-4">Dashboard</h1>
-    <!-- Панель с кнопками и статусом -->
+    <!-- Панель со статусом и кнопками -->
     <div class="status-bar">
       <button id="toggle-autorefresh" class="btn btn-outline-primary btn-sm">Disable Auto Refresh</button>
       <button id="refresh-now" class="btn btn-outline-secondary btn-sm ml-2">Refresh now</button>
       <span id="update-status" class="status-badge ml-2">Updated</span>
       <span class="ml-3">Auto refresh in <span id="countdown">60</span> seconds...</span>
     </div>
-    <div id="app">Загрузка...</div>
+    <!-- Контейнер для карточек всех платформ -->
+    <div id="app" class="platforms-row">Загрузка...</div>
   </div>
 
-  <!-- PapaParse для парсинга CSV -->
+  <!-- Подключаем PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    // Ссылка на CSV из Google Sheets (замените при необходимости)
+    // Ссылка на CSV, опубликованный в Google Sheets (замените при необходимости)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
 
-    // Конфигурация платформ: имена/статусы в одной паре столбцов
-    // CS: D (3), E (4)
-    // CS/Post: F (5), G (6)
-    // PSR: H (7), I (8)
-    // SiMo: J (9), K (10)
-    // Aircall: L (11), M (12)
-    // Venue: N (13), O (14)
-    // Trainee: P (15), Q (16)
-    // ST: R (17), S (18)
-
-    // colIndexNames -> столбец с именами
-    // colIndexData  -> тот же столбец, где хранятся числа и статусы
+    // Конфигурация платформ
     const platforms = [
       {
         name: "CS",
-        colIndexNames: 3,   // D
-        colIndexData: 4,    // E (и число Active/Away, и статусы)
-        // строки, где брать число активных, имена, etc.
-        rowActiveCount: 3,         // E4
-        rowActiveNamesStart: 4,    // E5
-        rowActiveNamesEnd: 15,     // E16
-        rowAwayCount: 27,          // E28
-        rowAwayNamesStart: 28,     // E29
-        rowAwayNamesEnd: 35        // E36
+        colIndexNames: 3,   // имена в столбце D
+        colIndexData: 4,    // данные в столбце E
+        rowActiveCount: 3,         // строка для числа активных (например, E4)
+        rowActiveNamesStart: 4,    // диапазон имён активных с E5
+        rowActiveNamesEnd: 15,     // до E16
+        rowAwayCount: 27,          // строка для числа away (например, E28)
+        rowAwayNamesStart: 28,     // диапазон имён away с E29
+        rowAwayNamesEnd: 35        // до E36
       },
       {
         name: "CS/Post order",
-        colIndexNames: 5,  // F
-        colIndexData: 6,   // G
+        colIndexNames: 5,   // имена в столбце F
+        colIndexData: 6,    // данные в столбце G
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -119,8 +118,8 @@
       },
       {
         name: "PSR",
-        colIndexNames: 7,  // H
-        colIndexData: 8,   // I
+        colIndexNames: 7,   // имена в столбце H
+        colIndexData: 8,    // данные в столбце I
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -130,8 +129,8 @@
       },
       {
         name: "SiMo",
-        colIndexNames: 9,   // J
-        colIndexData: 10,   // K
+        colIndexNames: 9,   // имена в столбце J
+        colIndexData: 10,   // данные в столбце K
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -141,8 +140,8 @@
       },
       {
         name: "Aircall",
-        colIndexNames: 11,  // L
-        colIndexData: 12,   // M
+        colIndexNames: 11,  // имена в столбце L
+        colIndexData: 12,   // данные в столбце M
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -152,8 +151,8 @@
       },
       {
         name: "Venue",
-        colIndexNames: 13,  // N
-        colIndexData: 14,   // O
+        colIndexNames: 13,  // имена в столбце N
+        colIndexData: 14,   // данные в столбце O
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -163,8 +162,8 @@
       },
       {
         name: "Trainee",
-        colIndexNames: 15,  // P
-        colIndexData: 16,   // Q
+        colIndexNames: 15,  // имена в столбце P
+        colIndexData: 16,   // данные в столбце Q
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -174,8 +173,8 @@
       },
       {
         name: "ST",
-        colIndexNames: 17,  // R
-        colIndexData: 18,   // S
+        colIndexNames: 17,  // имена в столбце R
+        colIndexData: 18,   // данные в столбце S
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -185,14 +184,14 @@
       }
     ];
 
-    // Параметры автообновления
+    // Настройки автообновления
     let autoRefreshEnabled = true;
-    let refreshInterval = 60; // секунд
+    let refreshInterval = 60; // в секундах
     let refreshTimer = null;
     let countdownTimer = null;
     let countdownValue = refreshInterval;
 
-    // Загрузка данных
+    // Функция загрузки данных через PapaParse
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -201,7 +200,6 @@
           const data = results.data;
           renderDashboard(data);
           showUpdatedStatus();
-
           if (autoRefreshEnabled) {
             resetAutoRefresh();
           }
@@ -212,90 +210,76 @@
       });
     }
 
-    // Рендерим дэшборд
+    // Функция рендера дэшборда – карточки всех платформ
     function renderDashboard(data) {
       const app = document.getElementById("app");
-      let html = '<div class="row">';
-
+      let html = "";
       platforms.forEach(platform => {
-        // Число активных из одной ячейки
+        // Извлекаем число активных сотрудников из одной ячейки
         const activeCount = data[platform.rowActiveCount]?.[platform.colIndexData] || 0;
-        // Имена активных (просто берём строки rowActiveNamesStart..rowActiveNamesEnd)
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
           const name = data[r]?.[platform.colIndexNames]?.trim();
           if (name) activeNames.push(name);
         }
-
-        // Количество away из одной ячейки
+        // Извлекаем число away сотрудников
         const awayCount = data[platform.rowAwayCount]?.[platform.colIndexData] || 0;
-        // Список away: берём имена и "статус"
-        // Но статус/причина хранится там же (colIndexData) в соответствующей строке
         const awayData = [];
         for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
           const name = data[r]?.[platform.colIndexNames]?.trim();
           if (!name) continue;
-          // Статус / причина
           const reason = data[r]?.[platform.colIndexData]?.trim() || "";
           awayData.push({ name, reason });
         }
 
+        // Формируем карточку для платформы
         html += `
-          <div class="col-md-3 col-sm-6">
-            <div class="platform-card">
-              <h5>${platform.name}</h5>
-              <p><small>Активные (${activeCount})</small></p>
-              <ul>
-                ${activeNames.map(n => `<li>${n}</li>`).join("")}
-              </ul>
-              <p><small>Away (${awayCount})</small></p>
-              <ul>
-                ${awayData.map(item => {
-                  // Если reason непуст, ставим тире
-                  const extra = item.reason ? ` - ${item.reason}` : "";
-                  return `<li>${item.name}${extra}</li>`;
-                }).join("")}
-              </ul>
-            </div>
+          <div class="platform-card">
+            <h5>${platform.name}</h5>
+            <p><small>Активные (${activeCount})</small></p>
+            <ul>
+              ${activeNames.map(n => `<li>${n}</li>`).join("")}
+            </ul>
+            <p><small>Away (${awayCount})</small></p>
+            <ul>
+              ${awayData.map(item => {
+                const extra = item.reason ? " - " + item.reason : "";
+                return `<li>${item.name}${extra}</li>`;
+              }).join("")}
+            </ul>
           </div>
         `;
       });
-
-      html += '</div>';
       app.innerHTML = html;
     }
 
-    // Отметка "Updated"
+    // Функция показа обновлённого статуса
     function showUpdatedStatus() {
       const updateStatusEl = document.getElementById("update-status");
       updateStatusEl.textContent = "Updated";
-      updateStatusEl.style.backgroundColor = "#28a745"; // зелёный
+      updateStatusEl.style.backgroundColor = "#28a745";
     }
 
-    // Сброс автообновления и запуск таймеров
+    // Сброс таймеров автообновления и запуск обратного отсчёта
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
-
       countdownValue = refreshInterval;
       updateCountdownDisplay();
-
       refreshTimer = setTimeout(fetchData, refreshInterval * 1000);
       countdownTimer = setInterval(() => {
         countdownValue--;
-        if (countdownValue <= 0) {
-          clearInterval(countdownTimer);
-        }
+        if (countdownValue <= 0) clearInterval(countdownTimer);
         updateCountdownDisplay();
       }, 1000);
     }
 
-    // Отображение обратного отсчёта
+    // Обновление обратного отсчёта на экране
     function updateCountdownDisplay() {
       document.getElementById("countdown").textContent = countdownValue;
     }
 
-    // Вкл/выкл автообновления
+    // Переключение автообновления
     function toggleAutoRefresh() {
       autoRefreshEnabled = !autoRefreshEnabled;
       const btn = document.getElementById("toggle-autorefresh");
@@ -310,12 +294,12 @@
       }
     }
 
-    // Ручное обновление
+    // Ручное обновление данных
     function refreshNow() {
       fetchData();
     }
 
-    // Инициализация
+    // Инициализация после загрузки страницы
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("toggle-autorefresh").addEventListener("click", toggleAutoRefresh);
       document.getElementById("refresh-now").addEventListener("click", refreshNow);
