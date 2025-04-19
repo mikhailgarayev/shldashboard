@@ -2,46 +2,79 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Support Shift Dashboard</title>
-  <!-- Подключаем PDF.js (через CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1, h2 { color: #333; }
-    .section { margin-bottom: 30px; }
-    .employee { border-bottom: 1px solid #ccc; padding: 5px 0; }
-    button { padding: 10px 20px; cursor: pointer; }
-  </style>
+  <title>Dashboard from Google Sheets</title>
 </head>
 <body>
-  <h1>Support Shift Dashboard</h1>
+  <h1>Dashboard</h1>
+  <div id="app">Загрузка...</div>
 
-  <!-- Раздел для загрузки PDF -->
-  <div class="section">
-    <button id="uploadPdfBtn">Загрузить PDF (дашборд)</button>
-    <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" />
-  </div>
+  <!-- Подключаем PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
 
-  <!-- Раздел для отображения данных из Google Sheets -->
-  <div class="section">
-    <h2>Сотрудники на смене (Google Sheets)</h2>
-    <div id="sheetData">Загрузка данных из таблицы...</div>
-  </div>
+  <script>
+    // Ссылка на CSV (замените на свою!)
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
 
-  <!-- Раздел для отображения данных из PDF -->
-  <div class="section">
-    <h2>Данные из PDF</h2>
-    <div id="pdfData">Загрузите PDF для отображения данных дашборда.</div>
-  </div>
+    // Функция для парсинга CSV через Papa Parse
+    function fetchData() {
+      Papa.parse(CSV_URL, {
+        download: true,
+        header: false, // или true, если в таблице есть заголовки
+        complete: function(results) {
+          // results.data – это двумерный массив со всеми данными таблицы
+          const data = results.data;
+          console.log("Все данные:", data);
 
-  <!-- Раздел для отображения найденных конфликтов (сотрудники on-shift, но статус Away) -->
-  <div class="section">
-    <h2>Сотрудники, числящиеся на смене, но со статусом <i>Away</i></h2>
-    <div id="conflicts">Здесь будут показаны результаты сравнения.</div>
-  </div>
+          // Пример: извлекаем нужную информацию
+          // Допустим, в столбцах D и E (в таблице это индексы 3 и 4)
+          // находятся данные по платформе CS.
+          // Или в конкретных ячейках (например, E4) что-то важное. 
+          // Обратите внимание, что индексация массива идет с 0.
+          
+          // Например, вы упомянули, что ячейка E4 содержит число "12 активных сотрудников".
+          // В логике массива Papa Parse это будет:
+          // data[3][4] (3-я строка, 4-й столбец) — смотрите, какая в реальности получается у вас нумерация.
+          const activeCSCell = data[3][4]; 
+          console.log("Активных сотрудников (E4):", activeCSCell);
 
-  <!-- Подключаем наш JavaScript код -->
-  <script src="script.js"></script>
+          // Пример: можете отобразить все имена, которые находятся ниже по строкам
+          // Предположим, начиная со строки 4 по строку 15 (т.е. индексы в массиве 3..14).
+          const activeCSNames = [];
+          for (let i = 3; i <= 14; i++) {
+            // столбец D (3) содержит имена? или E (4)?
+            // Нужно проверить, в каком столбце фактически лежат имена.
+            const name = data[i][3];
+            if (name) {
+              activeCSNames.push(name);
+            }
+          }
+
+          // Аналогично можете доставать данные про Away-сотрудников, про Post order и т. д.
+
+          // Рендерим всё это в элементе #app
+          renderDashboard(activeCSCell, activeCSNames);
+        }
+      });
+    }
+
+    function renderDashboard(activeCount, activeNames) {
+      const app = document.getElementById("app");
+      
+      let html = `
+        <h2>Платформа CS</h2>
+        <p>Активных сотрудников: ${activeCount}</p>
+        <ul>
+      `;
+      activeNames.forEach(name => {
+        html += `<li>${name}</li>`;
+      });
+      html += `</ul>`;
+
+      app.innerHTML = html;
+    }
+
+    // Запускаем парсинг при загрузке страницы
+    fetchData();
+  </script>
 </body>
 </html>
