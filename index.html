@@ -2,114 +2,190 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Centered Cards in One Row</title>
+  <title>Modern Dashboard</title>
+  <!-- Подключаем Bootstrap для базовых стилей (опционально) -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
+    /* Сброс отступов для всего документа и базовый фон */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       min-height: 100vh;
-      overflow-x: hidden; /* при желании можно отключать горизонтальный скролл всей страницы */
-      background-color: #f8f9fa;
-      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
     }
+    /* Контейнер на всю ширину */
     .dashboard-container {
-      width: 100%; 
-      margin: 0; 
+      width: 100%;
       padding: 20px;
     }
+    /* Заголовок сайта */
+    h1 {
+      text-align: center;
+      color: #343a40;
+      margin-bottom: 20px;
+      font-weight: 300;
+    }
+    /* Панель кнопок и статуса */
     .status-bar {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      margin-bottom: 10px;
       flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .status-bar button {
+      border: none;
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      margin: 4px;
+      transition: background-color 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .status-bar button:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(52, 58, 64, 0.4);
+    }
+    .btn-outline-primary {
+      background-color: #ffffff;
+      color: #007bff;
+      border: 2px solid #007bff;
+    }
+    .btn-outline-primary:hover {
+      background-color: #007bff;
+      color: #ffffff;
+    }
+    .btn-outline-secondary {
+      background-color: #ffffff;
+      color: #6c757d;
+      border: 2px solid #6c757d;
+    }
+    .btn-outline-secondary:hover {
+      background-color: #6c757d;
+      color: #ffffff;
     }
     .status-badge {
       background-color: #28a745;
-      border-radius: 4px;
-      color: #fff;
-      padding: 3px 8px;
-      margin-left: 10px;
+      border-radius: 50px;
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      margin: 4px;
     }
+    .status-bar span {
+      margin: 4px;
+      font-size: 0.9rem;
+      color: #343a40;
+    }
+    /* Горизонтальный ряд карточек – без переноса */
     .platforms-row {
       display: flex;
-      flex-wrap: nowrap;      /* одна строка */
-      justify-content: center;/* <-- центрируем карточки по горизонтали */
-      overflow-x: auto;       /* горизонтальная прокрутка, если карточек много */
-      width: 100%;
+      flex-wrap: nowrap;
+      justify-content: center;
+      overflow-x: auto;
+      padding-bottom: 10px;
     }
+    /* Стили для карточек платформ */
     .platform-card {
-      flex: 0 0 220px;        /* фиксированная ширина каждой карточки */
-      margin: 0 10px 0 10px;  /* отступ слева-справа */
-      padding: 10px;
-      border-radius: 8px;
-      background-color: #ffffff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      font-size: 0.9rem;
+      flex: 0 0 220px;
       box-sizing: border-box;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 0 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    h1, h5 {
+    .platform-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    .platform-card h5 {
       color: #343a40;
-      margin: 0;
-      padding: 0;
+      margin-bottom: 10px;
+      text-align: center;
+      font-weight: 600;
     }
-    h5 {
-      margin-bottom: 5px;
-      font-weight: bold;
+    .platform-card p {
+      text-align: center;
+      color: #6c757d;
+      margin: 8px 0;
+      font-size: 0.85rem;
     }
-    ul {
+    .platform-card ul {
       list-style: none;
       padding-left: 0;
       margin: 0;
+      font-size: 0.85rem;
+      color: #495057;
     }
-    ul li {
-      padding: 2px 0;
-      border-bottom: 1px solid #dee2e6;
+    .platform-card ul li {
+      border-bottom: 1px solid #e9ecef;
+      padding: 4px 0;
     }
-    ul li:last-child {
+    .platform-card ul li:last-child {
       border-bottom: none;
+    }
+    /* Стили для горизонтального скролла – чтобы скролл отображался на уровне всего экрана */
+    ::-webkit-scrollbar {
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cccccc;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #b3b3b3;
     }
   </style>
 </head>
 <body>
   <div class="dashboard-container">
-    <h1 class="text-center mb-4">Dashboard</h1>
+    <h1>Dashboard</h1>
+    <!-- Панель кнопок и статуса -->
     <div class="status-bar">
-      <button id="toggle-autorefresh" class="btn btn-outline-primary btn-sm">Disable Auto Refresh</button>
-      <button id="refresh-now" class="btn btn-outline-secondary btn-sm ml-2">Refresh now</button>
-      <span id="update-status" class="status-badge ml-2">Updated</span>
-      <span class="ml-3">Auto refresh in <span id="countdown">60</span> seconds...</span>
+      <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
+      <button id="refresh-now" class="btn btn-outline-secondary">Refresh now</button>
+      <span id="update-status" class="status-badge">Updated</span>
+      <span>Auto refresh in <span id="countdown">60</span> seconds...</span>
     </div>
+    <!-- Горизонтальная лента карточек -->
     <div id="app" class="platforms-row">
-      <!-- Карточки платформ вставляются динамически -->
+      <!-- Карточки вставляются динамически через JS -->
     </div>
   </div>
 
   <!-- PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
+    // Замените ссылку CSV_URL на вашу опубликованную ссылку на Google Sheets (CSV)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
 
-    // Пример настроек платформ
+    // Конфигурация 8 платформ – проверьте индексы строк и столбцов согласно вашей таблице
     const platforms = [
-      { name: "CS", colIndexNames: 3, colIndexData: 4, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "CS/Post order", colIndexNames: 5, colIndexData: 6, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "PSR", colIndexNames: 7, colIndexData: 8, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "SiMo", colIndexNames: 9, colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall", colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Venue", colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Trainee", colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "ST", colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
     ];
 
     let autoRefreshEnabled = true;
-    let refreshInterval = 60;
+    let refreshInterval = 60; // интервал в секундах
     let refreshTimer = null;
     let countdownTimer = null;
     let countdownValue = refreshInterval;
 
+    // Загрузка данных из CSV через PapaParse
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -119,20 +195,26 @@
           renderDashboard(data);
           showUpdatedStatus();
           if (autoRefreshEnabled) resetAutoRefresh();
+        },
+        error: function(err) {
+          console.error("Ошибка парсинга CSV:", err);
         }
       });
     }
 
+    // Функция рендера карточек платформ
     function renderDashboard(data) {
       const app = document.getElementById("app");
       let html = "";
       platforms.forEach(platform => {
+        // Получаем данные для активных
         const activeCount = data[platform.rowActiveCount]?.[platform.colIndexData] || 0;
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
           const name = data[r]?.[platform.colIndexNames]?.trim();
           if (name) activeNames.push(name);
         }
+        // Получаем данные для Away
         const awayCount = data[platform.rowAwayCount]?.[platform.colIndexData] || 0;
         const awayData = [];
         for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
@@ -162,12 +244,14 @@
       app.innerHTML = html;
     }
 
+    // Функция показа статуса обновления
     function showUpdatedStatus() {
       const updateStatusEl = document.getElementById("update-status");
       updateStatusEl.textContent = "Updated";
       updateStatusEl.style.backgroundColor = "#28a745";
     }
 
+    // Сброс таймеров и запуск автообновления
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
@@ -181,10 +265,12 @@
       }, 1000);
     }
 
+    // Обновление обратного отсчёта
     function updateCountdownDisplay() {
       document.getElementById("countdown").textContent = countdownValue;
     }
 
+    // Переключение автообновления
     function toggleAutoRefresh() {
       autoRefreshEnabled = !autoRefreshEnabled;
       const btn = document.getElementById("toggle-autorefresh");
@@ -199,6 +285,7 @@
       }
     }
 
+    // Ручное обновление
     function refreshNow() {
       fetchData();
     }
