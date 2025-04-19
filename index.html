@@ -5,40 +5,47 @@
   <title>SUMO Dashboard</title>
   <!-- Подключаем Bootstrap для базовых стилей -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- Подключаем pdf.js (на будущее, если понадобится) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <style>
-    /* Общий сброс стилей и фон */
+    /* Основной сброс и фон */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       min-height: 100vh;
-      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow-x: hidden;
     }
+    /* Центрированный контейнер с ограниченной шириной */
     .dashboard-container {
-      width: 100%;
-      padding: 20px;
+      max-width: 1400px;
+      margin: auto;
+      padding: 40px 20px;
     }
+    /* Заголовок */
     h1 {
       text-align: center;
       color: #343a40;
-      margin-bottom: 20px;
-      font-weight: 300;
+      margin-bottom: 30px;
+      font-weight: 500;
+      font-size: 2rem;
     }
+    /* Панель кнопок и статуса */
     .status-bar {
       display: flex;
       align-items: center;
       justify-content: flex-end;
       flex-wrap: wrap;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
     .status-bar button {
       border: none;
       border-radius: 50px;
-      padding: 8px 16px;
+      padding: 10px 20px;
       font-size: 0.9rem;
-      margin: 4px;
+      margin: 6px;
       transition: background-color 0.3s, box-shadow 0.3s;
       cursor: pointer;
     }
@@ -67,12 +74,12 @@
     .status-badge {
       background-color: #28a745;
       border-radius: 50px;
-      padding: 5px 12px;
-      font-size: 0.85rem;
-      margin: 4px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      margin: 6px;
     }
     .status-bar span {
-      margin: 4px;
+      margin: 6px;
       font-size: 0.9rem;
       color: #343a40;
     }
@@ -84,30 +91,32 @@
       overflow-x: auto;
       padding-bottom: 10px;
     }
+    /* Карточка платформы */
     .platform-card {
       flex: 0 0 220px;
       box-sizing: border-box;
       background: #ffffff;
-      border-radius: 12px;
-      padding: 16px;
-      margin: 0 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 0 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
       transition: transform 0.2s, box-shadow 0.2s;
     }
     .platform-card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     }
     .platform-card h5 {
       color: #343a40;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       text-align: center;
       font-weight: 600;
+      font-size: 1.1rem;
     }
     .platform-card p {
       text-align: center;
       color: #6c757d;
-      margin: 8px 0;
+      margin: 10px 0;
       font-size: 0.85rem;
     }
     .platform-card ul {
@@ -126,20 +135,21 @@
     }
     /* Раздел Upcoming Breaks */
     #breaks-section {
-      margin-top: 30px;
+      margin-top: 40px;
     }
     #breaks-section h2 {
       text-align: center;
       color: #343a40;
-      margin-bottom: 10px;
-      font-weight: 400;
+      margin-bottom: 20px;
+      font-weight: 500;
+      font-size: 1.5rem;
     }
     /* Одна карточка для всех брейков */
     .break-card {
       background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      padding: 20px;
       margin: 0 auto;
       max-width: 600px;
       text-align: center;
@@ -147,12 +157,13 @@
     }
     .break-card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     }
     .break-card h5 {
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       font-weight: 600;
       color: #343a40;
+      font-size: 1.1rem;
     }
     .break-card ul {
       list-style: none;
@@ -168,7 +179,7 @@
     .break-card ul li:last-child {
       border-bottom: none;
     }
-    /* Скролл для горизонтального ряда карточек */
+    /* Горизонтальный скролл (для ряда карточек платформ) */
     ::-webkit-scrollbar {
       height: 8px;
     }
@@ -210,20 +221,20 @@
   <!-- PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    // Ссылки на CSV-таблицы
+    // Ссылки на CSV
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
     const BREAKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?gid=96694645&single=true&output=csv";
 
-    // Конфигурация 8 платформ (убедитесь, что индексы соответствуют вашей таблице)
+    // Конфигурация платформ (убедитесь, что индексы соответствуют вашей таблице)
     const platforms = [
-      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
     ];
 
     let autoRefreshEnabled = true;
@@ -241,7 +252,7 @@
           const data = results.data;
           renderDashboard(data);
           showUpdatedStatus();
-          // Обновляем также раздел Upcoming Breaks
+          // Обновляем также список Upcoming Breaks
           fetchBreaksData();
           if (autoRefreshEnabled) resetAutoRefresh();
         },
@@ -251,7 +262,7 @@
       });
     }
 
-    // Рендер карточек платформ (основной дашборд)
+    // Функция рендера карточек платформ
     function renderDashboard(data) {
       const app = document.getElementById("app");
       let html = "";
@@ -300,7 +311,7 @@
       updateStatusEl.style.backgroundColor = "#28a745";
     }
 
-    // Загрузка данных для раздела Upcoming Breaks
+    // Загрузка данных для Upcoming Breaks из CSV
     function fetchBreaksData() {
       Papa.parse(BREAKS_CSV_URL, {
         download: true,
@@ -321,13 +332,13 @@
       return parseInt(hh, 10) * 60 + parseInt(mm, 10);
     }
 
-    // Рендеринг раздела Upcoming Breaks – все записи выводятся в одну карточку
+    // Рендеринг раздела Upcoming Breaks в одной карточке
     function renderBreaks(breaksData) {
       const now = new Date();
       const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
       const horizon = currentTotalMinutes + 60; // ближайший час
 
-      // Фильтруем записи, где время брейка находится между текущим временем и ближайшим часом
+      // Фильтруем записи, у которых Break Time находится между текущим временем и ближайшим часом
       const upcoming = breaksData.filter(item => {
         if (!item["Break Time"]) return false;
         const breakTimeStr = item["Break Time"].trim();
@@ -335,12 +346,11 @@
         return (breakMinutes > currentTotalMinutes) && (breakMinutes <= horizon);
       });
 
-      // Сортируем по времени брейка (по возрастанию)
+      // Сортируем по возрастанию времени брейка
       upcoming.sort((a, b) => {
         return parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]);
       });
 
-      // Формируем HTML одной карточки
       let html = `<div class="break-card">
                     <h5>Upcoming Breaks</h5>
                     <ul>`;
@@ -350,8 +360,9 @@
         const shiftStart = item["Shift Start Time"];
         const workspace = item["Working Space"];
         html += `<li>
-                   <strong>${name}</strong> — Break at <strong>${breakTime}</strong><br/>
-                   Shift Start: ${shiftStart} | ${workspace}
+                   <strong>${name}</strong><br/>
+                   Break at: <strong>${breakTime}</strong><br/>
+                   Shift: ${shiftStart} | ${workspace}
                  </li>`;
       });
       html += `   </ul>
