@@ -79,7 +79,7 @@
       font-size: 0.9rem;
       color: #343a40;
     }
-    /* Горизонтальный ряд карточек – без переноса */
+    /* Горизонтальный ряд карточек платформ – без переноса */
     .platforms-row {
       display: flex;
       flex-wrap: nowrap;
@@ -128,7 +128,38 @@
     .platform-card ul li:last-child {
       border-bottom: none;
     }
-    /* Стили для горизонтального скролла – чтобы скролл отображался на уровне всего экрана */
+    /* Раздел Upcoming Breaks */
+    #breaks-section {
+      margin-top: 30px;
+    }
+    #breaks-section h2 {
+      text-align: center;
+      color: #343a40;
+      margin-bottom: 10px;
+      font-weight: 400;
+    }
+    /* Стили карточек Upcoming Breaks */
+    .break-card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 16px;
+      margin: 10px auto;
+      max-width: 300px;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .break-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    .break-card strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 1.1rem;
+      color: #343a40;
+    }
+    /* Скролл (для горизонтального ряда карточек) */
     ::-webkit-scrollbar {
       height: 8px;
     }
@@ -148,6 +179,7 @@
 <body>
   <div class="dashboard-container">
     <h1>Support Monitoring Dashboard</h1>
+    
     <!-- Панель кнопок и статуса -->
     <div class="status-bar">
       <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
@@ -155,28 +187,34 @@
       <span id="update-status" class="status-badge">Updated</span>
       <span>Auto refresh in <span id="countdown">10</span> seconds...</span>
     </div>
-    <!-- Горизонтальная лента карточек -->
-    <div id="app" class="platforms-row">
-      <!-- Карточки вставляются динамически через JS -->
+    
+    <!-- Горизонтальная лента карточек платформ -->
+    <div id="app" class="platforms-row"></div>
+    
+    <!-- Раздел Upcoming Breaks -->
+    <div id="breaks-section">
+      <h2>Upcoming Breaks</h2>
+      <div id="breaks-app"></div>
     </div>
   </div>
 
   <!-- PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    // Замените ссылку CSV_URL на вашу опубликованную ссылку на Google Sheets (CSV)
+    // Ссылки на таблицы CSV
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
+    const BREAKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?gid=96694645&single=true&output=csv";
 
-    // Конфигурация 8 платформ – проверьте индексы строк и столбцов согласно вашей таблице
+    // Конфигурация 8 платформ – проверьте индексы согласно вашей таблице
     const platforms = [
-      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
     ];
 
     let autoRefreshEnabled = true;
@@ -185,7 +223,7 @@
     let countdownTimer = null;
     let countdownValue = refreshInterval;
 
-    // Загрузка данных из CSV через PapaParse
+    // Загрузка данных из основного CSV
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -194,6 +232,8 @@
           const data = results.data;
           renderDashboard(data);
           showUpdatedStatus();
+          // Обновляем также раздел Upcoming Breaks
+          fetchBreaksData();
           if (autoRefreshEnabled) resetAutoRefresh();
         },
         error: function(err) {
@@ -251,7 +291,61 @@
       updateStatusEl.style.backgroundColor = "#28a745";
     }
 
-    // Сброс таймеров и запуск автообновления
+    // Загрузка данных из CSV для Upcoming Breaks
+    function fetchBreaksData() {
+      Papa.parse(BREAKS_CSV_URL, {
+        download: true,
+        header: true, // таблица должна содержать заголовки: Name, Shift Start Time, Break Time, Working Space
+        complete: function(results) {
+          const data = results.data;
+          renderBreaks(data);
+        },
+        error: function(err) {
+          console.error("Ошибка загрузки данных брейков:", err);
+        }
+      });
+    }
+
+    // Функция для преобразования времени в минуты (формат "HH:MM")
+    function parseTimeToMinutes(timeStr) {
+      const [hh, mm] = timeStr.trim().split(":");
+      return parseInt(hh, 10) * 60 + parseInt(mm, 10);
+    }
+
+    // Рендеринг раздела Upcoming Breaks в виде карточек
+    function renderBreaks(breaksData) {
+      const now = new Date();
+      const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+      // Ограничим вывод ближайшими 60 минутами
+      const horizon = currentTotalMinutes + 60;
+      const upcoming = breaksData.filter(item => {
+        if (!item["Break Time"]) return false;
+        const breakTimeStr = item["Break Time"].trim();
+        const breakMinutes = parseTimeToMinutes(breakTimeStr);
+        return (breakMinutes > currentTotalMinutes) && (breakMinutes <= horizon);
+      });
+      // Сортируем по времени брейка
+      upcoming.sort((a, b) => {
+        return parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]);
+      });
+      let html = "";
+      upcoming.forEach(item => {
+        const name = item["Name"];
+        const breakTime = item["Break Time"];
+        const shiftStart = item["Shift Start Time"];
+        const workspace = item["Working Space"];
+        html += `
+          <div class="break-card">
+            <strong>${name}</strong>
+            <p>Break at: <strong>${breakTime}</strong></p>
+            <p>Shift: ${shiftStart} | ${workspace}</p>
+          </div>
+        `;
+      });
+      document.getElementById("breaks-app").innerHTML = html;
+    }
+
+    // Автообновление: сброс таймеров
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
