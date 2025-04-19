@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Dashboard from Google Sheets</title>
-  <!-- Подключаем Bootstrap CSS для оформления сетки и стилей -->
+  <title>Dashboard with Auto-Refresh and Manual Refresh</title>
+  <!-- Bootstrap для сетки и стилей -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
     body {
@@ -45,38 +45,68 @@
     ul li:last-child {
       border-bottom: none;
     }
+
+    /* Стили для статусной строки */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .status-badge {
+      background-color: #28a745; /* зелёный */
+      border-radius: 4px;
+      color: #fff;
+      padding: 3px 8px;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="dashboard-container">
-    <h1 class="text-center mb-4">Support Monitoring Dashboard</h1>
+    <h1 class="text-center mb-4">Dashboard</h1>
+
+    <!-- Контейнер для кнопок управления и статуса -->
+    <div class="status-bar">
+      <button id="toggle-autorefresh" class="btn btn-outline-primary btn-sm">
+        Disable Auto Refresh
+      </button>
+      <button id="refresh-now" class="btn btn-outline-secondary btn-sm ml-2">
+        Refresh now
+      </button>
+      <span id="update-status" class="status-badge ml-2">Updated</span>
+      <span class="ml-3">
+        Auto refresh in <span id="countdown">60</span> seconds...
+      </span>
+    </div>
+
     <div id="app">Загрузка...</div>
   </div>
 
   <!-- Подключаем PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    // Ссылка на CSV-файл из Google Sheets (замените на вашу публикацию, если необходимо)
+    // Ссылка на опубликованный CSV из Google Sheets (замените на свою, если необходимо)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
 
-    // Настройки для каждой платформы (индексы в 0-based).
-    // Отредактируйте rowActiveNamesEnd, rowAwayNamesEnd и другие параметры под вашу таблицу.
+    // Настройки платформ
     const platforms = [
       {
         name: "CS",
-        colIndexNames: 3,           // столбец D
-        colIndexCount: 4,           // столбец E
-        rowActiveCount: 3,          // ячейка E4 (число активных)
-        rowActiveNamesStart: 4,     // E5
-        rowActiveNamesEnd: 15,      // до E16
-        rowAwayCount: 27,           // E28 (число Away)
-        rowAwayNamesStart: 28,      // E29
-        rowAwayNamesEnd: 35         // до E36
+        colIndexNames: 3,           
+        colIndexCount: 4,           
+        rowActiveCount: 3,          
+        rowActiveNamesStart: 4,     
+        rowActiveNamesEnd: 15,      
+        rowAwayCount: 27,           
+        rowAwayNamesStart: 28,      
+        rowAwayNamesEnd: 35         
       },
       {
         name: "CS/Post order",
-        colIndexNames: 5,           // столбец F
-        colIndexCount: 6,           // столбец G
+        colIndexNames: 5,           
+        colIndexCount: 6,           
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -86,8 +116,8 @@
       },
       {
         name: "PSR",
-        colIndexNames: 7,   // столбец H
-        colIndexCount: 8,   // столбец I
+        colIndexNames: 7,   
+        colIndexCount: 8,   
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -97,8 +127,8 @@
       },
       {
         name: "SiMo",
-        colIndexNames: 9,   // столбец J
-        colIndexCount: 10,  // столбец K
+        colIndexNames: 9,   
+        colIndexCount: 10,  
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -108,8 +138,8 @@
       },
       {
         name: "Aircall",
-        colIndexNames: 11,  // столбец L
-        colIndexCount: 12,  // столбец M
+        colIndexNames: 11,  
+        colIndexCount: 12,  
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -119,8 +149,8 @@
       },
       {
         name: "Venue",
-        colIndexNames: 13,  // столбец N
-        colIndexCount: 14,  // столбец O
+        colIndexNames: 13,  
+        colIndexCount: 14,  
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -130,8 +160,8 @@
       },
       {
         name: "Trainee",
-        colIndexNames: 15,  // столбец P
-        colIndexCount: 16,  // столбец Q
+        colIndexNames: 15,  
+        colIndexCount: 16,  
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -141,8 +171,8 @@
       },
       {
         name: "ST",
-        colIndexNames: 17,  // столбец R
-        colIndexCount: 18,  // столбец S
+        colIndexNames: 17,  
+        colIndexCount: 18,  
         rowActiveCount: 3,
         rowActiveNamesStart: 4,
         rowActiveNamesEnd: 15,
@@ -152,7 +182,14 @@
       }
     ];
 
-    // Функция загрузки CSV и парсинга данных
+    // --- ПЕРЕМЕННЫЕ ДЛЯ АВТООБНОВЛЕНИЯ ---
+    let autoRefreshEnabled = true;   // Автообновление включено по умолчанию
+    let refreshInterval = 60;        // Интервал в секундах
+    let refreshTimer = null;         // Таймер для следующего вызова fetchData()
+    let countdownTimer = null;       // Таймер для обновления обратного отсчёта
+    let countdownValue = refreshInterval;
+
+    // --- ЗАГРУЗКА ДАННЫХ ---
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -160,24 +197,33 @@
         complete: function(results) {
           const data = results.data;
           renderDashboard(data);
+          
+          // Показать статус "Updated"
+          showUpdatedStatus();
+          
+          // Если автообновление включено, перезапустить таймеры
+          if (autoRefreshEnabled) {
+            resetAutoRefresh();
+          }
         }
       });
     }
 
-    // Функция рендера дэшборда: карточки выводятся как колонки сетки
+    // --- РЕНДЕР ДЭШБОРДА ---
     function renderDashboard(data) {
       const app = document.getElementById("app");
       let html = '<div class="row">';
 
       platforms.forEach(platform => {
-        // Извлекаем количество активных сотрудников
+        // Извлекаем число активных сотрудников
         const activeCount = data[platform.rowActiveCount]?.[platform.colIndexCount] || 0;
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
           const name = data[r]?.[platform.colIndexNames]?.trim();
           if (name) activeNames.push(name);
         }
-        // Извлекаем количество сотрудников в статусе Away
+
+        // Извлекаем число сотрудников в статусе Away
         const awayCount = data[platform.rowAwayCount]?.[platform.colIndexCount] || 0;
         const awayNames = [];
         for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
@@ -185,6 +231,7 @@
           if (name) awayNames.push(name);
         }
 
+        // Формирование карточки платформы
         html += `
           <div class="col-md-3 col-sm-6">
             <div class="platform-card">
@@ -201,13 +248,73 @@
           </div>
         `;
       });
+
       html += '</div>';
       app.innerHTML = html;
     }
 
-    fetchData();
-    // Для автообновления каждые 60 секунд можно добавить:
-    // setInterval(fetchData, 60000);
+    // --- СТАТУС "UPDATED" ---
+    function showUpdatedStatus() {
+      const updateStatusEl = document.getElementById("update-status");
+      updateStatusEl.textContent = "Updated";
+      updateStatusEl.style.backgroundColor = "#28a745"; // зелёный
+    }
+
+    // --- СБРОС И ЗАПУСК ТАЙМЕРОВ АВТООБНОВЛЕНИЯ ---
+    function resetAutoRefresh() {
+      // Очищаем старые таймеры
+      clearTimeout(refreshTimer);
+      clearInterval(countdownTimer);
+
+      // Сбрасываем и запускаем заново обратный отсчёт
+      countdownValue = refreshInterval;
+      updateCountdownDisplay();
+
+      refreshTimer = setTimeout(fetchData, refreshInterval * 1000);
+      countdownTimer = setInterval(() => {
+        countdownValue--;
+        if (countdownValue <= 0) {
+          clearInterval(countdownTimer);
+        }
+        updateCountdownDisplay();
+      }, 1000);
+    }
+
+    // --- ОБНОВЛЕНИЕ ОТРИСОВКИ ОБРАТНОГО ОТСЧЁТА ---
+    function updateCountdownDisplay() {
+      const countdownEl = document.getElementById("countdown");
+      countdownEl.textContent = countdownValue;
+    }
+
+    // --- ФУНКЦИЯ ВКЛ/ВЫКЛ АВТООБНОВЛЕНИЯ ---
+    function toggleAutoRefresh() {
+      autoRefreshEnabled = !autoRefreshEnabled;
+      const btn = document.getElementById("toggle-autorefresh");
+
+      if (autoRefreshEnabled) {
+        btn.textContent = "Disable Auto Refresh";
+        resetAutoRefresh();
+      } else {
+        btn.textContent = "Enable Auto Refresh";
+        clearTimeout(refreshTimer);
+        clearInterval(countdownTimer);
+        document.getElementById("countdown").textContent = "";
+      }
+    }
+
+    // --- Ручное обновление данных ---
+    function refreshNow() {
+      // Вызываем обновление данных немедленно и сбрасываем таймеры автообновления
+      fetchData();
+    }
+
+    // --- ПРИ ЗАГРУЗКЕ СТРАНИЦЫ ---
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("toggle-autorefresh").addEventListener("click", toggleAutoRefresh);
+      document.getElementById("refresh-now").addEventListener("click", refreshNow);
+      // Запускаем первую загрузку данных
+      fetchData();
+    });
   </script>
 </body>
 </html>
