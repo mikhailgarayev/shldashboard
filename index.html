@@ -3,78 +3,211 @@
 <head>
   <meta charset="UTF-8" />
   <title>Dashboard from Google Sheets</title>
+  <!-- Подключаем Bootstrap CSS для оформления сетки и стилей -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .dashboard-container {
+      max-width: 1200px;
+      margin: auto;
+    }
+    .platform-card {
+      margin: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      font-size: 0.9rem;
+    }
+    h1, h5 {
+      color: #343a40;
+    }
+    h5 {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    p {
+      margin: 5px 0;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0 0 5px 0;
+    }
+    ul li {
+      padding: 2px 0;
+      border-bottom: 1px solid #dee2e6;
+    }
+    ul li:last-child {
+      border-bottom: none;
+    }
+  </style>
 </head>
 <body>
-  <h1>Dashboard</h1>
-  <div id="app">Загрузка...</div>
+  <div class="dashboard-container">
+    <h1 class="text-center mb-4">Support Momitoring Dashboard</h1>
+    <div id="app">Загрузка...</div>
+  </div>
 
-  <!-- Подключаем PapaParse -->
+  <!-- Подключаем PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-
   <script>
-    // Ссылка на CSV (замените на свою!)
+    // Ссылка на CSV-файл из Google Sheets (замените на вашу публикацию, если необходимо)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
 
-    // Функция для парсинга CSV через Papa Parse
+    // Настройки для каждой платформы (индексы в 0-based).
+    // Отредактируйте rowActiveNamesEnd, rowAwayNamesEnd и другие параметры под вашу таблицу.
+    const platforms = [
+      {
+        name: "CS",
+        colIndexNames: 3,           // столбец D
+        colIndexCount: 4,           // столбец E
+        rowActiveCount: 3,          // ячейка E4 (число активных)
+        rowActiveNamesStart: 4,     // E5
+        rowActiveNamesEnd: 15,      // до E16
+        rowAwayCount: 27,           // E28 (число Away)
+        rowAwayNamesStart: 28,      // E29
+        rowAwayNamesEnd: 35         // до E36
+      },
+      {
+        name: "CS/Post order",
+        colIndexNames: 5,           // столбец F
+        colIndexCount: 6,           // столбец G
+        rowActiveCount: 3,
+        rowActiveNamesStart: 4,
+        rowActiveNamesEnd: 15,
+        rowAwayCount: 27,
+        rowAwayNamesStart: 28,
+        rowAwayNamesEnd: 35
+      },
+      {
+        name: "PSR",
+        colIndexNames: 7,   // столбец H
+        colIndexCount: 8,   // столбец I
+        rowActiveCount: 3,
+        rowActiveNamesStart: 4,
+        rowActiveNamesEnd: 15,
+        rowAwayCount: 27,
+        rowAwayNamesStart: 28,
+        rowAwayNamesEnd: 35
+      },
+      {
+        name: "SiMo",
+        colIndexNames: 9,   // столбец J
+        colIndexCount: 10,  // столбец K
+        rowActiveCount: 3,
+        rowActiveNamesStart: 4,
+        rowActiveNamesEnd: 15,
+        rowAwayCount: 27,
+        rowAwayNamesStart: 28,
+        rowAwayNamesEnd: 35
+      },
+      {
+        name: "Aircall",
+        colIndexNames: 11,  // столбец L
+        colIndexCount: 12,  // столбец M
+        rowActiveCount: 3,
+        rowActiveNamesStart: 4,
+        rowActiveNamesEnd: 15,
+        rowAwayCount: 27,
+        rowAwayNamesStart: 28,
+        rowAwayNamesEnd: 35
+      },
+      {
+        name: "Venue",
+        colIndexNames: 13,  // столбец N
+        colIndexCount: 14,  // столбец O
+        rowActiveCount: 3,
+        rowActiveNamesStart: 4,
+        rowActiveNamesEnd: 15,
+        rowAwayCount: 27,
+        rowAwayNamesStart: 28,
+        rowAwayNamesEnd: 35
+      },
+      {
+        name: "Trainee",
+        colIndexNames: 15,  // столбец P
+        colIndexCount: 16,  // столбец Q
+        rowActiveCount: 3,
+        rowActiveNamesStart: 4,
+        rowActiveNamesEnd: 15,
+        rowAwayCount: 27,
+        rowAwayNamesStart: 28,
+        rowAwayNamesEnd: 35
+      },
+      {
+        name: "ST",
+        colIndexNames: 17,  // столбец R
+        colIndexCount: 18,  // столбец S
+        rowActiveCount: 3,
+        rowActiveNamesStart: 4,
+        rowActiveNamesEnd: 15,
+        rowAwayCount: 27,
+        rowAwayNamesStart: 28,
+        rowAwayNamesEnd: 35
+      }
+    ];
+
+    // Функция загрузки CSV и парсинга данных
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
-        header: false, // или true, если в таблице есть заголовки
+        header: false,
         complete: function(results) {
-          // results.data – это двумерный массив со всеми данными таблицы
           const data = results.data;
-          console.log("Все данные:", data);
-
-          // Пример: извлекаем нужную информацию
-          // Допустим, в столбцах D и E (в таблице это индексы 3 и 4)
-          // находятся данные по платформе CS.
-          // Или в конкретных ячейках (например, E4) что-то важное. 
-          // Обратите внимание, что индексация массива идет с 0.
-          
-          // Например, вы упомянули, что ячейка E4 содержит число "12 активных сотрудников".
-          // В логике массива Papa Parse это будет:
-          // data[3][4] (3-я строка, 4-й столбец) — смотрите, какая в реальности получается у вас нумерация.
-          const activeCSCell = data[3][4]; 
-          console.log("Активных сотрудников (E4):", activeCSCell);
-
-          // Пример: можете отобразить все имена, которые находятся ниже по строкам
-          // Предположим, начиная со строки 4 по строку 15 (т.е. индексы в массиве 3..14).
-          const activeCSNames = [];
-          for (let i = 3; i <= 14; i++) {
-            // столбец D (3) содержит имена? или E (4)?
-            // Нужно проверить, в каком столбце фактически лежат имена.
-            const name = data[i][3];
-            if (name) {
-              activeCSNames.push(name);
-            }
-          }
-
-          // Аналогично можете доставать данные про Away-сотрудников, про Post order и т. д.
-
-          // Рендерим всё это в элементе #app
-          renderDashboard(activeCSCell, activeCSNames);
+          renderDashboard(data);
         }
       });
     }
 
-    function renderDashboard(activeCount, activeNames) {
+    // Функция рендера дэшборда: карточки выводятся как колонки сетки
+    function renderDashboard(data) {
       const app = document.getElementById("app");
-      
-      let html = `
-        <h2>Платформа CS</h2>
-        <p>Активных сотрудников: ${activeCount}</p>
-        <ul>
-      `;
-      activeNames.forEach(name => {
-        html += `<li>${name}</li>`;
-      });
-      html += `</ul>`;
+      let html = '<div class="row">';
 
+      platforms.forEach(platform => {
+        // Извлекаем количество активных сотрудников
+        const activeCount = data[platform.rowActiveCount]?.[platform.colIndexCount] || 0;
+        const activeNames = [];
+        for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
+          const name = data[r]?.[platform.colIndexNames]?.trim();
+          if (name) activeNames.push(name);
+        }
+        // Извлекаем количество сотрудников в статусе Away
+        const awayCount = data[platform.rowAwayCount]?.[platform.colIndexCount] || 0;
+        const awayNames = [];
+        for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
+          const name = data[r]?.[platform.colIndexNames]?.trim();
+          if (name) awayNames.push(name);
+        }
+
+        html += `
+          <div class="col-md-3 col-sm-6">
+            <div class="platform-card">
+              <h5>${platform.name}</h5>
+              <p><small>Активные (${activeCount})</small></p>
+              <ul>
+                ${activeNames.map(n => `<li>${n}</li>`).join("")}
+              </ul>
+              <p><small>Away (${awayCount})</small></p>
+              <ul>
+                ${awayNames.map(n => `<li>${n}</li>`).join("")}
+              </ul>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
       app.innerHTML = html;
     }
 
-    // Запускаем парсинг при загрузке страницы
     fetchData();
+    // Для автообновления каждые 60 секунд можно добавить:
+    // setInterval(fetchData, 60000);
   </script>
 </body>
 </html>
