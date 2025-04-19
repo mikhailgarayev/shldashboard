@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>SUMO Dashboard</title>
-  <!-- Подключаем Bootstrap (опционально) -->
+  <!-- Подключаем Bootstrap для базовых стилей -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
-    /* Сброс и фон */
+    /* Общий сброс и фон */
     html, body {
       margin: 0;
       padding: 0;
@@ -14,17 +14,15 @@
       min-height: 100vh;
       background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      /* Убираем лишний горизонтальный скролл у body */
-      overflow-x: hidden; 
+      overflow-x: hidden;
     }
-    /* Контейнер на всю ширину */
+    /* Контейнер дэшборда */
     .dashboard-container {
-      width: 100%;        /* занимаем всю ширину экрана */
-      margin: 0;          /* убираем авто-отступы */
+      width: 100%;
+      margin: 0;
       padding: 40px 20px;
       box-sizing: border-box;
     }
-
     h1 {
       text-align: center;
       color: #343a40;
@@ -83,31 +81,26 @@
       color: #343a40;
     }
 
-    /* Горизонтальный ряд карточек (без переноса) 
-       + распределение карточек по всей ширине */
+    /* Горизонтальный ряд карточек платформ (одна строка, без переноса) */
     .platforms-row {
       display: flex;
-      flex-wrap: nowrap;            /* без переноса */
-      align-items: flex-start;      /* выравниваем карточки сверху */
-      justify-content: space-between; /* равномерно распределяем карточки */
-      overflow-x: auto;            /* горизонтальная прокрутка (если нужно) */
-      width: 100%; 
-      gap: 10px;                   /* расстояние между карточками */
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      overflow-x: auto;
+      width: 100%;
+      gap: 10px;
     }
-
     .platform-card {
-      /* Карточка может расширяться, но имеет мин. 220px для нормального вида */
-      flex: 1 1 220px;      /* растягиваться при наличии места, но мин. 220px */
-      min-width: 220px;     /* гарантия минимума */
-      margin: 0;            /* gap уже задаёт отступы */
+      flex: 1 1 220px;      /* карточка растягивается, но не меньше 220px */
+      min-width: 220px;
       box-sizing: border-box;
       background: #ffffff;
       border-radius: 16px;
       padding: 20px;
+      /* gap задаёт отступы */
       box-shadow: 0 4px 16px rgba(0,0,0,0.08);
       transition: transform 0.2s, box-shadow 0.2s;
-
-      /* Разрешаем перенос текста (не обрезаем) */
       white-space: normal;
       overflow-wrap: anywhere;
       word-break: break-word;
@@ -204,8 +197,49 @@
     .break-card ul li:last-child {
       border-bottom: none;
     }
-
-    /* Горизонтальный скролл стилей */
+    
+    /* Раздел Shift Summary (диапазон AB:AR) оформленный как карточка */
+    .shift-summary-card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin: 0 auto 40px auto;
+      max-width: 900px;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .shift-summary-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+    .shift-summary-title {
+      margin-bottom: 16px;
+      font-weight: 600;
+      color: #343a40;
+      font-size: 1.3rem;
+    }
+    .shift-summary-grid {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+    .shift-summary-grid th,
+    .shift-summary-grid td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    .shift-summary-grid th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    
+    /* Скролл для горизонтальной ленты */
     ::-webkit-scrollbar {
       height: 8px;
     }
@@ -225,7 +259,7 @@
 <body>
   <div class="dashboard-container">
     <h1>Support Monitoring Dashboard</h1>
-
+    
     <!-- Панель кнопок и статуса -->
     <div class="status-bar">
       <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
@@ -233,10 +267,16 @@
       <span id="update-status" class="status-badge">Updated</span>
       <span>Auto refresh in <span id="countdown">10</span> seconds...</span>
     </div>
-
-    <!-- Горизонтальная лента карточек (одна строка, заполняющая всю ширину) -->
+    
+    <!-- Карточка Shift Summary (данные из диапазона AB:AR) -->
+    <div id="shift-summary" class="shift-summary-card">
+      <div class="shift-summary-title">Employees by platform</div>
+      <table class="shift-summary-grid" id="summary-table"></table>
+    </div>
+    
+    <!-- Горизонтальная лента карточек платформ -->
     <div id="app" class="platforms-row"></div>
-
+    
     <!-- Раздел Upcoming Breaks -->
     <div id="breaks-section">
       <h2>Upcoming Breaks</h2>
@@ -244,13 +284,18 @@
     </div>
   </div>
 
-  <!-- PapaParse для CSV -->
+  <!-- PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    // Ссылки на ваши таблицы
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
     const BREAKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?gid=96694645&single=true&output=csv";
-
+    
+    let autoRefreshEnabled = true;
+    let refreshInterval = 10;
+    let refreshTimer = null;
+    let countdownTimer = null;
+    let countdownValue = refreshInterval;
+    
     // Конфигурация платформ
     const platforms = [
       { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
@@ -262,20 +307,17 @@
       { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
     ];
-
-    let autoRefreshEnabled = true;
-    let refreshInterval = 10;
-    let refreshTimer = null;
-    let countdownTimer = null;
-    let countdownValue = refreshInterval;
-
+    
+    // Основные данные дашборда
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
         header: false,
         complete: function(results) {
-          renderDashboard(results.data);
+          const data = results.data;
+          renderDashboard(data);
           showUpdatedStatus();
+          renderShiftSummary(data);  // Shift Summary из столбцов AB:AR
           fetchBreaksData();
           if (autoRefreshEnabled) resetAutoRefresh();
         },
@@ -284,17 +326,16 @@
         }
       });
     }
+    
     function renderDashboard(data) {
-      const app = document.getElementById("app");
+      const container = document.getElementById("app");
       let html = "";
       platforms.forEach(platform => {
-        const activeCount = data[platform.rowActiveCount]?.[platform.colIndexData] || 0;
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
           const name = data[r]?.[platform.colIndexNames]?.trim();
           if (name) activeNames.push(name);
         }
-        const awayCount = data[platform.rowAwayCount]?.[platform.colIndexData] || 0;
         const awayData = [];
         for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
           const name = data[r]?.[platform.colIndexNames]?.trim();
@@ -305,11 +346,11 @@
         html += `
           <div class="platform-card">
             <h5>${platform.name}</h5>
-            <p><small>Активные (${activeCount})</small></p>
+            <p><small>Активные (${activeNames.length})</small></p>
             <ul>
               ${activeNames.map(n => `<li>${n}</li>`).join("")}
             </ul>
-            <p><small>Away (${awayCount})</small></p>
+            <p><small>Away (${awayData.length})</small></p>
             <ul>
               ${awayData.map(item => {
                 const extra = item.reason ? " - " + item.reason : "";
@@ -319,13 +360,36 @@
           </div>
         `;
       });
-      app.innerHTML = html;
+      container.innerHTML = html;
     }
+    
     function showUpdatedStatus() {
       const updateStatusEl = document.getElementById("update-status");
       updateStatusEl.textContent = "Updated";
       updateStatusEl.style.backgroundColor = "#28a745";
     }
+    
+    // Shift Summary: отображение данных из диапазона AB:AR (индексы 27...43)
+    function renderShiftSummary(data) {
+      const tableEl = document.getElementById("summary-table");
+      let html = "<tr>";
+      data.forEach((row, rowIndex) => {
+        // Если первая строка – заголовок, можно её обработать отдельно.
+        // Здесь для примера пройдёмся по каждой строке,
+        // но вы можете выбрать нужные строки.
+        const subset = row.slice(27, 44);  // AB:AR (индексы 27 до 43, slice до 44)
+        // Если строка пустая, пропускаем
+        if (subset.every(cell => !cell)) return;
+        html += "<tr>";
+        subset.forEach(cell => {
+          html += `<td>${cell || ""}</td>`;
+        });
+        html += "</tr>";
+      });
+      tableEl.innerHTML = html;
+    }
+    
+    // Upcoming Breaks
     function fetchBreaksData() {
       Papa.parse(BREAKS_CSV_URL, {
         download: true,
@@ -338,24 +402,20 @@
         }
       });
     }
-    function parseTimeToMinutes(timeStr) {
-      const [hh, mm] = timeStr.trim().split(":");
-      return parseInt(hh, 10)*60 + parseInt(mm, 10);
-    }
     function renderBreaks(breaksData) {
       const now = new Date();
-      const currentTotalMinutes = now.getHours()*60 + now.getMinutes();
-      const horizon = currentTotalMinutes + 60;
+      const currentMinutes = now.getHours()*60 + now.getMinutes();
+      const horizon = currentMinutes + 60;
       const upcoming = breaksData.filter(item => {
         if (!item["Break Time"]) return false;
-        const breakTimeStr = item["Break Time"].trim();
-        const breakMinutes = parseTimeToMinutes(breakTimeStr);
-        return breakMinutes > currentTotalMinutes && breakMinutes <= horizon;
+        const timeStr = item["Break Time"].trim();
+        const minutes = parseTimeToMinutes(timeStr);
+        return (minutes > currentMinutes) && (minutes <= horizon);
       });
       upcoming.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
       let html = `<div class="break-card">
-        <h5>Upcoming Breaks</h5>
-        <ul>`;
+                    <h5>Upcoming Breaks</h5>
+                    <ul>`;
       upcoming.forEach(item => {
         html += `
           <li>
@@ -368,12 +428,18 @@
       html += `</ul></div>`;
       document.getElementById("breaks-app").innerHTML = html;
     }
+    function parseTimeToMinutes(timeStr) {
+      const [hh, mm] = timeStr.trim().split(":");
+      return parseInt(hh, 10)*60 + parseInt(mm, 10);
+    }
+    
+    // Auto Refresh
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
       countdownValue = refreshInterval;
       updateCountdownDisplay();
-      refreshTimer = setTimeout(fetchData, refreshInterval*1000);
+      refreshTimer = setTimeout(fetchData, refreshInterval * 1000);
       countdownTimer = setInterval(() => {
         countdownValue--;
         if (countdownValue <= 0) {
@@ -401,6 +467,7 @@
     function refreshNow() {
       fetchData();
     }
+    
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("toggle-autorefresh").addEventListener("click", toggleAutoRefresh);
       document.getElementById("refresh-now").addEventListener("click", refreshNow);
