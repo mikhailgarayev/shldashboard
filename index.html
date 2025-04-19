@@ -2,33 +2,23 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Full-Width Cards & Full-Page Scroll</title>
-  <!-- Подключаем Bootstrap по желанию -->
+  <title>Centered Cards in One Row</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
   <style>
-    /* Сброс отступов, чтобы было "на весь экран" */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
-      min-height: 100vh; /* чтобы растягивался на весь экран */
-      overflow-x: hidden; /* отключаем горизонтальный скролл, если не нужен */
-    }
-
-    body {
-      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden; /* при желании можно отключать горизонтальный скролл всей страницы */
       background-color: #f8f9fa;
+      font-family: Arial, sans-serif;
     }
-
-    /* Контейнер на всю ширину, без max-width */
     .dashboard-container {
       width: 100%; 
       margin: 0; 
       padding: 20px;
     }
-
-    /* Статусная панель вверху */
     .status-bar {
       display: flex;
       align-items: center;
@@ -43,31 +33,23 @@
       padding: 3px 8px;
       margin-left: 10px;
     }
-
-    /* Горизонтальная линия карточек.
-       Если хотите перенос, укажите flex-wrap: wrap;.
-       Если хотите одну строку с горизонтальным скроллом — flex-wrap: nowrap; overflow-x: auto;
-    */
     .platforms-row {
       display: flex;
-      flex-wrap: nowrap;     /* Все карточки в одну строку */
-      overflow-x: auto;      /* Горизонтальный скролл при переполнении */
-      /* overflow-y: hidden;  <-- Можно скрыть вертикальный скролл, но часто не нужно. */
+      flex-wrap: nowrap;      /* одна строка */
+      justify-content: center;/* <-- центрируем карточки по горизонтали */
+      overflow-x: auto;       /* горизонтальная прокрутка, если карточек много */
+      width: 100%;
     }
-
-    /* Карточки */
     .platform-card {
-      flex: 0 0 220px;  /* фиксированная ширина в пикселях, чтобы располагались в одну строку */
-      box-sizing: border-box;
-      margin-right: 10px;
-      margin-bottom: 10px; /* небольшой нижний отступ, если всё же что-то перенесётся */
+      flex: 0 0 220px;        /* фиксированная ширина каждой карточки */
+      margin: 0 10px 0 10px;  /* отступ слева-справа */
       padding: 10px;
       border-radius: 8px;
       background-color: #ffffff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       font-size: 0.9rem;
+      box-sizing: border-box;
     }
-
     h1, h5 {
       color: #343a40;
       margin: 0;
@@ -94,26 +76,23 @@
 <body>
   <div class="dashboard-container">
     <h1 class="text-center mb-4">Dashboard</h1>
-    <!-- Панель со статусом/кнопками -->
     <div class="status-bar">
       <button id="toggle-autorefresh" class="btn btn-outline-primary btn-sm">Disable Auto Refresh</button>
       <button id="refresh-now" class="btn btn-outline-secondary btn-sm ml-2">Refresh now</button>
       <span id="update-status" class="status-badge ml-2">Updated</span>
       <span class="ml-3">Auto refresh in <span id="countdown">60</span> seconds...</span>
     </div>
-
-    <!-- Горизонтальная лента карточек -->
     <div id="app" class="platforms-row">
-      <!-- Карточки вставляются динамически -->
+      <!-- Карточки платформ вставляются динамически -->
     </div>
   </div>
 
-  <!-- Подключаем PapaParse (CSV парсер) -->
+  <!-- PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
 
-    // Пример массива платформ
+    // Пример настроек платформ
     const platforms = [
       { name: "CS", colIndexNames: 3, colIndexData: 4, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "CS/Post order", colIndexNames: 5, colIndexData: 6, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
