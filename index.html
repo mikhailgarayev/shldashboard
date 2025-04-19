@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>SUMO Dashboard</title>
-  <!-- Подключаем Bootstrap (опционально) -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
     /* Общий сброс и фон */
@@ -14,7 +13,6 @@
       min-height: 100vh;
       background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      overflow-x: hidden;
     }
     .dashboard-container {
       max-width: 1400px;
@@ -78,27 +76,28 @@
       font-size: 0.9rem;
       color: #343a40;
     }
-    /* Горизонтальный ряд карточек */
+
+    /* Горизонтальное расположение карточек, но с переносом (wrap) */
     .platforms-row {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;       /* <-- переносим карточки на новую строку, если не помещаются */
       justify-content: center;
-      overflow-x: auto;
-      padding-bottom: 10px;
+      gap: 20px;             /* расстояние между карточками */
     }
+    /* Карточка платформы – адаптивная ширина */
     .platform-card {
-      /* Возвращаем фиксированную ширину */
-      flex: 0 0 220px;
+      flex: 1 1 250px;              /* карточка будет занимать равномерное пространство (мин ~250px) */
+      max-width: 300px;            /* можно задать ограничение по ширине */
       box-sizing: border-box;
       background: #ffffff;
       border-radius: 16px;
       padding: 20px;
-      margin: 0 12px;
+      margin: 0;                    /* gap управляет отступами */
       box-shadow: 0 4px 16px rgba(0,0,0,0.08);
       transition: transform 0.2s, box-shadow 0.2s;
-      /* Самое главное – разрешаем перенос слов/строк */
       white-space: normal;
-      overflow-wrap: break-word; /* или word-wrap: break-word; */
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .platform-card:hover {
       transform: translateY(-3px);
@@ -110,12 +109,18 @@
       text-align: center;
       font-weight: 600;
       font-size: 1.1rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .platform-card p {
       text-align: center;
       color: #6c757d;
       margin: 10px 0;
       font-size: 0.85rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .platform-card ul {
       list-style: none;
@@ -123,22 +128,22 @@
       margin: 0;
       font-size: 0.85rem;
       color: #495057;
-      /* Тоже полезно разрешить перенос строк */
       white-space: normal;
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .platform-card ul li {
       border-bottom: 1px solid #e9ecef;
       padding: 4px 0;
-      /* Позволяем перенос для каждого элемента списка */
       white-space: normal;
       overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .platform-card ul li:last-child {
       border-bottom: none;
     }
 
-    /* Upcoming Breaks */
+    /* Раздел Upcoming Breaks */
     #breaks-section {
       margin-top: 40px;
     }
@@ -149,6 +154,7 @@
       font-weight: 500;
       font-size: 1.5rem;
     }
+    /* Одна карточка для всех брейков */
     .break-card {
       background: #ffffff;
       border-radius: 16px;
@@ -158,6 +164,9 @@
       max-width: 600px;
       text-align: center;
       transition: transform 0.2s, box-shadow 0.2s;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .break-card:hover {
       transform: translateY(-3px);
@@ -168,6 +177,9 @@
       font-weight: 600;
       color: #343a40;
       font-size: 1.1rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .break-card ul {
       list-style: none;
@@ -175,16 +187,22 @@
       margin: 0;
       font-size: 0.85rem;
       color: #495057;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .break-card ul li {
       padding: 6px 0;
       border-bottom: 1px solid #e9ecef;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .break-card ul li:last-child {
       border-bottom: none;
     }
 
-    /* Скролл */
+    /* Стили для скролла (если потребуется) */
     ::-webkit-scrollbar {
       height: 8px;
     }
@@ -212,11 +230,11 @@
       <span id="update-status" class="status-badge">Updated</span>
       <span>Auto refresh in <span id="countdown">10</span> seconds...</span>
     </div>
-    
-    <!-- Горизонтальная лента карточек платформ -->
+
+    <!-- Горизонтальная/Wrap лента карточек платформ -->
     <div id="app" class="platforms-row"></div>
-    
-    <!-- Раздел Upcoming Breaks (одна карточка) -->
+
+    <!-- Раздел Upcoming Breaks -->
     <div id="breaks-section">
       <h2>Upcoming Breaks</h2>
       <div id="breaks-app"></div>
@@ -230,25 +248,25 @@
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
     const BREAKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?gid=96694645&single=true&output=csv";
 
-    // Конфигурация платформ (индексы столбцов/строк)
+    // Конфигурация платформ
     const platforms = [
-      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
     ];
 
     let autoRefreshEnabled = true;
-    let refreshInterval = 10; 
+    let refreshInterval = 10;
     let refreshTimer = null;
     let countdownTimer = null;
     let countdownValue = refreshInterval;
 
-    // Загрузка основного CSV
+    // Загрузка данных CSV для основного дашборда
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -257,7 +275,6 @@
           const data = results.data;
           renderDashboard(data);
           showUpdatedStatus();
-          // Обновляем также Upcoming Breaks
           fetchBreaksData();
           if (autoRefreshEnabled) resetAutoRefresh();
         },
@@ -267,7 +284,7 @@
       });
     }
 
-    // Рендерим карточки платформ
+    // Рендер карточек платформ
     function renderDashboard(data) {
       const app = document.getElementById("app");
       let html = "";
@@ -316,7 +333,7 @@
 
     // Загрузка CSV для Upcoming Breaks
     function fetchBreaksData() {
-      Papa.parse(BREAKS_CSV_URL, {
+      Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?gid=96694645&single=true&output=csv", {
         download: true,
         header: true,
         complete: function(results) {
@@ -329,13 +346,13 @@
       });
     }
 
-    // Преобразование "HH:MM" в минуты от полуночи
+    // Функция для преобразования "HH:MM" в минуты
     function parseTimeToMinutes(timeStr) {
       const [hh, mm] = timeStr.trim().split(":");
       return parseInt(hh, 10) * 60 + parseInt(mm, 10);
     }
 
-    // Рендерим Upcoming Breaks одной карточкой
+    // Рендер единой карточки для Upcoming Breaks
     function renderBreaks(breaksData) {
       const now = new Date();
       const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
