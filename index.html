@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Modern Dashboard</title>
+  <title>SUMO Dashboard</title>
   <!-- Подключаем Bootstrap для базовых стилей (опционально) -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
@@ -147,13 +147,13 @@
 </head>
 <body>
   <div class="dashboard-container">
-    <h1>Dashboard</h1>
+    <h1>Support Monitoring Dashboard</h1>
     <!-- Панель кнопок и статуса -->
     <div class="status-bar">
       <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
       <button id="refresh-now" class="btn btn-outline-secondary">Refresh now</button>
       <span id="update-status" class="status-badge">Updated</span>
-      <span>Auto refresh in <span id="countdown">60</span> seconds...</span>
+      <span>Auto refresh in <span id="countdown">10</span> seconds...</span>
     </div>
     <!-- Горизонтальная лента карточек -->
     <div id="app" class="platforms-row">
@@ -180,7 +180,7 @@
     ];
 
     let autoRefreshEnabled = true;
-    let refreshInterval = 60; // интервал в секундах
+    let refreshInterval = 10; // интервал в секундах
     let refreshTimer = null;
     let countdownTimer = null;
     let countdownValue = refreshInterval;
