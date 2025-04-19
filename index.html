@@ -2,47 +2,33 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Dashboard Fill Width</title>
-  <!-- Bootstrap (опционально) -->
+  <title>Full-Width Cards & Full-Page Scroll</title>
+  <!-- Подключаем Bootstrap по желанию -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
   <style>
-    body {
-      background-color: #f8f9fa;
+    /* Сброс отступов, чтобы было "на весь экран" */
+    html, body {
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh; /* чтобы растягивался на весь экран */
+      overflow-x: hidden; /* отключаем горизонтальный скролл, если не нужен */
+    }
+
+    body {
       font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
     }
+
+    /* Контейнер на всю ширину, без max-width */
     .dashboard-container {
-      max-width: 1400px; /* можно увеличить/уменьшить */
-      margin: auto;
+      width: 100%; 
+      margin: 0; 
+      padding: 20px;
     }
-    .platforms-row {
-      display: flex;
-      flex-wrap: wrap;         /* разрешаем перенос строк, если ширины не хватает */
-      justify-content: space-between; /* равномерно распределяем */
-      margin-bottom: 20px;
-    }
-    .platform-card {
-      /* 
-        flex-basis ~ начальная базовая ширина;
-        flex-grow = 1 (позволяет расширяться);
-        flex-shrink = 1 (позволяет сужаться);
-        Вычисляем на 8 карточек: 100% / 8 = 12.5%
-        Вычитаем ~ 20px для отступов/полей (или подстраиваем под ваш дизайн)
-      */
-      flex: 1 1 calc(12.5% - 20px);
-      box-sizing: border-box;
-      min-width: 180px; /* чтобы карточка совсем не сжималась до крошечных размеров */
-      margin: 10px 0;   /* отступы сверху/снизу (горизонтальные отступы будут из justify-content) */
-      padding: 10px;
-      border-radius: 8px;
-      background-color: #ffffff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      font-size: 0.9rem;
-    }
-    h1, h5 {
-      color: #343a40;
-    }
+
+    /* Статусная панель вверху */
     .status-bar {
       display: flex;
       align-items: center;
@@ -57,10 +43,44 @@
       padding: 3px 8px;
       margin-left: 10px;
     }
+
+    /* Горизонтальная линия карточек.
+       Если хотите перенос, укажите flex-wrap: wrap;.
+       Если хотите одну строку с горизонтальным скроллом — flex-wrap: nowrap; overflow-x: auto;
+    */
+    .platforms-row {
+      display: flex;
+      flex-wrap: nowrap;     /* Все карточки в одну строку */
+      overflow-x: auto;      /* Горизонтальный скролл при переполнении */
+      /* overflow-y: hidden;  <-- Можно скрыть вертикальный скролл, но часто не нужно. */
+    }
+
+    /* Карточки */
+    .platform-card {
+      flex: 0 0 220px;  /* фиксированная ширина в пикселях, чтобы располагались в одну строку */
+      box-sizing: border-box;
+      margin-right: 10px;
+      margin-bottom: 10px; /* небольшой нижний отступ, если всё же что-то перенесётся */
+      padding: 10px;
+      border-radius: 8px;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      font-size: 0.9rem;
+    }
+
+    h1, h5 {
+      color: #343a40;
+      margin: 0;
+      padding: 0;
+    }
+    h5 {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
     ul {
       list-style: none;
       padding-left: 0;
-      margin: 0 0 5px 0;
+      margin: 0;
     }
     ul li {
       padding: 2px 0;
@@ -74,24 +94,26 @@
 <body>
   <div class="dashboard-container">
     <h1 class="text-center mb-4">Dashboard</h1>
+    <!-- Панель со статусом/кнопками -->
     <div class="status-bar">
       <button id="toggle-autorefresh" class="btn btn-outline-primary btn-sm">Disable Auto Refresh</button>
       <button id="refresh-now" class="btn btn-outline-secondary btn-sm ml-2">Refresh now</button>
       <span id="update-status" class="status-badge ml-2">Updated</span>
       <span class="ml-3">Auto refresh in <span id="countdown">60</span> seconds...</span>
     </div>
+
+    <!-- Горизонтальная лента карточек -->
     <div id="app" class="platforms-row">
-      <!-- Карточки платформ будут вставлены сюда -->
+      <!-- Карточки вставляются динамически -->
     </div>
   </div>
 
-  <!-- PapaParse для парсинга CSV -->
+  <!-- Подключаем PapaParse (CSV парсер) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    // Ссылка на CSV, замените при необходимости
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
 
-    // Пример конфигурации для 8 платформ
+    // Пример массива платформ
     const platforms = [
       { name: "CS", colIndexNames: 3, colIndexData: 4, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "CS/Post order", colIndexNames: 5, colIndexData: 6, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
@@ -109,7 +131,6 @@
     let countdownTimer = null;
     let countdownValue = refreshInterval;
 
-    // Загрузка CSV
     function fetchData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -123,19 +144,16 @@
       });
     }
 
-    // Рендерим карточки
     function renderDashboard(data) {
       const app = document.getElementById("app");
       let html = "";
       platforms.forEach(platform => {
-        // Active
         const activeCount = data[platform.rowActiveCount]?.[platform.colIndexData] || 0;
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
           const name = data[r]?.[platform.colIndexNames]?.trim();
           if (name) activeNames.push(name);
         }
-        // Away
         const awayCount = data[platform.rowAwayCount]?.[platform.colIndexData] || 0;
         const awayData = [];
         for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
@@ -145,7 +163,6 @@
           awayData.push({ name, reason });
         }
 
-        // Формируем карточку
         html += `
           <div class="platform-card">
             <h5>${platform.name}</h5>
@@ -166,20 +183,17 @@
       app.innerHTML = html;
     }
 
-    // "Updated"
     function showUpdatedStatus() {
       const updateStatusEl = document.getElementById("update-status");
       updateStatusEl.textContent = "Updated";
       updateStatusEl.style.backgroundColor = "#28a745";
     }
 
-    // Сброс и запуск таймеров автообновления
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
       countdownValue = refreshInterval;
       updateCountdownDisplay();
-
       refreshTimer = setTimeout(fetchData, refreshInterval * 1000);
       countdownTimer = setInterval(() => {
         countdownValue--;
@@ -188,12 +202,10 @@
       }, 1000);
     }
 
-    // Обновление обратного отсчёта
     function updateCountdownDisplay() {
       document.getElementById("countdown").textContent = countdownValue;
     }
 
-    // Кнопка: вкл/выкл автообновление
     function toggleAutoRefresh() {
       autoRefreshEnabled = !autoRefreshEnabled;
       const btn = document.getElementById("toggle-autorefresh");
@@ -208,12 +220,10 @@
       }
     }
 
-    // Кнопка: обновить вручную
     function refreshNow() {
       fetchData();
     }
 
-    // Инициализация
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("toggle-autorefresh").addEventListener("click", toggleAutoRefresh);
       document.getElementById("refresh-now").addEventListener("click", refreshNow);
