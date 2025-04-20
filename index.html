@@ -162,12 +162,12 @@
     }
     .shift-summary-grid {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       table-layout: auto;
     }
     .shift-summary-grid th,
     .shift-summary-grid td {
-      border: 1px solid #dee2e6;
       padding: 8px 12px;
       text-align: center;
       font-size: 0.85rem;
@@ -177,6 +177,12 @@
     .shift-summary-grid th {
       background-color: #f8f9fa;
       font-weight: 600;
+    }
+    /* Добавлены закругления для ячеек таблицы */
+    .shift-summary-grid td {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
     }
     /* Upcoming Breaks */
     #breaks-section {
@@ -394,12 +400,16 @@
       let html = "";
       for (let i = 5; i < data.length; i++) {
         const row = data[i];
-        const subset = row.slice(27, 44); // столбцы AB:AR
-        if (subset.every(cell => !cell.trim()) || subset.some(cell => cell.trim() === "Dashboard"))
+        // Получаем диапазон столбцов AB:AR (индексы 27–43), обрезаем пробелы и фильтруем пустые ячейки
+        const subset = row.slice(27, 44)
+                         .map(cell => cell.trim())
+                         .filter(cell => cell !== "");
+        // Если строка пуста или содержит слово "Dashboard", пропускаем её
+        if (subset.length === 0 || subset.includes("Dashboard"))
           continue;
         html += "<tr>";
         subset.forEach(cell => {
-          html += `<td>${cell.trim() || ""}</td>`;
+          html += `<td>${cell}</td>`;
         });
         html += "</tr>";
       }
@@ -583,7 +593,7 @@
     });
   </script>
   <div id="loading-overlay">
-  <div class="spinner"></div>
-</div>
+    <div class="spinner"></div>
+  </div>
 </body>
 </html>
