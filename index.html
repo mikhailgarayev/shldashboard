@@ -245,7 +245,7 @@
       <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
       <button id="refresh-now" class="btn btn-outline-secondary">Refresh now</button>
       <span id="update-status" class="status-badge">Updated</span>
-      <span>Auto refresh in <span id="countdown">10</span> seconds...</span>
+      <span>Auto refresh in <span id="countdown">15</span> seconds...</span>
     </div>
     
     <!-- Shift Summary Card (данные из диапазона AB:AR, начиная с AB6) -->
@@ -279,14 +279,11 @@
       try {
         const res = await fetch(url);
         if (!res.ok) {
-          logDebug("Ошибка получения данных: " + res.statusText);
           return null;
         }
         const data = await res.json();
-        logDebug("Данные из Sheets API (" + range + "): " + JSON.stringify(data.values));
         return data.values;
       } catch (err) {
-        logDebug("Ошибка запроса: " + err);
         return null;
       }
     }
@@ -326,7 +323,13 @@
     let aircallAway = [];
 
     // Функция для вывода сообщений для отладки на сайте
-    
+    function logDebug(message) {
+  const debugDiv = document.getElementById("debug");
+  if (debugDiv) {
+    debugDiv.innerHTML += message + "<br/>";
+  }
+}
+
 
     // Генерация email, например "lala.babayeva@wolt.com"
     function generateWoltEmail(fullName) {
@@ -342,15 +345,11 @@
       try {
         const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
         if (!res.ok) {
-          logDebug("[Aircall] Ошибка getUserId для " + email + ": " + res.status + " " + res.statusText);
           return null;
         }
         const data = await res.json();
-        logDebug("[Aircall] Получен userId для " + email + ": " + (data.user?.id || "null"));
         return data.user?.id || null;
       } catch (e) {
-        logDebug("[Aircall] Исключение в getUserId: " + e);
-        return null;
       }
     }
 
@@ -362,16 +361,12 @@
       try {
         const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
         if (!res.ok) {
-          logDebug("[Aircall] Ошибка getAvailability для userId " + userId + ": " + res.status + " " + res.statusText);
           return "Error";
         }
         const data = await res.json();
-        logDebug("[Aircall] Данные availability для userId " + userId + ": " + JSON.stringify(data));
         let status = data?.user_availability?.availability_status || data?.availability;
         return status || "Unknown";
       } catch (e) {
-        logDebug("[Aircall] Исключение в getAvailability: " + e);
-        return "Error";
       }
     }
 
@@ -453,7 +448,6 @@
       if (!data) return;
       // Преобразуем массив в объекты, используя первую строку в качестве заголовков
       const breaksObjects = arrayToObjects(data);
-      logDebug("Преобразованные данные для брейков: " + JSON.stringify(breaksObjects));
       renderBreaks(breaksObjects);
     }
     function renderBreaks(breaksData) {
@@ -547,7 +541,7 @@
 
     /********* Автообновление **********/
     let autoRefreshEnabled = true;
-    let refreshInterval = 10;
+    let refreshInterval =  15;
     let refreshTimer = null;
     let countdownTimer = null;
     let countdownValue = refreshInterval;
@@ -587,7 +581,6 @@
     async function fetchData() {
       const data = await fetchSheetData(RANGE);
       if (!data) return;
-      logDebug("Основные данные получены: " + JSON.stringify(data));
       renderDashboard(data);
       showUpdatedStatus();
       renderShiftSummary(data);
@@ -602,7 +595,6 @@
         if (name) aircallActive.push(name);
       }
       // Если есть отдельный диапазон для away, можно его обработать (в этом примере away оставляем пустым)
-      renderAircallCardWithStatuses(aircallActive, aircallAway);
       fetchAircallStatuses();
     }
 
