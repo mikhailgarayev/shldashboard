@@ -74,6 +74,7 @@
       padding: 8px 16px;
       font-size: 0.9rem;
       margin: 6px;
+      color: #ffffff;
     }
     .status-bar span {
       margin: 6px;
@@ -91,7 +92,7 @@
       gap: 10px;
     }
     .platform-card {
-      flex: 1 1 220px;  /* карточка растягивается при наличии места, но не меньше 220px */
+      flex: 1 1 220px;
       min-width: 220px;
       box-sizing: border-box;
       background: #ffffff;
@@ -113,9 +114,6 @@
       text-align: center;
       font-weight: 600;
       font-size: 1.1rem;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
     }
     .platform-card p {
       text-align: center;
@@ -132,9 +130,6 @@
       margin: 0;
       font-size: 0.85rem;
       color: #495057;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
     }
     .platform-card ul li {
       border-bottom: 1px solid #e9ecef;
@@ -277,10 +272,15 @@
       <div id="breaks-app"></div>
     </div>
   </div>
-
+  
   <!-- PapaParse для парсинга CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
+    /********* Aircall API Настройки **********/
+    const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";       // Замените на ваш реальный ключ
+    const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";   // Замените на ваш реальный секрет
+
+    /********* Параметры CSV **********/
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
     const BREAKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?gid=96694645&single=true&output=csv";
     
@@ -289,96 +289,186 @@
     let refreshTimer = null;
     let countdownTimer = null;
     let countdownValue = refreshInterval;
-    
-    // Рендер данных из основного CSV
-    function fetchData() {
-      Papa.parse(CSV_URL, {
-        download: true,
-        header: false,
-        complete: function(results) {
-          const data = results.data;
-          renderDashboard(data);
-          showUpdatedStatus();
-          renderShiftSummary(data);  // Shift Summary
-          fetchBreaksData();
-          if (autoRefreshEnabled) resetAutoRefresh();
-        },
-        error: function(err) {
-          console.error("Ошибка парсинга CSV:", err);
-        }
-      });
+
+    // Конфигурация ваших платформ:
+    const platforms = [
+      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+    ];
+
+    // Массив сотрудников Aircall (заполним из CSV)
+    let aircallEmployees = [];
+
+    // Генерация email (к примеру "lala.babayeva@wolt.com")
+    function generateWoltEmail(fullName) {
+      const parts = fullName.trim().split(/\s+/);
+      if (parts.length < 2) return "";
+      return parts[0].toLowerCase() + "." + parts[1].toLowerCase() + "@wolt.com";
     }
-    
+    // Запрашиваем userId в Aircall
+    async function getAircallUserId(email) {
+      const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
+      const url = `https://api.aircall.io/v1/users/${encodeURIComponent(email)}`;
+      try {
+        const res = await fetch(url, {
+          headers: { "Authorization": `Basic ${authString}` }
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.user?.id ?? null;
+      } catch {
+        return null;
+      }
+    }
+    // Запрашиваем availability
+    async function getAircallAvailability(userId) {
+      if (!userId) return "No ID";
+      const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
+      const url = `https://api.aircall.io/v1/users/${userId}/availability`;
+      try {
+        const res = await fetch(url, {
+          headers: { "Authorization": `Basic ${authString}` }
+        });
+        if (!res.ok) return "Error";
+        const data = await res.json();
+        let status = data?.user_availability?.availability_status || data?.availability;
+        return status || "Unknown";
+      } catch {
+        return "Error";
+      }
+    }
+
+    // Рендерим карточки платформ (кроме Aircall статуса)
     function renderDashboard(data) {
       const container = document.getElementById("app");
       let html = "";
-      // Используем конфигурацию платформ (определена локально)
-      const platforms = [
-        { name: "CS", colIndexNames: 3, colIndexData: 4, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-        { name: "CS/Post order", colIndexNames: 5, colIndexData: 6, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-        { name: "PSR", colIndexNames: 7, colIndexData: 8, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-        { name: "SiMo", colIndexNames: 9, colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-        { name: "Aircall", colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-        { name: "Venue", colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-        { name: "Trainee", colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-        { name: "ST", colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
-      ];
       platforms.forEach(platform => {
+        // Собираем список активных
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
-          const name = data[r]?.[platform.colIndexNames]?.trim();
-          if (name) activeNames.push(name);
+          const nm = data[r]?.[platform.colIndexNames]?.trim();
+          if (nm) activeNames.push(nm);
         }
+        // Собираем away
         const awayData = [];
         for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
-          const name = data[r]?.[platform.colIndexNames]?.trim();
-          if (!name) continue;
-          const reason = data[r]?.[platform.colIndexData]?.trim() || "";
-          awayData.push({ name, reason });
+          const nm = data[r]?.[platform.colIndexNames]?.trim();
+          if (!nm) continue;
+          const rsn = data[r]?.[platform.colIndexData]?.trim() || "";
+          awayData.push({ name: nm, reason: rsn });
         }
-        html += `
-          <div class="platform-card">
-            <h5>${platform.name}</h5>
-            <p><small>Активные (${activeNames.length})</small></p>
-            <ul>${activeNames.map(n => `<li>${n}</li>`).join("")}</ul>
-            <p><small>Away (${awayData.length})</small></p>
-            <ul>${awayData.map(item => {
-              const extra = item.reason ? " - " + item.reason : "";
-              return `<li>${item.name}${extra}</li>`;
-            }).join("")}</ul>
-          </div>
-        `;
+
+        // Если это Aircall — не рендерим здесь статусы, а просто
+        // сохраняем имена в массив aircallEmployees (для статусов)
+        if (platform.name === "Aircall") {
+          aircallEmployees = activeNames;  // запоминаем
+          // Но отрисуем "скелет" карточки (без статуса)
+          // подменим activeNames на пустой
+          html += `
+            <div class="platform-card" id="aircall-skeleton">
+              <h5>${platform.name}</h5>
+              <p><small>Активные (${activeNames.length})</small></p>
+              <ul>${activeNames.map(n => `<li>${n}</li>`).join("")}</ul>
+              <p><small>Away (${awayData.length})</small></p>
+              <ul>${awayData.map(a => {
+                const ex = a.reason ? " - " + a.reason : "";
+                return `<li>${a.name}${ex}</li>`;
+              }).join("")}</ul>
+            </div>
+          `;
+        } else {
+          // Обычный рендер, без Aircall статусов
+          html += `
+            <div class="platform-card">
+              <h5>${platform.name}</h5>
+              <p><small>Активные (${activeNames.length})</small></p>
+              <ul>${activeNames.map(n => `<li>${n}</li>`).join("")}</ul>
+              <p><small>Away (${awayData.length})</small></p>
+              <ul>${awayData.map(item => {
+                const extra = item.reason ? " - " + item.reason : "";
+                return `<li>${item.name}${extra}</li>`;
+              }).join("")}</ul>
+            </div>
+          `;
+        }
       });
       container.innerHTML = html;
     }
-    
-    function showUpdatedStatus() {
-      const el = document.getElementById("update-status");
-      el.textContent = "Updated";
-      el.style.backgroundColor = "#28a745";
+
+    // После рендера "скелета" Aircall — заменяем имена с "Loading..." + статус
+    // Рендерим новую карточку
+    function renderAircallCardWithStatuses(employees) {
+      // Создаем новый HTML, заменяя скелет
+      let html = `
+        <div class="platform-card">
+          <h5>Aircall</h5>
+          <p><small>Активные (${employees.length})</small></p>
+          <ul id="aircall-active-list">`;
+      employees.forEach(emp => {
+        const safeId = emp.replace(/\s+/g, "_");
+        html += `<li id="emp-${safeId}">${emp} - <span style="color:blue;">Loading...</span></li>`;
+      });
+      html += `</ul>
+          <p><small>Away (0)</small></p>
+          <ul><li>—</li></ul>
+        </div>
+      `;
+
+      // Заменяем старый скелет в DOM
+      const skeleton = document.getElementById("aircall-skeleton");
+      if (skeleton) {
+        skeleton.outerHTML = html;
+      } else {
+        // если почему-то нет skeleton, добавим в конец
+        document.getElementById("app").innerHTML += html;
+      }
     }
-    
-    // Shift Summary: берем данные начиная с AB6 (т.е. row индекс 5) и столбцы AB:AR (индексы 27-43)
+
+    // Запрашиваем статусы для сотрудников Aircall
+    async function fetchAircallStatuses() {
+      // Перерисовываем "Aircall" карточку с "Loading" статусами
+      renderAircallCardWithStatuses(aircallEmployees);
+
+      for (let emp of aircallEmployees) {
+        const safeId = emp.replace(/\s+/g, "_");
+        const liEl = document.getElementById("emp-" + safeId);
+        if (!liEl) continue;
+        const email = generateWoltEmail(emp);
+        liEl.querySelector("span").textContent = "Fetching ID...";
+        const userId = await getAircallUserId(email);
+        if (!userId) {
+          liEl.querySelector("span").textContent = "No ID";
+          continue;
+        }
+        liEl.querySelector("span").textContent = "Fetching status...";
+        const status = await getAircallAvailability(userId);
+        liEl.querySelector("span").textContent = status;
+      }
+    }
+
+    // Shift Summary
     function renderShiftSummary(data) {
       const tableEl = document.getElementById("summary-table");
       let html = "";
-      // Начинаем с rowIndex = 5 (т.е. 6-я строка)
       for (let i = 5; i < data.length; i++) {
         const row = data[i];
-        // Берем диапазон столбцов от 27 до 44 (44 не включаем)
         const subset = row.slice(27, 44);
-        // Если все ячейки пусты или содержат слово "Dashboard", пропускаем строку
         if (subset.every(cell => !cell.trim()) || subset.some(cell => cell.trim() === "Dashboard")) continue;
         html += "<tr>";
         subset.forEach(cell => {
-          const val = cell.trim() || "";
-          html += `<td>${val}</td>`;
+          html += `<td>${cell.trim() || ""}</td>`;
         });
         html += "</tr>";
       }
       tableEl.innerHTML = html;
     }
-    
+
     // Upcoming Breaks
     function fetchBreaksData() {
       Papa.parse(BREAKS_CSV_URL, {
@@ -400,7 +490,7 @@
         if (!item["Break Time"]) return false;
         const timeStr = item["Break Time"].trim();
         const minutes = parseTimeToMinutes(timeStr);
-        return (minutes > currMinutes) && (minutes <= horizon);
+        return (minutes > currMinutes && minutes <= horizon);
       });
       upcoming.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
       let html = `<div class="break-card">
@@ -420,10 +510,10 @@
     }
     function parseTimeToMinutes(timeStr) {
       const [hh, mm] = timeStr.trim().split(":");
-      return parseInt(hh, 10) * 60 + parseInt(mm, 10);
+      return parseInt(hh, 10)*60 + parseInt(mm, 10);
     }
-    
-    // AUTOREFRESH
+
+    // Автообновление
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
@@ -455,7 +545,39 @@
     function refreshNow() {
       fetchData();
     }
-    
+
+    // Основная функция загрузки CSV и рендера дашборда
+    function fetchData() {
+      Papa.parse(CSV_URL, {
+        download: true,
+        header: false,
+        complete: function(results) {
+          const data = results.data;
+          // 1. Рендерим карточки (без Aircall-статусов)
+          renderDashboard(data);
+          // 2. Обновляем статус
+          showUpdatedStatus();
+          // 3. Shift Summary
+          renderShiftSummary(data);
+          // 4. Upcoming Breaks
+          fetchBreaksData();
+          // 5. Автообновление
+          if (autoRefreshEnabled) resetAutoRefresh();
+          // 6. Старт запросов Aircall
+          fetchAircallStatuses();
+        },
+        error: function(err) {
+          console.error("Ошибка парсинга CSV:", err);
+        }
+      });
+    }
+
+    function showUpdatedStatus() {
+      const el = document.getElementById("update-status");
+      el.textContent = "Updated";
+      el.style.backgroundColor = "#28a745";
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("toggle-autorefresh").addEventListener("click", toggleAutoRefresh);
       document.getElementById("refresh-now").addEventListener("click", refreshNow);
