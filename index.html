@@ -134,20 +134,19 @@
     .platform-card ul li:last-child {
       border-bottom: none;
     }
-    /* Shift Summary (AB..AR, начиная с AB6) */
+    /* Снимаем max-width и позволяем карточке «обнимать» контент */
     .shift-summary-card {
+      display: inline-block;     /* Автоматическая ширина под содержимое */
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.08);
       padding: 20px;
-      margin: 0 auto 40px;
-      max-width: 900px;
-      text-align: center;
+      margin: 0 auto 40px;       /* центрируем (auto слева и справа) */
+      text-align: center;        /* выравнивание внутри карточки */
       transition: transform 0.2s, box-shadow 0.2s;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
+      overflow-wrap: break-word; /* если будет очень длинное слово, оно перенесётся */
+      word-break: normal;        
+    }	
     .shift-summary-card:hover {
       transform: translateY(-3px);
       box-shadow: 0 6px 20px rgba(0,0,0,0.12);
@@ -159,15 +158,17 @@
       font-size: 1.3rem;
     }
     .shift-summary-grid {
-      width: 100%;
+      table-layout: auto;  /* ширина таблицы зависит от содержимого */
       border-collapse: collapse;
-      table-layout: auto;
     }
-    .shift-summary-grid th, .shift-summary-grid td {
+    .shift-summary-grid th,
+    .shift-summary-grid td {
       border: 1px solid #dee2e6;
-      padding: 8px;
+      padding: 8px 12px;
       text-align: center;
       font-size: 0.85rem;
+      color: #495057;
+      white-space: normal; /* разрешаем перенос строк, если очень узко */
     }
     .shift-summary-grid th {
       background-color: #f8f9fa;
