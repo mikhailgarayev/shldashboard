@@ -225,6 +225,7 @@
     .break-card ul li:last-child {
       border-bottom: none;
     }
+    
   </style>
 </head>
 <body>
@@ -238,26 +239,27 @@
       <span>Auto refresh in <span id="countdown">15</span> seconds...</span>
     </div>
     
-    <!-- Shift Summary Card (данные из диапазона AB:AR, начиная с AB6) -->
+    <!-- Shift Summary Card -->
     <div id="shift-summary" class="shift-summary-card">
-      <div class="shift-summary-title">Shift Summary</div>
+      <div class="shift-summary-title">Statistics per platform</div>
       <table class="shift-summary-grid" id="summary-table"></table>
     </div>
     
-    <!-- Горизонтальная лента карточек платформ (для всех, кроме Aircall) -->
+    <!-- Горизонтальная лента карточек для всех платформ, кроме Aircall -->
     <div id="platforms-container" class="platforms-row"></div>
     
     <!-- Раздел Upcoming Breaks -->
     <div id="breaks-section">
       <h2>Upcoming Breaks</h2>
       <div id="breaks-app"></div>
+      <!-- Отладочный блок для брейков (временно) -->
     </div>
   </div>
   
   <script>
     /********* Google Sheets API **********/
     const SPREADSHEET_ID = "1dICKOxxz9R3x8MY3FKQ9I-IwR9fBUDfMOT9PFDLloAE";
-    // Указываем диапазон, включающий столбцы до BJ
+    // Диапазон основной таблицы (до столбца BJ, чтобы покрыть Shift Summary (AB:AR))
     const RANGE = "list1!A1:BJ100";
     const BREAKS_RANGE = "prebreaks!A1:D40";
     const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxU-4AAiow6Y0TV4ChSY";
@@ -282,13 +284,13 @@
     const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";
     const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";
 
-    // Конфигурация платформ. Для Aircall away теперь: строки L28:L47 (индексы 27-46)
+    // Конфигурация платформ. Для Aircall: имена – из колонки L (индекс 11), away – строки 28:47 (0‑индексация: 27–46)
     const platforms = [
       { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 27, rowAwayNamesEnd: 46 },
+      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 46 },
       { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
       { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
@@ -336,8 +338,6 @@
     }
 
     /********* Рендеринг дашборда **********/
-    // Для всех платформ, кроме Aircall, карточки отрисовываются здесь.
-    // Для Aircall данные просто сохраняются.
     function renderDashboard(data) {
       const container = document.getElementById("platforms-container");
       let html = "";
@@ -368,7 +368,7 @@
             </div>
           `;
         } else {
-          // Для Aircall просто сохраняем данные
+          // Для Aircall просто сохраняем данные (не выводим HTML)
           const activeNames = [];
           for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
             const nm = data[r]?.[platform.colIndexNames]?.trim();
@@ -383,7 +383,6 @@
           }
           aircallActive = activeNames;
           aircallAway = awayData;
-          // Не выводим HTML для Aircall здесь, чтобы не создавать дубликат
         }
       });
       container.innerHTML = html;
@@ -412,19 +411,28 @@
       const data = await fetchSheetData(BREAKS_RANGE);
       if (!data) return;
       const breaksObjects = arrayToObjects(data);
-      renderBreaks(breaksObjects);
-    }
-    function renderBreaks(breaksData) {
+
+      // Отладочная временная информация для брейков
+      let debugHTML = "<p><strong>Raw breaks data:</strong> " + breaksObjects.length + " записей.</p>";
+      breaksObjects.forEach((item, i) => {
+        const breakTime = item["Break Time"] ? item["Break Time"].trim() : "нет";
+        debugHTML += "<p>Строка " + (i+2) + ": " + breakTime + " (" + parseTimeToMinutes(breakTime) + " минут)</p>";
+      });
+      // Вывод временной отладки в контейнер (удалите после отладки)
+
+      // Фильтрация: выводим только брейки в ближайший час
       const now = new Date();
       const currMinutes = now.getHours() * 60 + now.getMinutes();
       const horizon = currMinutes + 60;
-      const upcoming = breaksData.filter(item => {
+      const upcoming = breaksObjects.filter(item => {
         if (!item["Break Time"]) return false;
         const timeStr = item["Break Time"].trim();
         const minutes = parseTimeToMinutes(timeStr);
         return (minutes > currMinutes && minutes <= horizon);
       });
       upcoming.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
+
+      // Обновляем вывод брейков с фильтрацией
       let html = `<div class="break-card">
                     <h5>Upcoming Breaks</h5>
                     <ul>`;
@@ -439,9 +447,23 @@
       html += `</ul></div>`;
       document.getElementById("breaks-app").innerHTML = html;
     }
+
     function parseTimeToMinutes(timeStr) {
       const [hh, mm] = timeStr.trim().split(":");
       return parseInt(hh, 10) * 60 + parseInt(mm, 10);
+    }
+
+    /********* Функция преобразования массива в объекты **********/
+    function arrayToObjects(arr) {
+      if (!arr.length) return [];
+      const header = arr[0];
+      return arr.slice(1).map(row => {
+        const obj = {};
+        header.forEach((key, i) => {
+          obj[key] = row[i] || "";
+        });
+        return obj;
+      });
     }
 
     /********* Рендер карточки Aircall **********/
@@ -463,7 +485,6 @@
         html += `<li>${a.name}${extra}</li>`;
       });
       html += `</ul></div>`;
-      // Добавляем карточку Aircall в контейнер один раз
       document.getElementById("platforms-container").innerHTML += html;
     }
 
@@ -533,7 +554,7 @@
       renderShiftSummary(data);
       fetchBreaksData();
       if (autoRefreshEnabled) resetAutoRefresh();
-      // Извлекаем список сотрудников для платформы Aircall
+      // Извлекаем список сотрудников для Aircall
       const aircallConfig = platforms.find(p => p.name === "Aircall");
       aircallActive = [];
       aircallAway = [];
@@ -561,5 +582,8 @@
       fetchData();
     });
   </script>
+  <div id="loading-overlay">
+  <div class="spinner"></div>
+</div>
 </body>
 </html>
