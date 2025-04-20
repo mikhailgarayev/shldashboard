@@ -225,16 +225,6 @@
     .break-card ul li:last-child {
       border-bottom: none;
     }
-    /* Отладочный блок (вывод сообщений на сайте) */
-    #debug {
-      margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      background-color: #f9f9f9;
-      max-height: 300px;
-      overflow-y: auto;
-      font-size: 0.85rem;
-    }
   </style>
 </head>
 <body>
@@ -261,11 +251,6 @@
     <div id="breaks-section">
       <h2>Upcoming Breaks</h2>
       <div id="breaks-app"></div>
-    </div>
-
-    <!-- Отладочный блок для вывода сообщений -->
-    <div id="debug"><strong>Отладочные сообщения:</strong><br/></div>
-  </div>
   
   <script>
     /********* Google Sheets API **********/
@@ -325,11 +310,6 @@
     let aircallActive = [];
     let aircallAway = [];
 
-    // Функция для вывода сообщений для отладки на сайте
-    function logDebug(message) {
-      const debugDiv = document.getElementById("debug");
-      debugDiv.innerHTML += message + "<br/>";
-    }
 
     // Генерация email, например "lala.babayeva@wolt.com"
     function generateWoltEmail(fullName) {
