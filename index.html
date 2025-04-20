@@ -80,7 +80,7 @@
       font-size: 0.9rem;
       color: #343a40;
     }
-    /* Горизонтальная лента карточек (одна строка) */
+    /* Горизонтальная лента карточек */
     .platforms-row {
       display: flex;
       flex-wrap: nowrap;
@@ -100,8 +100,8 @@
       box-shadow: 0 4px 16px rgba(0,0,0,0.08);
       transition: transform 0.2s, box-shadow 0.2s;
       white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      overflow-wrap: break-word;
+      word-break: normal;
     }
     .platform-card:hover {
       transform: translateY(-3px);
@@ -130,23 +130,26 @@
     .platform-card ul li {
       border-bottom: 1px solid #e9ecef;
       padding: 4px 0;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: normal;
     }
     .platform-card ul li:last-child {
       border-bottom: none;
     }
-    /* Снимаем max-width и позволяем карточке «обнимать» контент */
+    /* Shift Summary Card */
     .shift-summary-card {
-      display: inline-block;     /* Автоматическая ширина под содержимое */
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.08);
       padding: 20px;
-      margin: 0 auto 40px;       /* центрируем (auto слева и справа) */
-      text-align: center;        /* выравнивание внутри карточки */
+      margin: 0 auto 40px;
+      width: auto;
+      text-align: center;
       transition: transform 0.2s, box-shadow 0.2s;
-      overflow-wrap: break-word; /* если будет очень длинное слово, оно перенесётся */
-      word-break: normal;        
-    }	
+      overflow-wrap: break-word;
+      word-break: normal;
+    }
     .shift-summary-card:hover {
       transform: translateY(-3px);
       box-shadow: 0 6px 20px rgba(0,0,0,0.12);
@@ -158,8 +161,9 @@
       font-size: 1.3rem;
     }
     .shift-summary-grid {
-      table-layout: auto;  /* ширина таблицы зависит от содержимого */
+      width: 100%;
       border-collapse: collapse;
+      table-layout: auto;
     }
     .shift-summary-grid th,
     .shift-summary-grid td {
@@ -168,7 +172,7 @@
       text-align: center;
       font-size: 0.85rem;
       color: #495057;
-      white-space: normal; /* разрешаем перенос строк, если очень узко */
+      white-space: normal;
     }
     .shift-summary-grid th {
       background-color: #f8f9fa;
@@ -194,9 +198,8 @@
       max-width: 600px;
       text-align: center;
       transition: transform 0.2s, box-shadow 0.2s;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      overflow-wrap: break-word;
+      word-break: normal;
     }
     .break-card:hover {
       transform: translateY(-3px);
@@ -222,28 +225,22 @@
     .break-card ul li:last-child {
       border-bottom: none;
     }
-    /* Горизонтальный скролл */
-    ::-webkit-scrollbar {
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cccccc;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #b3b3b3;
+    /* Отладочный блок (вывод сообщений на сайте) */
+    #debug {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      background-color: #f9f9f9;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 0.85rem;
     }
   </style>
 </head>
 <body>
   <div class="dashboard-container">
-    <h1>Support Monitoring Dashboard</h1>
+    <h1>SUMO Dashboard</h1>
     
-    <!-- Кнопки автообновления -->
     <div class="status-bar">
       <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
       <button id="refresh-now" class="btn btn-outline-secondary">Refresh now</button>
@@ -251,104 +248,148 @@
       <span>Auto refresh in <span id="countdown">10</span> seconds...</span>
     </div>
     
-    <!-- Shift Summary -->
+    <!-- Shift Summary Card (данные из диапазона AB:AR, начиная с AB6) -->
     <div id="shift-summary" class="shift-summary-card">
-      <div class="shift-summary-title">Statistics per platform</div>
+      <div class="shift-summary-title">Shift Summary</div>
       <table class="shift-summary-grid" id="summary-table"></table>
     </div>
     
-    <!-- Горизонтальная лента карточек -->
-    <div id="app" class="platforms-row"></div>
+    <!-- Горизонтальная лента карточек платформ -->
+    <div id="platforms-container" class="platforms-row"></div>
     
-    <!-- Upcoming Breaks -->
+    <!-- Раздел Upcoming Breaks -->
     <div id="breaks-section">
-      <h2>Upcoming Breaks in the next hour</h2>
+      <h2>Upcoming Breaks</h2>
       <div id="breaks-app"></div>
     </div>
+
+    <!-- Отладочный блок для вывода сообщений -->
+    <div id="debug"><strong>Отладочные сообщения:</strong><br/></div>
   </div>
-
-  <!-- PapaParse -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  
   <script>
-    /********* Aircall API настройки *********/
-    const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";     
-    const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";  
+    /********* Google Sheets API **********/
+    const SPREADSHEET_ID = "1dICKOxxz9R3x8MY3FKQ9I-IwR9fBUDfMOT9PFDLloAE";  // Ваш ID таблицы
+    const RANGE = "list1!A1:Z100";  // Основной диапазон
+    const BREAKS_RANGE = "prebreaks!A1:D40";  // Диапазон для брейков
+    const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxU-4AAiow6Y0TV4ChSY";
 
-    // Ссылки
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?output=csv";
-    const BREAKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmaCLCDgsSsk-HY4qtkZteI60f1NxMCO4IYrFjeXoCbQRjAh0IeK0tJ4fMSScZqbS1troISgXNvssJ/pub?gid=96694645&single=true&output=csv";
+    async function fetchSheetData(range) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${GOOGLE_API_KEY}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          logDebug("Ошибка получения данных: " + res.statusText);
+          return null;
+        }
+        const data = await res.json();
+        logDebug("Данные из Sheets API (" + range + "): " + JSON.stringify(data.values));
+        return data.values;
+      } catch (err) {
+        logDebug("Ошибка запроса: " + err);
+        return null;
+      }
+    }
 
-    let autoRefreshEnabled = true;
-    let refreshInterval = 10;
-    let refreshTimer = null;
-    let countdownTimer = null;
-    let countdownValue = refreshInterval;
+    /********* Функция преобразования массива в объекты **********/
+    function arrayToObjects(arr) {
+      if (!arr.length) return [];
+      const header = arr[0];
+      // Преобразуем все строки после заголовка в объекты
+      return arr.slice(1).map(row => {
+        const obj = {};
+        header.forEach((key, i) => {
+          obj[key] = row[i] || "";
+        });
+        return obj;
+      });
+    }
 
-    // Платформы (старая конфигурация + Aircall)
+    /********* Aircall API настройки **********/
+    const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";       // Ваш ключ Aircall API
+    const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";       // Ваш секрет Aircall API
+
+    // Конфигурация платформ
     const platforms = [
-      { name: "CS", colIndexNames: 3, colIndexData: 4,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "CS/Post order", colIndexNames: 5, colIndexData: 6, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "PSR", colIndexNames: 7, colIndexData: 8, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "SiMo", colIndexNames: 9, colIndexData: 10, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall", colIndexNames: 11, colIndexData: 12, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Venue", colIndexNames: 13, colIndexData: 14, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Trainee", colIndexNames: 15, colIndexData: 16, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "ST", colIndexNames: 17, colIndexData: 18, rowActiveCount: 3, rowActiveNamesStart: 4, rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveCount: 3,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayCount: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
     ];
 
-    // Массивы для Aircall
+    // Массивы для сотрудников Aircall
     let aircallActive = [];
     let aircallAway = [];
 
-    // ==================== Aircall API Helpers ====================
+    // Функция для вывода сообщений для отладки на сайте
+    function logDebug(message) {
+      const debugDiv = document.getElementById("debug");
+      debugDiv.innerHTML += message + "<br/>";
+    }
+
+    // Генерация email, например "lala.babayeva@wolt.com"
     function generateWoltEmail(fullName) {
       const parts = fullName.trim().split(/\s+/);
       if (parts.length < 2) return "";
       return parts[0].toLowerCase() + "." + parts[1].toLowerCase() + "@wolt.com";
     }
+
+    // Получение userId через Aircall API
     async function getAircallUserId(email) {
       const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
       const url = `https://api.aircall.io/v1/users/${encodeURIComponent(email)}`;
       try {
-        const res = await fetch(url, {
-          headers: { "Authorization": `Basic ${authString}` }
-        });
-        if (!res.ok) return null;
+        const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
+        if (!res.ok) {
+          logDebug("[Aircall] Ошибка getUserId для " + email + ": " + res.status + " " + res.statusText);
+          return null;
+        }
         const data = await res.json();
-        return data.user?.id ?? null;
-      } catch {
+        logDebug("[Aircall] Получен userId для " + email + ": " + (data.user?.id || "null"));
+        return data.user?.id || null;
+      } catch (e) {
+        logDebug("[Aircall] Исключение в getUserId: " + e);
         return null;
       }
     }
+
+    // Получение availability через Aircall API
     async function getAircallAvailability(userId) {
       if (!userId) return "No ID";
       const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
       const url = `https://api.aircall.io/v1/users/${userId}/availability`;
       try {
-        const res = await fetch(url, {
-          headers: { "Authorization": `Basic ${authString}` }
-        });
-        if (!res.ok) return "Error";
+        const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
+        if (!res.ok) {
+          logDebug("[Aircall] Ошибка getAvailability для userId " + userId + ": " + res.status + " " + res.statusText);
+          return "Error";
+        }
         const data = await res.json();
+        logDebug("[Aircall] Данные availability для userId " + userId + ": " + JSON.stringify(data));
         let status = data?.user_availability?.availability_status || data?.availability;
         return status || "Unknown";
-      } catch {
+      } catch (e) {
+        logDebug("[Aircall] Исключение в getAvailability: " + e);
         return "Error";
       }
     }
 
-    // ==================== Render Dashboard ====================
+    /********* Рендеринг дашборда **********/
     function renderDashboard(data) {
-      const container = document.getElementById("app");
+      const container = document.getElementById("platforms-container");
       let html = "";
       platforms.forEach(platform => {
-        // Собираем активные
+        // Собираем активные имена
         const activeNames = [];
         for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
           const nm = data[r]?.[platform.colIndexNames]?.trim();
           if (nm) activeNames.push(nm);
         }
-        // Собираем away
+        // Собираем away данные
         const awayData = [];
         for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
           const nm = data[r]?.[platform.colIndexNames]?.trim();
@@ -356,15 +397,14 @@
           const rsn = data[r]?.[platform.colIndexData]?.trim() || "";
           awayData.push({ name: nm, reason: rsn });
         }
-
-        // Если это Aircall, сохраним массивы для статусов:
         if (platform.name === "Aircall") {
+          // Для Aircall сохраняем массивы активных и away сотрудников
           aircallActive = activeNames;
-          aircallAway = awayData; // <-- собрали away
-          // отрисуем "скелет"
+          aircallAway = awayData;
+          // Рендерим "скелет" карточки Aircall (будет обновлен позже)
           html += `
             <div class="platform-card" id="aircall-skeleton">
-              <h5>Aircall</h5>
+              <h5>${platform.name}</h5>
               <p><small>Активные (${activeNames.length})</small></p>
               <ul>${activeNames.map(n => `<li>${n}</li>`).join("")}</ul>
               <p><small>Away (${awayData.length})</small></p>
@@ -375,7 +415,6 @@
             </div>
           `;
         } else {
-          // Просто рендерим обычную карточку
           html += `
             <div class="platform-card">
               <h5>${platform.name}</h5>
@@ -393,14 +432,83 @@
       container.innerHTML = html;
     }
 
-    // ==================== Render Aircall Card With Statuses ====================
+    /********* Рендер Shift Summary **********/
+    function renderShiftSummary(data) {
+      const tableEl = document.getElementById("summary-table");
+      let html = "";
+      for (let i = 5; i < data.length; i++) {
+        const row = data[i];
+        const subset = row.slice(27, 44);
+        if (subset.every(cell => !cell.trim()) || subset.some(cell => cell.trim() === "Dashboard"))
+          continue;
+        html += "<tr>";
+        subset.forEach(cell => {
+          html += `<td>${cell.trim() || ""}</td>`;
+        });
+        html += "</tr>";
+      }
+      tableEl.innerHTML = html;
+    }
+
+    /********* Рендер Upcoming Breaks **********/
+    async function fetchBreaksData() {
+      const data = await fetchSheetData(BREAKS_RANGE);
+      if (!data) return;
+      // Преобразуем массив в объекты, используя первую строку в качестве заголовков
+      const breaksObjects = arrayToObjects(data);
+      logDebug("Преобразованные данные для брейков: " + JSON.stringify(breaksObjects));
+      renderBreaks(breaksObjects);
+    }
+    function renderBreaks(breaksData) {
+      const now = new Date();
+      const currMinutes = now.getHours() * 60 + now.getMinutes();
+      const horizon = currMinutes + 60;
+      const upcoming = breaksData.filter(item => {
+        if (!item["Break Time"]) return false;
+        const timeStr = item["Break Time"].trim();
+        const minutes = parseTimeToMinutes(timeStr);
+        return (minutes > currMinutes && minutes <= horizon);
+      });
+      upcoming.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
+      let html = `<div class="break-card">
+                    <h5>Upcoming Breaks</h5>
+                    <ul>`;
+      upcoming.forEach(item => {
+        html += `
+          <li>
+            <strong>${item["Name"]}</strong><br/>
+            Break at: <strong>${item["Break Time"]}</strong><br/>
+            Shift: ${item["Shift Start Time"]} | ${item["Working Space"]}
+          </li>`;
+      });
+      html += `</ul></div>`;
+      document.getElementById("breaks-app").innerHTML = html;
+    }
+    function parseTimeToMinutes(timeStr) {
+      const [hh, mm] = timeStr.trim().split(":");
+      return parseInt(hh, 10) * 60 + parseInt(mm, 10);
+    }
+
+    /********* Функция преобразования массива в объекты **********/
+    function arrayToObjects(arr) {
+      if (!arr.length) return [];
+      const header = arr[0];
+      return arr.slice(1).map(row => {
+        const obj = {};
+        header.forEach((key, i) => {
+          obj[key] = row[i] || "";
+        });
+        return obj;
+      });
+    }
+
+    /********* Aircall: Рендер карточки с обновленными статусами **********/
     function renderAircallCardWithStatuses(activeList, awayList) {
       let html = `
         <div class="platform-card">
           <h5>Aircall</h5>
           <p><small>Активные (${activeList.length})</small></p>
-          <ul id="aircall-active-list">
-      `;
+          <ul id="aircall-active-list">`;
       activeList.forEach(n => {
         const safeId = n.replace(/\s+/g, "_");
         html += `<li id="emp-${safeId}">${n} - <span style="color:blue;">Loading...</span></li>`;
@@ -415,24 +523,20 @@
       html += `</ul></div>`;
       const skel = document.getElementById("aircall-skeleton");
       if (skel) {
-        skel.outerHTML = html; 
+        skel.outerHTML = html;
       } else {
-        // если нет skeleton, добавим в конец
-        document.getElementById("app").innerHTML += html;
+        document.getElementById("platforms-container").innerHTML += html;
       }
     }
 
-    // Запрашиваем статусы Aircall для "active" сотрудников
     async function fetchAircallStatuses() {
-      // перерисовываем карточку Aircall 
       renderAircallCardWithStatuses(aircallActive, aircallAway);
-      // теперь делаем запросы для каждого active
       for (let emp of aircallActive) {
         const safeId = emp.replace(/\s+/g, "_");
         const liEl = document.getElementById("emp-" + safeId);
         if (!liEl) continue;
-        liEl.querySelector("span").textContent = "Fetching ID...";
         const email = generateWoltEmail(emp);
+        liEl.querySelector("span").textContent = "Fetching ID...";
         const userId = await getAircallUserId(email);
         if (!userId) {
           liEl.querySelector("span").textContent = "No ID";
@@ -444,66 +548,12 @@
       }
     }
 
-    // ==================== Shift Summary ====================
-    function renderShiftSummary(data) {
-      const tableEl = document.getElementById("summary-table");
-      let html = "";
-      for (let i = 5; i < data.length; i++) {
-        const row = data[i];
-        const subset = row.slice(27, 44);
-        if (subset.every(cell => !cell.trim()) || subset.some(cell => cell.trim() === "Dashboard")) continue;
-        html += "<tr>";
-        subset.forEach(cell => {
-          html += `<td>${cell.trim() || ""}</td>`;
-        });
-        html += "</tr>";
-      }
-      tableEl.innerHTML = html;
-    }
-
-    // ==================== Breaks ====================
-    function fetchBreaksData() {
-      Papa.parse(BREAKS_CSV_URL, {
-        download: true,
-        header: true,
-        complete: function(results) {
-          renderBreaks(results.data);
-        },
-        error: function(err) {
-          console.error("Ошибка загрузки брейков:", err);
-        }
-      });
-    }
-    function renderBreaks(breaksData) {
-      const now = new Date();
-      const currMinutes = now.getHours() * 60 + now.getMinutes();
-      const horizon = currMinutes + 60;
-      const upcoming = breaksData.filter(item => {
-        if (!item["Break Time"]) return false;
-        const timeStr = item["Break Time"].trim();
-        const minutes = parseTimeToMinutes(timeStr);
-        return (minutes > currMinutes && minutes <= horizon);
-      });
-      upcoming.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
-      let html = `<div class="break-card">
-        <h5>Upcoming Breaks</h5><ul>`;
-      upcoming.forEach(item => {
-        html += `
-          <li>
-            <strong>${item["Name"]}</strong><br/>
-            Break at: <strong>${item["Break Time"]}</strong><br/>
-            Shift: ${item["Shift Start Time"]} | ${item["Working Space"]}
-          </li>`;
-      });
-      html += `</ul></div>`;
-      document.getElementById("breaks-app").innerHTML = html;
-    }
-    function parseTimeToMinutes(timeStr) {
-      const [hh, mm] = timeStr.trim().split(":");
-      return parseInt(hh, 10)*60 + parseInt(mm, 10);
-    }
-
-    // ==================== Автообновление ====================
+    /********* Автообновление **********/
+    let autoRefreshEnabled = true;
+    let refreshInterval = 10;
+    let refreshTimer = null;
+    let countdownTimer = null;
+    let countdownValue = refreshInterval;
     function resetAutoRefresh() {
       clearTimeout(refreshTimer);
       clearInterval(countdownTimer);
@@ -536,31 +586,33 @@
       fetchData();
     }
 
-    // ==================== Основная логика ====================
+    /********* Основная функция загрузки данных и рендера дашборда **********/
+    async function fetchData() {
+      const data = await fetchSheetData(RANGE);
+      if (!data) return;
+      logDebug("Основные данные получены: " + JSON.stringify(data));
+      renderDashboard(data);
+      showUpdatedStatus();
+      renderShiftSummary(data);
+      fetchBreaksData();
+      if (autoRefreshEnabled) resetAutoRefresh();
+      // Извлекаем список сотрудников для платформы Aircall
+      const aircallConfig = platforms.find(p => p.name === "Aircall");
+      aircallActive = [];
+      aircallAway = [];
+      for (let r = aircallConfig.rowActiveNamesStart; r <= aircallConfig.rowActiveNamesEnd; r++) {
+        const name = data[r]?.[aircallConfig.colIndexNames]?.trim();
+        if (name) aircallActive.push(name);
+      }
+      // Если есть отдельный диапазон для away, можно его обработать (в этом примере away оставляем пустым)
+      renderAircallCardWithStatuses(aircallActive, aircallAway);
+      fetchAircallStatuses();
+    }
+
     function showUpdatedStatus() {
       const el = document.getElementById("update-status");
       el.textContent = "Updated";
       el.style.backgroundColor = "#28a745";
-    }
-    function fetchData() {
-      Papa.parse(CSV_URL, {
-        download: true,
-        header: false,
-        complete: function(results) {
-          const data = results.data;
-          // Рендер платформ (без статусов)
-          renderDashboard(data);
-          showUpdatedStatus();
-          renderShiftSummary(data);
-          fetchBreaksData();
-          if (autoRefreshEnabled) resetAutoRefresh();
-          // Запускаем обновление статусов Aircall
-          fetchAircallStatuses();
-        },
-        error: function(err) {
-          console.error("Ошибка парсинга CSV:", err);
-        }
-      });
     }
 
     document.addEventListener("DOMContentLoaded", () => {
