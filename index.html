@@ -177,15 +177,6 @@
     .platform-card h5 a:hover {
       color: #0056b3;
     }
-    .platform-link-hint {
-      margin-left: 5px;
-      color: #6c757d;
-      font-size: 0.85rem;
-      cursor: default;
-    }
-    .platform-link-hint:hover {
-      color: #0056b3;
-    }
     .platform-card p {
       text-align: center;
       color: #6c757d;
@@ -362,6 +353,30 @@
     #employee-modal a:hover {
       color: #0056b3;
     }
+    .platform-link-hint {
+      display: inline-block;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    .platform-link-hint::before {
+      content: "i";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
+      text-align: center;
+      border-radius: 50%;
+      background-color: #eee;
+      color: #333;
+      font-size: 12px;
+      font-weight: bold;
+      vertical-align: middle;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .platform-link-hint:hover::before {
+      background-color: #0056b3;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -399,7 +414,6 @@
         <option value="active">Активные</option>
         <option value="away">Away</option>
       </select>
-
       <!-- Фильтры Reallocate и Language -->
       <select id="realloc-filter">
         <option value="all">Reallocate: All</option>
@@ -410,6 +424,11 @@
         <option value="All">Language: All</option>
         <option value="two">🇦🇿 🇬🇧</option>
         <option value="three">🇦🇿🇷🇺🇬🇧</option>
+      </select>
+      <!-- Новый фильтр для брейков -->
+      <select id="break-filter">
+        <option value="upcoming">Брейки в ближайший час</option>
+        <option value="all">Все брейки</option>
       </select>
     </div>
 
@@ -644,7 +663,7 @@
                 <a href="${platform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть ${platform.name}">
                   ${platform.name}
                 </a>
-                <span class="platform-link-hint" title="Перейти на страницу ${platform.name}">?</span>
+                <span class="platform-link-hint" title="Перейти на страницу CS"></span>
               </h5>`;
 
           if (showActive) {
@@ -704,7 +723,7 @@
               <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть Aircall">
                 Aircall
               </a>
-              <span class="platform-link-hint" title="Перейти на страницу Aircall">?</span>
+              <span class="platform-link-hint" title="Перейти на страницу CS"></span>
             </h5>`;
       if (showActive) {
         html += `<p><small>Активные (${activeList.length})</small></p><ul id="aircall-active-list">`;
@@ -766,24 +785,38 @@
       tableEl.innerHTML = html;
     }
 
+    // Функция, обновленная для отображения либо всех брейков, либо только брейков в ближайший час
     async function fetchBreaksData() {
       const data = await fetchSheetData(BREAKS_RANGE);
       if (!data) return;
       const breaksObjects = arrayToObjects(data);
+      let filteredBreaks = breaksObjects;
+
+      // Получаем выбранное значение фильтра брейков
+      const breakFilter = document.getElementById("break-filter").value;
       const now = new Date();
       const currMinutes = now.getHours() * 60 + now.getMinutes();
-      const horizon = currMinutes + 60;
-      const upcoming = breaksObjects.filter(item => {
-        if (!item["Break Time"]) return false;
-        const timeStr = item["Break Time"].trim();
-        const minutes = parseTimeToMinutes(timeStr);
-        return (minutes > currMinutes && minutes <= horizon);
-      });
-      upcoming.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
+
+      if (breakFilter === "upcoming") {
+        const horizon = currMinutes + 60;
+        filteredBreaks = breaksObjects.filter(item => {
+          if (!item["Break Time"]) return false;
+          const timeStr = item["Break Time"].trim();
+          // При вычислении передаем currMinutes, чтобы корректно обработать брейки следующего дня
+          const minutes = parseTimeToMinutes(timeStr, currMinutes);
+          return (minutes >= currMinutes && minutes <= horizon);
+        });
+        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"], currMinutes) - parseTimeToMinutes(b["Break Time"], currMinutes));
+      } else if (breakFilter === "all") {
+        // При выборе "Все брейки" — сортируем все брейки по времени, с учетом корректировки для следующих дней
+        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"], currMinutes) - parseTimeToMinutes(b["Break Time"], currMinutes));
+      }
+
       let html = `<div class="break-card">
-                    <h5>Upcoming breaks in the next hour</h5>
-                    <ul>`;
-      upcoming.forEach(item => {
+                    <h5>`;
+      html += breakFilter === "upcoming" ? `Upcoming breaks in the next hour` : `All Breaks`;
+      html += `</h5><ul>`;
+      filteredBreaks.forEach(item => {
         html += `
           <li>
             <strong>${item["Name"]}</strong><br/>
@@ -795,10 +828,20 @@
       document.getElementById("breaks-app").innerHTML = html;
     }
 
-    function parseTimeToMinutes(timeStr) {
-      const [hh, mm] = timeStr.trim().split(":");
-      return parseInt(hh, 10) * 60 + parseInt(mm, 10);
+    function parseTimeToMinutes(timeStr, currMinutes) {
+      timeStr = timeStr.trim();
+      let parts = timeStr.split(":");
+      if (parts.length < 2) return 0;
+      let hours = parseInt(parts[0], 10);
+      let minutes = parseInt(parts[1], 10);
+      let total = hours * 60 + minutes;
+      // Если передан currMinutes и время брейка меньше текущего, то предполагаем, что брейк назначен на следующий день
+      if (typeof currMinutes !== "undefined" && total < currMinutes) {
+        total += 1440; // добавляем 24 часа в минутах
+      }
+      return total;
     }
+
     function arrayToObjects(arr) {
       if (!arr.length) return [];
       const header = arr[0];
@@ -914,8 +957,7 @@
       if (autoRefreshEnabled) resetAutoRefresh();
     }
 
-    // Замените или добавьте реализацию функции generateWoltEmail
-    // Пример простой реализации: преобразует имя сотрудника в email в формате lowercase с точкой и доменом @wolt.com
+    // Пример реализации функции generateWoltEmail: преобразует имя сотрудника в email в формате lowercase с точкой и доменом @wolt.com
     function generateWoltEmail(name) {
       // Например, "Иван Иванов" -> "иван.иванов@wolt.com"
       if (!name) return "";
@@ -965,6 +1007,8 @@
         currentLangFilter = e.target.value;
         applyFilters();
       });
+      // Добавляем обработчик для фильтра брейков
+      document.getElementById("break-filter").addEventListener("change", fetchBreaksData);
 
       document.getElementById("modal-overlay").addEventListener("click", closeEmployeeModal);
       document.getElementById("modal-close").addEventListener("click", closeEmployeeModal);
