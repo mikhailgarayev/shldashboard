@@ -175,6 +175,15 @@
       font-weight: 600;
       font-size: 1.1rem;
     }
+    /* Сделаем гиперссылку для заголовка: убираем подчеркивание и подскажем, что это ссылка */
+    .platform-card h5 a {
+      text-decoration: underline;      /* подчеркнуто */
+      color: #007bff;                 /* сделаем цвет посинее для ясности */
+      cursor: pointer;
+    }
+    .platform-card h5 a:hover {
+      color: #0056b3;                 /* чуть темнее при наведении */
+    }
     .platform-card p {
       text-align: center;
       color: #6c757d;
@@ -309,7 +318,6 @@
           <span class="slider"></span>
         </label>
       </div>
-      <!-- Кнопки управления -->
       <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
       <button id="refresh-now" class="btn btn-outline-secondary">Refresh now</button>
       <span>Auto refresh in <span id="countdown">15</span> sec</span>
@@ -382,16 +390,16 @@
     const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";
     const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";
     
-    // Конфигурация платформ
+    // Конфигурация платформ (добавили url для гиперссылки)
     const platforms = [
-      { name: "CS",             colIndexNames: 3,  colIndexData: 4,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "CS/Post order",  colIndexNames: 5,  colIndexData: 6,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "PSR",            colIndexNames: 7,  colIndexData: 8,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "SiMo",           colIndexNames: 9,  colIndexData: 10, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Aircall",        colIndexNames: 11, colIndexData: 12, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 46 },
-      { name: "Venue",          colIndexNames: 13, colIndexData: 14, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "Trainee",        colIndexNames: 15, colIndexData: 16, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
-      { name: "ST",             colIndexNames: 17, colIndexData: 18, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
+      { name: "CS",             url: "https://wolt.com/444555666", colIndexNames: 3,  colIndexData: 4,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "CS/Post order",  url: "https://wolt.com/987654321", colIndexNames: 5,  colIndexData: 6,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "PSR",            url: "https://wolt.com/111222333", colIndexNames: 7,  colIndexData: 8,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "SiMo",           url: "https://wolt.com/333444555", colIndexNames: 9,  colIndexData: 10, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Aircall",        url: "https://wolt.com/777888999", colIndexNames: 11, colIndexData: 12, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 46 },
+      { name: "Venue",          url: "https://wolt.com/000111222", colIndexNames: 13, colIndexData: 14, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "Trainee",        url: "https://wolt.com/333222111", colIndexNames: 15, colIndexData: 16, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 },
+      { name: "ST",             url: "https://wolt.com/555666777", colIndexNames: 17, colIndexData: 18, rowActiveNamesStart: 4,  rowActiveNamesEnd: 15, rowAwayNamesStart: 28, rowAwayNamesEnd: 35 }
     ];
     
     let aircallActive = [];
@@ -453,22 +461,21 @@
             awayData.push({ name: nm, reason: rsn });
           }
     
-          // Поиск
           if (currentSearchTerm) {
             activeNames = activeNames.filter(n => n.toLowerCase().includes(currentSearchTerm.toLowerCase()));
             awayData = awayData.filter(item => item.name.toLowerCase().includes(currentSearchTerm.toLowerCase()));
           }
     
-          // Фильтр статуса
           let showActive = true, showAway = true;
-          if (currentStatusFilter === "active") {
-            showAway = false;
-          } else if (currentStatusFilter === "away") {
-            showActive = false;
-          }
+          if (currentStatusFilter === "active") showAway = false;
+          else if (currentStatusFilter === "away") showActive = false;
     
           let html = `<div class="platform-card">
-              <h5>${platform.name}</h5>`;
+              <h5>
+                <a href="${platform.url}" target="_blank" rel="noopener">
+                  ${platform.name}
+                </a>
+              </h5>`;
           if (showActive) {
             html += `<p><small>Активные (${activeNames.length})</small></p>
                      <ul>${activeNames.map(n => `<li>${n}</li>`).join("")}</ul>`;
@@ -483,7 +490,7 @@
           html += `</div>`;
           container.innerHTML += html;
         } else {
-          // Для Aircall: используем уже заполненные массивы aircallActive и aircallAway
+          // Aircall
           let filteredActive = aircallActive.slice();
           let filteredAway = aircallAway.slice();
           if (currentSearchTerm) {
@@ -491,19 +498,21 @@
             filteredAway = filteredAway.filter(item => item.name.toLowerCase().includes(currentSearchTerm.toLowerCase()));
           }
           let showActive = true, showAway = true;
-          if (currentStatusFilter === "active") {
-            showAway = false;
-          } else if (currentStatusFilter === "away") {
-            showActive = false;
-          }
+          if (currentStatusFilter === "active") showAway = false;
+          else if (currentStatusFilter === "away") showActive = false;
           renderAircallCardWithStatuses(filteredActive, filteredAway, showActive, showAway);
         }
       });
     }
     
     function renderAircallCardWithStatuses(activeList, awayList, showActive = true, showAway = true) {
+      const aircallPlatform = platforms.find(p => p.name === "Aircall");
       let html = `<div class="platform-card">
-            <h5>Aircall</h5>`;
+            <h5>
+              <a href="${aircallPlatform.url}" target="_blank" rel="noopener">
+                Aircall
+              </a>
+            </h5>`;
       if (showActive) {
         html += `<p><small>Активные (${activeList.length})</small></p>
                  <ul id="aircall-active-list">` +
@@ -592,7 +601,6 @@
     }
     
     async function fetchAircallStatuses() {
-      // Находим элементы с id, начинающимся на "aircall-active-"
       const activeElements = document.querySelectorAll("[id^='aircall-active-']");
       for (let elem of activeElements) {
         const name = elem.textContent.split(" - ")[0].trim();
@@ -655,7 +663,7 @@
       if (!data) return;
       fetchedData = data;
       
-      // Добавляем заполнение Aircall сотрудников
+      // Заполняем Aircall
       const aircallConfig = platforms.find(p => p.name === "Aircall");
       aircallActive = [];
       aircallAway = [];
@@ -673,10 +681,10 @@
       fetchBreaksData();
       applyFilters();
       fetchAircallStatuses();
+      
       if (autoRefreshEnabled) resetAutoRefresh();
     }
     
-    /********* Тоггл темы (темная / светлая) **********/
     function loadThemePreference() {
       const saved = localStorage.getItem("darkThemeEnabled");
       if (saved === "true") {
