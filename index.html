@@ -316,6 +316,8 @@
       padding: 10px;
       font-size: 0.85rem;
       white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
     }
     /* Модальное окно сотрудника */
     #modal-overlay {
@@ -472,18 +474,24 @@
     let aircallActive = [];
     let aircallAway = [];
 
+    // Функция для вывода отладочных сообщений в отладочный блок
+    function logDebug(message) {
+      const debugDiv = document.getElementById("debug-section");
+      debugDiv.textContent += message + "\n";
+    }
+
     async function fetchSheetData(range) {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${GOOGLE_API_KEY}`;
       try {
         const res = await fetch(url);
         if (!res.ok) {
-          console.error("Ошибка получения данных: " + res.statusText);
+          logDebug("Ошибка получения данных: " + res.statusText);
           return null;
         }
         const data = await res.json();
         return data.values;
       } catch (err) {
-        console.error("Ошибка запроса:", err);
+        logDebug("Ошибка запроса: " + err);
         return null;
       }
     }
@@ -520,7 +528,7 @@
     function openEmployeeModal(empName) {
       const info = employeeData[empName];
       if (!info) {
-        console.warn("Данные о сотруднике не найдены:", empName);
+        logDebug("Данные о сотруднике не найдены: " + empName);
         return;
       }
       document.getElementById("modal-emp-name").textContent = empName;
@@ -541,41 +549,59 @@
     const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";
     const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";
 
+    // Функция получения ID пользователя Aircall по email с добавлением логов
     async function getAircallUserId(email) {
       const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
       const url = `https://api.aircall.io/v1/users/${encodeURIComponent(email)}`;
       try {
+        logDebug(`Запрос Aircall ID для email: ${email}`);
         const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
-        if (!res.ok) return null;
+        if (!res.ok) {
+          logDebug(`Ошибка получения ID Aircall: ${res.statusText} (Статус: ${res.status})`);
+          return null;
+        }
         const data = await res.json();
+        logDebug(`Получен ID пользователя: ${data.user?.id}`);
         return data.user?.id || null;
-      } catch {
+      } catch (err) {
+        logDebug("Исключение при получении Aircall ID: " + err);
         return null;
       }
     }
+    // Функция получения статуса Aircall с логированием
     async function getAircallAvailability(userId) {
-      if (!userId) return "No ID";
+      if (!userId) {
+         logDebug("getAircallAvailability: userId не передан");
+         return "No ID";
+      }
       const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
       const url = `https://api.aircall.io/v1/users/${userId}/availability`;
       try {
-        const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
-        if (!res.ok) return "Error";
-        const data = await res.json();
-        let status = data?.user_availability?.availability_status || data?.availability;
-        return status || "Unknown";
-      } catch {
-        return "Error";
+         logDebug(`Запрос статуса Aircall для userId: ${userId}`);
+         const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
+         if (!res.ok) {
+             logDebug(`Ошибка получения статуса Aircall: ${res.statusText} (Статус: ${res.status})`);
+             return "Error";
+         }
+         const data = await res.json();
+         let status = data?.user_availability?.availability_status || data?.availability;
+         logDebug(`Получен статус для userId ${userId}: ${status}`);
+         return status || "Unknown";
+      } catch (err) {
+         logDebug("Исключение в getAircallAvailability: " + err);
+         return "Error";
       }
     }
 
     function applyFilters() {
       const debugDiv = document.getElementById("debug-section");
-      debugDiv.innerHTML = "Отладка applyFilters():\n";
-      debugDiv.innerHTML += ` - currentPlatformFilter: ${currentPlatformFilter}\n`;
-      debugDiv.innerHTML += ` - currentStatusFilter: ${currentStatusFilter}\n`;
-      debugDiv.innerHTML += ` - currentReallocFilter: ${currentReallocFilter}\n`;
-      debugDiv.innerHTML += ` - currentLangFilter: ${currentLangFilter}\n`;
-      debugDiv.innerHTML += ` - search: '${currentSearchTerm}'\n`;
+      // Очищаем текущие логи отладки перед обновлением фильтра
+      debugDiv.textContent = "Отладка applyFilters():\n";
+      debugDiv.textContent += ` - currentPlatformFilter: ${currentPlatformFilter}\n`;
+      debugDiv.textContent += ` - currentStatusFilter: ${currentStatusFilter}\n`;
+      debugDiv.textContent += ` - currentReallocFilter: ${currentReallocFilter}\n`;
+      debugDiv.textContent += ` - currentLangFilter: ${currentLangFilter}\n`;
+      debugDiv.textContent += ` - search: '${currentSearchTerm}'\n`;
 
       const container = document.getElementById("platforms-container");
       container.innerHTML = "";
@@ -659,7 +685,7 @@
       // Вывод финального списка сотрудников
       const allItems = document.querySelectorAll(".employee-item");
       const finalList = Array.from(allItems).map(item => item.getAttribute("data-employee"));
-      debugDiv.innerHTML += "Сотрудники после фильтров:\n" + finalList.join(", ") + "\n\n";
+      debugDiv.textContent += "Сотрудники после фильтров:\n" + finalList.join(", ") + "\n\n";
 
       // Навесим клик
       const employeeItems = document.querySelectorAll(".employee-item");
@@ -785,19 +811,33 @@
       });
     }
 
+    // Функция для получения статусов Aircall с добавлением отладочных логов
     async function fetchAircallStatuses() {
       const activeElements = document.querySelectorAll("#aircall-active-list li");
+      logDebug(`Начало запроса статусов Aircall. Найдено элементов: ${activeElements.length}`);
       for (let elem of activeElements) {
         const text = elem.textContent;
-        // делим по " - ", первый кусок — имя
+        // Разделяем строку по " - ", первый кусок — имя
         const [name] = text.split(" - ");
         const span = elem.querySelector("span");
-        if (!name || !span) continue;
+        if (!name || !span) {
+          logDebug("Пропускается элемент – отсутствует имя или span.");
+          continue;
+        }
         span.textContent = "Fetching ID...";
+        logDebug(`Запрос статуса для сотрудника: ${name}`);
+        // Обратите внимание: функция generateWoltEmail должна быть определена!
         const email = generateWoltEmail(name);
+        if (!email) {
+          span.textContent = "No email";
+          logDebug(`generateWoltEmail не вернула email для ${name}`);
+          continue;
+        }
+        logDebug(`Сгенерированный email для ${name}: ${email}`);
         const userId = await getAircallUserId(email);
         if (!userId) {
           span.textContent = "No ID";
+          logDebug(`Не найден Aircall ID для ${name} (email: ${email})`);
           continue;
         }
         span.textContent = "Fetching status...";
@@ -845,6 +885,8 @@
     }
 
     async function fetchData() {
+      // Перед каждым запросом очищаем отладочный блок
+      document.getElementById("debug-section").textContent = "Начало обновления данных...\n";
       const data = await fetchSheetData(RANGE);
       if (!data) return;
       fetchedData = data;
@@ -870,6 +912,16 @@
       fetchAircallStatuses();
 
       if (autoRefreshEnabled) resetAutoRefresh();
+    }
+
+    // Замените или добавьте реализацию функции generateWoltEmail
+    // Пример простой реализации: преобразует имя сотрудника в email в формате lowercase с точкой и доменом @wolt.com
+    function generateWoltEmail(name) {
+      // Например, "Иван Иванов" -> "иван.иванов@wolt.com"
+      if (!name) return "";
+      let parts = name.split(" ");
+      if (parts.length < 2) return parts[0].toLowerCase() + "@wolt.com";
+      return parts[0].toLowerCase() + "." + parts[1].toLowerCase() + "@wolt.com";
     }
 
     function loadThemePreference() {
