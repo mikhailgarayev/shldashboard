@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="eng">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign in with Google</title>
+  <!-- Подключаем Firebase через CDN (compat-версия для простоты) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      width: 300px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+    button {
+      width: 95%;
+      padding: 10px;
+      margin: 10px 0;
+      background: #4285F4;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #357ae8;
+    }
+    .error-message {
+      color: red;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>Login to Dashboard</h1>
+    <!-- Только кнопка входа через Google -->
+    <button id="google-signin-btn">Sign in with Google</button>
+    <div class="error-message" id="login-error"></div>
+  </div>
+
+  <script>
+    // Конфигурация Firebase – замените на данные из Firebase Console
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHyxC12UaO6QU_nCiWFnegul1Vix5skm8",
+      authDomain: "shldashboard.firebaseapp.com",
+      projectId: "shldashboard",
+      storageBucket: "shldashboard.firebasestorage.app",
+      messagingSenderId: "362566153595",
+      appId: "1:362566153595:web:ee35c2588bd0f798e6f9de"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Список разрешённых пользователей (whitelist)
+    const allowedEmails = [
+      "mikhail.garayev@wolt.com",
+      "user2@example.com",
+      // Добавьте здесь email пользователей, которым разрешён доступ
+    ];
+
+    // Обработчик клика на кнопку "Войти через Google"
+    const googleBtn = document.getElementById("google-signin-btn");
+    googleBtn.addEventListener("click", () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          const user = result.user;
+          // Проверяем, входит ли email пользователя в список разрешённых
+          if (allowedEmails.includes(user.email)) {
+            console.log("Acces restircted:", user.email);
+            window.location.href = "index.html"; // Перенаправляем на защищённую страницу
+          } else {
+            console.error("Acces resctricted for: " + user.email);
+            // Выводим сообщение об ошибке и выходим
+            document.getElementById("login-error").textContent = "You are not allowed to visit this site :)";
+            auth.signOut();
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to login with Google:", error.message);
+          document.getElementById("login-error").textContent = error.message;
+        });
+    });
+
+    // Если пользователь уже авторизован, проверяем его email и перенаправляем, если всё OK.
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        if (allowedEmails.includes(user.email)) {
+          window.location.href = "index.html";
+        } else {
+          auth.signOut();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
