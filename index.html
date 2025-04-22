@@ -315,14 +315,17 @@
       border-bottom: none;
     }
     .shift-summary-card {
-      background: var(--card-bg-color);
+      background: none !important;
       color: var(--card-text-color);
-      border-radius: 16px;
-      box-shadow: var(--card-shadow);
+      border: none !important;
+      box-shadow: none !important;
       padding: 20px;
       margin: 0 auto 40px;
       text-align: center;
       overflow-wrap: break-word;
+      color: #f8f9fa;
+      font-size: 1.2rem;
+      font-weight: 700;
     }
     .shift-summary-card:hover {
       transform: translateY(-3px);
@@ -339,6 +342,7 @@
       border-collapse: separate;
       border-spacing: 0;
       table-layout: auto;
+      font-size: 2rem;
     }
     .shift-summary-grid th,
     .shift-summary-grid td {
@@ -348,13 +352,29 @@
       color: var(--card-text-color);
     }
     .shift-summary-grid th {
-      background-color: #f8f9fa;
+      background: none !important;
       font-weight: 600;
     }
     .shift-summary-grid td {
-      background: var(--card-bg-color);
+      background: none !important;
       border: 1px solid var(--card-border-color);
       border-radius: 8px;
+    }
+    /* Класс для уменьшения шрифта в специфических карточках */
+    .small-font-card {
+      font-size: 0.9rem;
+    }
+    /* Новые CSS-классы для увеличения заголовков и надписи Away */
+    .shift-card-title {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    .shift-card-away {
+      font-size: 1.1rem;
+      color: #666;
+      text-align: center;
     }
     #breaks-section {
       margin-top: 40px;
@@ -805,12 +825,17 @@
           html += `</div>`;
           container.innerHTML += html;
         } else {
+          // Обработка карточки Aircall
+          // Применяем фильтрацию по поиску, а также по reallocate и языкам
           let filteredActive = aircallActive.slice().filter(n => n.toLowerCase() !== "away");
           let filteredAway = aircallAway.slice().filter(item => item.name.toLowerCase() !== "away");
           if (currentSearchTerm) {
             filteredActive = filteredActive.filter(n => n.toLowerCase().includes(currentSearchTerm.toLowerCase()));
             filteredAway = filteredAway.filter(item => item.name.toLowerCase().includes(currentSearchTerm.toLowerCase()));
           }
+          filteredActive = filteredActive.filter(n => passReallocAndLang(n));
+          filteredAway = filteredAway.filter(item => passReallocAndLang(item.name));
+          
           let showActive = true, showAway = true;
           if (currentStatusFilter === "active") showAway = false;
           else if (currentStatusFilter === "away") showActive = false;
@@ -862,21 +887,101 @@
     }
 
     function renderShiftSummary(data) {
-      const tableEl = document.getElementById("summary-table");
-      let html = "";
-      for (let i = 5; i < data.length; i++) {
-        const row = data[i];
-        const subset = row.slice(27, 44)
-                         .map(cell => cell.trim())
-                         .filter(cell => cell !== "");
-        if (subset.length === 0 || subset.includes("Dashboard"))
-          continue;
-        html += "<tr>";
-        subset.forEach(cell => {
-          html += `<td>${cell}</td>`;
-        });
-        html += "</tr>";
-      }
+      // В какую область страницы выводим карточки
+      const tableEl = document.getElementById("summary-table"); 
+      // Очищаем содержимое
+      tableEl.innerHTML = "";
+
+      // Индексы для удобочитаемости:
+      // Строка 7 => индекс 6, строка 9 => индекс 8, строка 11 => индекс 10
+      // AB=27, AD=29, AF=31, AH=33, AJ=35, AL=37, AN=39, AP=41, AR=43
+
+      // Подготовим структуру карточек
+      const summaryCards = [
+        {
+          title: "On shift now",
+          value: data[6][27] || "",
+        },
+        {
+          title: "Should be on shift",
+          value: data[6][29] || "",
+        },
+        {
+          title: "CS",
+          value: data[6][31] || "",
+          away: data[8][31] || "",
+        },
+        {
+          title: "CS/Post Order",
+          value: data[6][33] || "",
+          away: data[8][33] || "",
+        },
+        {
+          title: "PSR",
+          value: data[6][35] || "",
+          away: data[8][35] || "",
+        },
+        {
+          title: "Venue",
+          value: data[6][37] || "",
+          away: data[8][37] || "",
+        },
+        {
+          title: "Aircall",
+          value: data[6][39] || "",
+          away: data[8][39] || "",
+        },
+        {
+          title: "Simo",
+          value: data[6][41] || "",
+          away: data[8][41] || "",
+        },
+        {
+          title: "ST",
+          value: data[6][43] || "",
+          away: data[8][43] || "",
+        },
+        {
+          title: "Not here",
+          value: (data[8][29] || "") + (data[10][29] ? ", " + data[10][29] : ""),
+          customClass: "small-font-card"
+        },
+        {
+          title: "Will not attend the shift",
+          value: (data[8][27] || "") + (data[10][27] ? ", " + data[10][27] : ""),
+          customClass: "small-font-card"
+        }
+      ];
+
+      // Генерируем карточки
+      let html = `<div class="shift-summary-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">`;
+
+      summaryCards.forEach(card => {
+        html += `
+          <div class="shift-card ${card.customClass ? card.customClass : ""}" style="
+            background: var(--card-bg-color);
+            color: var(--card-text-color);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 16px;
+            min-width: 150px;
+          ">
+            <h6 class="shift-card-title">
+              ${card.title}
+            </h6>
+            <div style="margin-bottom: 0.5rem;">${card.value || ""}</div>
+        `;
+        if (card.away) {
+          html += `
+            <div class="shift-card-away">
+              <strong>Away:</strong> ${card.away}
+            </div>
+          `;
+        }
+        html += `</div>`;
+      });
+
+      html += `</div>`;
       tableEl.innerHTML = html;
     }
 
