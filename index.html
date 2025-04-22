@@ -617,7 +617,7 @@
       
       <!-- Переключатель темы -->
       <div class="theme-toggle-container">
-        <span>Тема:</span>
+        <span>Theme:</span>
         <label class="theme-switch">
           <input type="checkbox" id="theme-checkbox">
           <span class="slider"></span>
@@ -651,18 +651,91 @@
   
   <!-- Модальное окно сотрудника -->
   <div id="modal-overlay"></div>
-  <div id="employee-modal">
-    <span class="close-btn" id="modal-close">&times;</span>
-    <h3 id="modal-emp-name"></h3>
-    <p><strong>Can Reallocate?</strong>: <span id="modal-emp-realloc"></span></p>
-    <p><strong>Prime Platform:</strong> <span id="modal-emp-prime"></span></p>
-    <p><strong>Preferred Platform:</strong> <span id="modal-emp-pref"></span></p>
-    <p><strong>Languages:</strong> <span id="modal-emp-languages"></span></p>
-    <p>
-      <a id="modal-inbox-link" href="#" target="_blank">Inbox</a> |
-      <a id="modal-admin-link" href="#" target="_blank">Admin Dashboard</a>
-    </p>
+  <div id="employee-modal" style="display: none;
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16 px rgba(0,0,0,0.1);
+  z-index: 1001;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #495057;">
+   <div style="
+   display: flex; 
+   align-items: center; 
+   justify-content: space-between;
+   padding: 20px 20px 0 20px;
+ ">
+   <div style="display: flex; align-items: center;">
+     <img 
+       id="modal-emp-avatar" 
+       src="https://i.ibb.co/YrbxqCn/favicon.jpg" 
+       alt="Avatar" 
+       style="width: 60px; height: 60px; border-radius: 50%; margin-right: 15px;"
+     />
+     <div>
+      <h5 id="modal-emp-name" style="margin: 0; font-weight: 600;">Employee Name</h5>
+      <small id="modal-emp-email" style="color: #888;">employee.email@wolt.com</small>
+    </div>
   </div>
+  <span 
+  class="close-btn" 
+  id="modal-close" 
+  style="cursor: pointer; font-size: 24px; color: #999; margin-left: 10px;"
+>
+  &times;
+</span>
+</div>
+
+<!-- Тело карточки -->
+<div style="padding: 15px 20px 0 20px;">
+  <div style="margin-bottom: 10px;">
+    <strong>Role:</strong> <span id="modal-emp-role">Support Associate</span>
+  </div>
+  <div style="margin-bottom: 10px;">
+    <strong>Prime platform:</strong> <span id="modal-emp-prime"></span>
+  </div>
+  <div style="margin-bottom: 10px;">
+    <strong>Preferred platform:</strong> <span id="modal-emp-pref"></span>
+  </div>
+  <div style="margin-bottom: 10px;">
+    <strong>Can reallocate?:</strong> <span id="modal-emp-realloc"></span>
+  </div>
+  <div style="margin-bottom: 10px;">
+    <strong>Language:</strong> <span id="modal-emp-languages"></span>
+  </div>
+</div>
+
+<!-- Низ карточки: кнопки для открытия Inbox и Admin Panel -->
+<div style="padding: 20px; text-align: right;">
+  <button 
+    id="modal-inbox-link"
+    class="btn btn-primary"
+    style="
+      background-color: #007bff; 
+      border: none; 
+      margin-right: 10px;
+      cursor: pointer;
+    "
+  >
+    Open Inbox
+  </button>
+
+  <button 
+    id="modal-admin-link"
+    class="btn btn-outline-primary"
+    style="
+      border: 1px solid #007bff; 
+      color: #007bff; 
+      cursor: pointer;
+    "
+  >
+    Admin Panel
+  </button>
+</div>
   
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -835,8 +908,12 @@
       document.getElementById("modal-emp-prime").textContent = info.prime || "N/A";
       document.getElementById("modal-emp-pref").textContent = info.pref || "N/A";
       document.getElementById("modal-emp-languages").textContent = info.languages || "N/A";
-      document.getElementById("modal-inbox-link").href = generateInboxLink(info.id);
-      document.getElementById("modal-admin-link").href = generateAdminLink(info.id);
+      document.getElementById("modal-inbox-link").onclick = () => {
+      window.open(generateInboxLink(info.id), "_blank");
+      };
+      document.getElementById("modal-admin-link").onclick = () => {
+    window.open(generateAdminLink(info.id), "_blank");
+    };
       document.getElementById("employee-modal").style.display = "block";
       document.getElementById("modal-overlay").style.display = "block";
     }
@@ -961,12 +1038,12 @@
               </h5>`;
           if (showActive) {
             if (activeNames.length === 0) {
-              html += `<p><small style="color: red; font-weight: bold;">Активные (0)</small>
+              html += `<p><small style="color: red; font-weight: bold;">Active (0)</small>
                 <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">
                   &#9888;
                 </span></p>`;
             } else {
-              html += `<p><small>Активные (${activeNames.length})</small></p><ul>`;
+              html += `<p><small>Active (${activeNames.length})</small></p><ul>`;
               activeNames.forEach(n => {
                 html += `<li class="employee-item" data-employee="${n}">${n}</li>`;
               });
@@ -1030,13 +1107,13 @@
             </h5>`;
       if (showActive) {
         if (activeList.length === 0) {
-          html += `<p><small style="color: red; font-weight: bold;">Активные (0)</small>
-                    <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">
+          html += `<p><small style="color: red; font-weight: bold;">Active (0)</small>
+                    <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">
                       &#9888;
                     </span>
                   </p>`;
         } else {
-          html += `<p><small>Активные (${activeList.length})</small></p>
+          html += `<p><small>Active (${activeList.length})</small></p>
                    <ul id="aircall-active-list">` +
                    activeList.map((n, index) => {
                      const safeId = `aircall-active-${index}`;
