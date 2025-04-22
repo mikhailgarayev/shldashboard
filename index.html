@@ -49,6 +49,14 @@
       transition: background var(--transition-speed) ease, color var(--transition-speed) ease;
     }
     
+    /* Стиль для блока с информацией о пользователе и кнопкой выхода */
+    #user-info {
+      text-align: right;
+      padding: 10px;
+      font-size: 1rem;
+      color: var(--text-color);
+    }
+    
     /* Сайдбар (меню) */
     .hamburger-menu {
       position: fixed;
@@ -492,13 +500,28 @@
       if (!user || !allowedEmails.includes(user.email)) {
         window.location.replace("login.html");
       } else {
-        // Если все ок, показываем содержимое, убираем класс hidden
+        // Если все ок, выводим имя пользователя и убираем класс hidden
+        document.getElementById("user-display-name").textContent = user.displayName || user.email;
         document.body.classList.remove("hidden");
       }
+    });
+    
+    // Обработчик для кнопки Log Out
+    document.addEventListener("DOMContentLoaded", () => {
+      const logoutBtn = document.getElementById("logout-btn");
+      logoutBtn.addEventListener("click", () => {
+        auth.signOut();
+      });
     });
   </script>
 </head>
 <body class="hidden">
+  <!-- Блок отображения аккаунта и кнопка Log Out -->
+  <div id="user-info" style="text-align: right; padding: 10px; font-size: 1rem; color: var(--text-color);">
+    Logged in as: <span id="user-display-name"></span>
+    <button id="logout-btn" class="btn btn-danger btn-sm" style="margin-left: 10px;">Log Out</button>
+  </div>
+  
   <!-- Гамбургер-меню -->
   <div class="hamburger-menu" id="hamburger-menu">
     <span>&#9776;</span>
@@ -518,7 +541,6 @@
     
     <!-- Панель фильтров с расширенными опциями -->
     <div class="filter-panel">
-      <!-- Пример метрики "Baku Central 1.1" -->
       <div class="stats-card">
         <span class="stats-title">Baku Central</span>
         <span class="stats-value">1.1</span>
@@ -634,7 +656,7 @@
   <script>
     // ===============================
     // WEATHER SECTION WITH CACHING
-    const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d"; // Замените на ваш ключ
+    const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d";
     const CITY_NAME = "Baku,AZ";
     async function fetchWeather() {
       const cacheKey = "bakuWeatherData";
@@ -676,7 +698,7 @@
     }
     // ===============================
     
-    // Информация по платформам (можно изменять)
+    // Информация по платформам
     const platformInfo = {
       "CS": "Поддержка клиентов через чат и звонки.",
       "CS/Post order": "Обработка вопросов по заказам после оформления.",
