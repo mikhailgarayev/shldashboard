@@ -23,7 +23,7 @@
     }
     /* Тёмная тема */
     body.dark-theme {
-      --bg-color: linear-gradient(120deg, #2a2a2a 0%, #3c3c3c 100%);
+      --bg-color: linear-gradient(120deg, #2a2a2a 0%, #3c3a3c 100%);
       --text-color: #f0f0f0;
       --card-bg-color: #3a3a3a;
       --card-text-color: #e5e5e5;
@@ -191,7 +191,6 @@
     .refresh-btn:hover {
       background-color: #218838;
     }
-    /* Spinner style for refresh section */
     .spinner-border {
       width: 1rem;
       height: 1rem;
@@ -485,7 +484,7 @@
     
     <!-- Панель фильтров с расширенными опциями -->
     <div class="filter-panel">
-      <!-- Пример как раньше была метрика "Baku Central 1.1" -->
+      <!-- Пример метрики "Baku Central 1.1" -->
       <div class="stats-card">
         <span class="stats-title">Baku Central</span>
         <span class="stats-value">1.1</span>
@@ -597,8 +596,36 @@
   
   <script>
     // ===============================
+    // Инициализация Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHyxC12UaO6QU_nCiWFnegul1Vix5skm8",
+      authDomain: "shldashboard.firebaseapp.com",
+      projectId: "shldashboard",
+      storageBucket: "shldashboard.firebasestorage.app",
+      messagingSenderId: "362566153595",
+      appId: "1:362566153595:web:ee35c2588bd0f798e6f9de"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    
+    // Список разрешённых email
+    const allowedEmails = [
+      "mikhail.garayev@wolt.com",
+      "user2@example.com"
+    ];
+    
+    // Добавляем проверку авторизации сразу после загрузки страницы
+    auth.onAuthStateChanged((user) => {
+      if (!user || !allowedEmails.includes(user.email)) {
+        // Если пользователь не авторизован или его email не разрешён, перенаправляем на страницу входа
+        window.location.href = "login.html";
+      }
+    });
+    
+    // ===============================
     // WEATHER SECTION WITH CACHING
-    const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d"; // Замените на ваш ключ
+    const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d";
     const CITY_NAME = "Baku,AZ";
     async function fetchWeather() {
       const cacheKey = "bakuWeatherData";
@@ -609,7 +636,6 @@
       const cachedData = localStorage.getItem(cacheKey);
       const cachedTimestamp = localStorage.getItem(cacheTimeKey);
       
-      // Если данные кешированы и не старше 15 минут, используем их
       if (cachedData && cachedTimestamp && (now - cachedTimestamp) < cacheTTL) {
         const data = JSON.parse(cachedData);
         updateWeatherUI(data);
@@ -641,7 +667,7 @@
     }
     // ===============================
     
-    // Краткая информация по платформам (можно изменять)
+    // Информация по платформам
     const platformInfo = {
       "CS": "Поддержка клиентов через чат и звонки.",
       "CS/Post order": "Обработка вопросов по заказам после оформления.",
@@ -880,7 +906,6 @@
           html += `</div>`;
           container.innerHTML += html;
         } else {
-          // Обработка карточки Aircall
           let filteredActive = aircallActive.slice().filter(n => n.toLowerCase() !== "away");
           let filteredAway = aircallAway.slice().filter(item => item.name.toLowerCase() !== "away");
           if (currentSearchTerm) {
@@ -905,7 +930,6 @@
         });
       });
       
-      // Инициализация тултипов для иконок
       $('[data-toggle="tooltip"]').tooltip();
     }
     
@@ -945,59 +969,17 @@
       tableEl.innerHTML = "";
     
       const summaryCards = [
-        {
-          title: "On shift now",
-          value: data[6][27] || "",
-        },
-        {
-          title: "Should be on shift",
-          value: data[6][29] || "",
-        },
-        {
-          title: "CS",
-          value: data[6][31] || "",
-          away: data[8][31] || "",
-        },
-        {
-          title: "CS/Post Order",
-          value: data[6][33] || "",
-          away: data[8][33] || "",
-        },
-        {
-          title: "PSR",
-          value: data[6][35] || "",
-          away: data[8][35] || "",
-        },
-        {
-          title: "Venue",
-          value: data[6][37] || "",
-          away: data[8][37] || "",
-        },
-        {
-          title: "Aircall",
-          value: data[6][39] || "",
-          away: data[8][39] || "",
-        },
-        {
-          title: "Simo",
-          value: data[6][41] || "",
-          away: data[8][41] || "",
-        },
-        {
-          title: "ST",
-          value: data[6][43] || "",
-          away: data[8][43] || "",
-        },
-        {
-          title: "Not here",
-          value: (data[8][29] || "") + (data[10][29] ? ", " + data[10][29] : ""),
-          customClass: "small-font-card"
-        },
-        {
-          title: "Will not attend the shift",
-          value: (data[8][27] || "") + (data[10][27] ? ", " + data[10][27] : ""),
-          customClass: "small-font-card"
-        }
+        { title: "On shift now", value: data[6][27] || "" },
+        { title: "Should be on shift", value: data[6][29] || "" },
+        { title: "CS", value: data[6][31] || "", away: data[8][31] || "" },
+        { title: "CS/Post Order", value: data[6][33] || "", away: data[8][33] || "" },
+        { title: "PSR", value: data[6][35] || "", away: data[8][35] || "" },
+        { title: "Venue", value: data[6][37] || "", away: data[8][37] || "" },
+        { title: "Aircall", value: data[6][39] || "", away: data[8][39] || "" },
+        { title: "Simo", value: data[6][41] || "", away: data[8][41] || "" },
+        { title: "ST", value: data[6][43] || "", away: data[8][43] || "" },
+        { title: "Not here", value: (data[8][29] || "") + (data[10][29] ? ", " + data[10][29] : ""), customClass: "small-font-card" },
+        { title: "Will not attend the shift", value: (data[8][27] || "") + (data[10][27] ? ", " + data[10][27] : ""), customClass: "small-font-card" }
       ];
     
       let html = `<div class="shift-summary-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">`;
@@ -1012,17 +994,11 @@
             padding: 16px;
             min-width: 150px;
           ">
-            <h6 class="shift-card-title">
-              ${card.title}
-            </h6>
+            <h6 class="shift-card-title">${card.title}</h6>
             <div style="margin-bottom: 0.5rem;">${card.value || ""}</div>
         `;
         if (card.away) {
-          html += `
-            <div class="shift-card-away">
-              <strong>Away:</strong> ${card.away}
-            </div>
-          `;
+          html += `<div class="shift-card-away"><strong>Away:</strong> ${card.away}</div>`;
         }
         html += `</div>`;
       });
@@ -1139,11 +1115,11 @@
         clearInterval(countdownTimer);
       }
     }
-    // Кнопка Refresh Now и автообновление вызывают эту функцию
     function refreshNow() {
       document.getElementById("refresh-spinner").style.display = "inline-block";
       fetchData();
     }
+    
     async function fetchData() {
       document.getElementById("refresh-spinner").style.display = "inline-block";
       const data = await fetchSheetData(RANGE);
@@ -1155,7 +1131,7 @@
       
       await fetchEmployeeList();
       
-      // Заполнение данных Aircall
+      // Заполнение данных для Aircall
       const aircallConfig = platforms.find(p => p.name === "Aircall");
       aircallActive = [];
       aircallAway = [];
@@ -1234,61 +1210,71 @@
       loadThemePreference();
       initPlatformCheckboxes();
       
-      const platformCheckboxes = document.querySelectorAll(".platform-option");
-      platformCheckboxes.forEach(chk => {
-        chk.addEventListener("change", function() {
-          if (this.value === "all") {
-            if (this.checked) {
-              platformCheckboxes.forEach(cb => {
-                if (cb.value !== "all") {
-                  cb.checked = false;
-                }
-              });
+      // ПРОВЕРКА АУТЕНТИФИКАЦИИ
+      auth.onAuthStateChanged((user) => {
+        if (!user || !allowedEmails.includes(user.email)) {
+          window.location.href = "login.html";
+          return;
+        }
+        
+        // Если пользователь авторизован и разрешен, продолжаем инициализацию:
+        const platformCheckboxes = document.querySelectorAll(".platform-option");
+        platformCheckboxes.forEach(chk => {
+          chk.addEventListener("change", function() {
+            if (this.value === "all") {
+              if (this.checked) {
+                platformCheckboxes.forEach(cb => {
+                  if (cb.value !== "all") {
+                    cb.checked = false;
+                  }
+                });
+              }
+            } else {
+              document.getElementById("platform-all").checked = false;
             }
-          } else {
-            document.getElementById("platform-all").checked = false;
-          }
-          updatePlatformFilter();
+            updatePlatformFilter();
+          });
         });
-      });
       
-      document.getElementById("employee-search").addEventListener("input", function(e) {
-        currentSearchTerm = e.target.value;
-        applyFilters();
-      });
-      document.getElementById("status-filter").addEventListener("change", function(e) {
-        currentStatusFilter = e.target.value;
-        applyFilters();
-      });
-      document.getElementById("realloc-filter").addEventListener("change", function(e) {
-        currentReallocFilter = e.target.value;
-        applyFilters();
-      });
-      document.getElementById("lang-filter").addEventListener("change", function(e) {
-        currentLangFilter = e.target.value;
-        applyFilters();
-      });
-      document.getElementById("break-filter").addEventListener("change", function(e) {
-        currentBreakFilter = e.target.value;
-        fetchBreaksData();
-      });
+        document.getElementById("employee-search").addEventListener("input", function(e) {
+          currentSearchTerm = e.target.value;
+          applyFilters();
+        });
+        document.getElementById("status-filter").addEventListener("change", function(e) {
+          currentStatusFilter = e.target.value;
+          applyFilters();
+        });
+        document.getElementById("realloc-filter").addEventListener("change", function(e) {
+          currentReallocFilter = e.target.value;
+          applyFilters();
+        });
+        document.getElementById("lang-filter").addEventListener("change", function(e) {
+          currentLangFilter = e.target.value;
+          applyFilters();
+        });
+        document.getElementById("break-filter").addEventListener("change", function(e) {
+          currentBreakFilter = e.target.value;
+          fetchBreaksData();
+        });
       
-      const overlay = document.getElementById("modal-overlay");
-      const modalClose = document.getElementById("modal-close");
-      overlay.addEventListener("click", closeEmployeeModal);
-      modalClose.addEventListener("click", closeEmployeeModal);
+        const overlay = document.getElementById("modal-overlay");
+        const modalClose = document.getElementById("modal-close");
+        overlay.addEventListener("click", closeEmployeeModal);
+        modalClose.addEventListener("click", closeEmployeeModal);
       
-      document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
+        document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
       
-      document.getElementById("hamburger-menu").addEventListener("click", function() {
-        document.getElementById("sidebar").classList.toggle("active");
+        document.getElementById("hamburger-menu").addEventListener("click", function() {
+          document.getElementById("sidebar").classList.toggle("active");
+        });
+        document.getElementById("sidebar-close").addEventListener("click", function() {
+          document.getElementById("sidebar").classList.remove("active");
+        });
+      
+        // Запуск загрузки данных
+        fetchData();
+        fetchWeather();
       });
-      document.getElementById("sidebar-close").addEventListener("click", function() {
-        document.getElementById("sidebar").classList.remove("active");
-      });
-      
-      fetchData();
-      fetchWeather();
     });
   </script>
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
