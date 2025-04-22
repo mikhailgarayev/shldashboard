@@ -6,14 +6,12 @@
   <link rel="icon" type="image/png" href="favicon.png" />
   <!-- Подключаем Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
   <style>
-    /* Скрываем тело страницы до завершения проверки авторизации */
-    body.hidden {
-      display: none;
-    }
-
+    /* Скрываем страницу до проверки авторизации */
+    body.hidden { display: none; }
+    
     :root {
+      /* Светлая тема по умолчанию */
       --bg-color: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
       --text-color: #343a40;
       --card-bg-color: #ffffff;
@@ -26,6 +24,7 @@
       --menu-width: 250px;
       --transition-speed: 0.3s;
     }
+    /* Тёмная тема */
     body.dark-theme {
       --bg-color: linear-gradient(120deg, #2a2a2a 0%, #3c3c3c 100%);
       --text-color: #f0f0f0;
@@ -465,9 +464,41 @@
       color: #0056b3;
     }
   </style>
-
+  
+  <!-- Подключаем Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    // Инициализация Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHyxC12UaO6QU_nCiWFnegul1Vix5skm8",
+      authDomain: "shldashboard.firebaseapp.com",
+      projectId: "shldashboard",
+      storageBucket: "shldashboard.firebasestorage.app",
+      messagingSenderId: "362566153595",
+      appId: "1:362566153595:web:ee35c2588bd0f798e6f9de"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    
+    // Список разрешённых email
+    const allowedEmails = [
+      "mikhail.garayev@wolt.com",
+      "user2@example.com"
+    ];
+    
+    // Проверка авторизации – если пользователь не авторизован или его email не разрешён, перенаправляем на login.html
+    auth.onAuthStateChanged((user) => {
+      if (!user || !allowedEmails.includes(user.email)) {
+        window.location.replace("login.html");
+      } else {
+        // Если все ок, показываем содержимое, убираем класс hidden
+        document.body.classList.remove("hidden");
+      }
+    });
+  </script>
 </head>
-<body class="hidden"> <!-- Прячем страницу по умолчанию -->
+<body class="hidden">
   <!-- Гамбургер-меню -->
   <div class="hamburger-menu" id="hamburger-menu">
     <span>&#9776;</span>
@@ -487,6 +518,7 @@
     
     <!-- Панель фильтров с расширенными опциями -->
     <div class="filter-panel">
+      <!-- Пример метрики "Baku Central 1.1" -->
       <div class="stats-card">
         <span class="stats-title">Baku Central</span>
         <span class="stats-value">1.1</span>
@@ -600,55 +632,695 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // ИНИЦИАЛИЗАЦИЯ FIREBASE / ПРОВЕРКА АВТОРИЗАЦИИ
-    // (Список разрешённых email и onAuthStateChanged)
-    // -- Уже инициализировано в <head>, продолжим:
+    // ===============================
+    // WEATHER SECTION WITH CACHING
+    const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d"; // Замените на ваш ключ
+    const CITY_NAME = "Baku,AZ";
+    async function fetchWeather() {
+      const cacheKey = "bakuWeatherData";
+      const cacheTimeKey = "bakuWeatherTimestamp";
+      const now = Date.now();
+      const cacheTTL = 15 * 60 * 1000; // 15 минут
+      
+      const cachedData = localStorage.getItem(cacheKey);
+      const cachedTimestamp = localStorage.getItem(cacheTimeKey);
+      
+      if (cachedData && cachedTimestamp && (now - cachedTimestamp) < cacheTTL) {
+        const data = JSON.parse(cachedData);
+        updateWeatherUI(data);
+        return;
+      }
+      
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${CITY_NAME}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.error("Ошибка получения погоды: " + res.statusText);
+          return;
+        }
+        const data = await res.json();
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        localStorage.setItem(cacheTimeKey, now);
+        updateWeatherUI(data);
+      } catch (err) {
+        console.error("Ошибка при запросе погоды: " + err);
+      }
+    }
+    function updateWeatherUI(data) {
+      const temperature = data.main?.temp ?? null;
+      const windSpeed = data.wind?.speed ?? null;
+      document.getElementById("baku-temp").textContent =
+        temperature ? `${Math.round(temperature)} °C` : "-- °C";
+      document.getElementById("baku-wind").textContent =
+        windSpeed ? `${windSpeed} m/s` : "-- m/s";
+    }
+    // ===============================
     
-    // Как только пользователь авторизуется, показываем страницу
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
-        // Не авторизован => уходим на login
-        window.location.replace("login.html");
-      } else {
-        const allowedEmails = [
-          "mikhail.garayev@wolt.com",
-          "user2@example.com"
-        ];
-        if (!allowedEmails.includes(user.email)) {
-          // Выходим и уходим, если email не разрешён
-          auth.signOut().then(() => {
-            window.location.replace("login.html");
-          });
-        } else {
-          // Если всё ок, показываем страницу
-          document.body.classList.remove("hidden");
+    // Информация по платформам (можно изменять)
+    const platformInfo = {
+      "CS": "Поддержка клиентов через чат и звонки.",
+      "CS/Post order": "Обработка вопросов по заказам после оформления.",
+      "PSR": "Поддержка по техническим вопросам.",
+      "SiMo": "Симуляция операций внутри системы.",
+      "Aircall": "Телефонная поддержка с использованием Aircall.",
+      "Venue": "Поддержка клиентов в определенных регионах.",
+      "Trainee": "Стажеры, находящиеся на обучении.",
+      "ST": "Местная техническая поддержка."
+    };
+    
+    let fetchedData = null;
+    let currentSearchTerm = "";
+    let currentStatusFilter = "both";
+    let currentPlatformFilter = ["all"];
+    let currentReallocFilter = "all";
+    let currentLangFilter = "all";
+    let currentBreakFilter = "upcoming";
+    
+    const SPREADSHEET_ID = "1dICKOxxz9R3x8MY3FKQ9I-IwR9fBUDfMOT9PFDLloAE";
+    const RANGE = "list1!A1:BJ100";
+    const BREAKS_RANGE = "prebreaks!A1:D40";
+    const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxU-4AAiow6Y0TV4ChSY";
+    
+    let employeeData = {};
+    
+    const platforms = [
+      { name: "CS",             url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6643245bfadf62c6edc28feb", colIndexNames: 3, colIndexData: 4,  rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "CS/Post order",  url: "https://ops.wolt.com/support/converse/conversations?conversationListId=664324a0510ac011feaa798c", colIndexNames: 5, colIndexData: 6,  rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "PSR",            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6567a44af7d470550b11dc68", colIndexNames: 7, colIndexData: 8,  rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "SiMo",           url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6668088fc6d870f3cfd61653", colIndexNames: 9, colIndexData: 10, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "Aircall",        url: "https://ops.wolt.com/support/converse/conversations?conversationListId=671a26a2a5b9ae4a2ca603fb", colIndexNames: 11, colIndexData: 12, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "Venue",          url: "https://ops.wolt.com/support/converse/conversations?conversationListId=666807fc28b3f1231948f407", colIndexNames: 13, colIndexData: 14, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "Trainee",        url: "https://wolt.com/", colIndexNames: 15, colIndexData: 16, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "ST",             url: "https://wolt.com/", colIndexNames: 17, colIndexData: 18, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 }
+    ];
+    
+    let aircallActive = [];
+    let aircallAway = [];
+    
+    function logDebug(message) {
+      console.log(message);
+    }
+    
+    async function fetchSheetData(range) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${GOOGLE_API_KEY}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          logDebug("Ошибка получения данных: " + res.statusText);
+          return null;
+        }
+        const data = await res.json();
+        return data.values;
+      } catch (err) {
+        logDebug("Ошибка запроса: " + err);
+        return null;
+      }
+    }
+    
+    async function fetchEmployeeList() {
+      const data = await fetchSheetData("emplist!A1:F");
+      if (!data || data.length < 2) return;
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row[0]) continue;
+        const empName = row[0].trim();
+        const empId = row[1]?.trim() || "";
+        const canRealloc = row[2]?.trim() || "";
+        const primePlatform = row[3]?.trim() || "";
+        const preferredPlatform = row[4]?.trim() || "";
+        const languages = row[5]?.trim() || "";
+        employeeData[empName] = {
+          id: empId,
+          canReallocate: canRealloc,
+          prime: primePlatform,
+          pref: preferredPlatform,
+          languages: languages
+        };
+      }
+    }
+    
+    function generateInboxLink(empId) {
+      return "https://ops.wolt.com/support/converse/users/conversations?assigneeIds=" + encodeURIComponent(empId);
+    }
+    
+    function generateAdminLink(empId) {
+      return "https://ops.wolt.com/support/converse/admin/users?userId=" + encodeURIComponent(empId);
+    }
+    
+    function openEmployeeModal(empName) {
+      const info = employeeData[empName];
+      if (!info) {
+        logDebug("Данные о сотруднике не найдены: " + empName);
+        return;
+      }
+      document.getElementById("modal-emp-name").textContent = empName;
+      document.getElementById("modal-emp-realloc").textContent = info.canReallocate || "N/A";
+      document.getElementById("modal-emp-prime").textContent = info.prime || "N/A";
+      document.getElementById("modal-emp-pref").textContent = info.pref || "N/A";
+      document.getElementById("modal-emp-languages").textContent = info.languages || "N/A";
+      document.getElementById("modal-inbox-link").href = generateInboxLink(info.id);
+      document.getElementById("modal-admin-link").href = generateAdminLink(info.id);
+      document.getElementById("employee-modal").style.display = "block";
+      document.getElementById("modal-overlay").style.display = "block";
+    }
+    
+    function closeEmployeeModal() {
+      document.getElementById("employee-modal").style.display = "none";
+      document.getElementById("modal-overlay").style.display = "none";
+    }
+    
+    const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";
+    const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";
+    
+    async function getAircallUserId(email) {
+      const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
+      const url = `https://api.aircall.io/v1/users/${encodeURIComponent(email)}`;
+      try {
+        logDebug(`Запрос Aircall ID для email: ${email}`);
+        const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
+        if (!res.ok) {
+          logDebug(`Ошибка получения ID Aircall: ${res.statusText} (Статус: ${res.status})`);
+          return null;
+        }
+        const data = await res.json();
+        logDebug(`Получен ID пользователя: ${data.user?.id}`);
+        return data.user?.id || null;
+      } catch (err) {
+        logDebug("Исключение при получении Aircall ID: " + err);
+        return null;
+      }
+    }
+    
+    async function getAircallAvailability(userId) {
+      if (!userId) {
+         logDebug("getAircallAvailability: userId не передан");
+         return "No ID";
+      }
+      const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
+      const url = `https://api.aircall.io/v1/users/${userId}/availability`;
+      try {
+         logDebug(`Запрос статуса Aircall для userId: ${userId}`);
+         const res = await fetch(url, { headers: { "Authorization": `Basic ${authString}` }});
+         if (!res.ok) {
+             logDebug(`Ошибка получения статуса Aircall: ${res.statusText} (Статус: ${res.status})`);
+             return "Error";
+         }
+         const data = await res.json();
+         let status = data?.user_availability?.availability_status || data?.availability;
+         logDebug(`Получен статус для userId ${userId}: ${status}`);
+         return status || "Unknown";
+      } catch (err) {
+         logDebug("Исключение в getAircallAvailability: " + err);
+         return "Error";
+      }
+    }
+    
+    function passReallocAndLang(empName) {
+      const info = employeeData[empName];
+      if (!info) return false;
+      if (currentReallocFilter !== "all") {
+        if (info.canReallocate !== currentReallocFilter) return false;
+      }
+      if (currentLangFilter !== "all") {
+        let lang = info.languages.replace(/\s+/g, "");
+        if (currentLangFilter === "two") {
+          if (!(lang.includes("🇦🇿") && lang.includes("🇬🇧")) || lang.includes("🇷🇺")) {
+            return false;
+          }
+        } else if (currentLangFilter === "three") {
+          if (!(lang.includes("🇦🇿") && lang.includes("🇬🇧") && lang.includes("🇷🇺"))) {
+            return false;
+          }
         }
       }
-    });
-
-    /* Остальная логика (fetchData, fetchWeather, initPlatformCheckboxes, и т.д.) */
-    // ==========================================================
+      return true;
+    }
     
-    const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d";
-    const CITY_NAME = "Baku,AZ";
-
-    /* ... тот же код fetchWeather(), updateWeatherUI(), etc. */
-    // См. предыдущие ответы — всё без изменений
-    // ...
+    function applyFilters() {
+      const container = document.getElementById("platforms-container");
+      container.innerHTML = "";
+      
+      platforms.forEach(platform => {
+        if (!currentPlatformFilter.includes("all") && !currentPlatformFilter.includes(platform.name)) {
+          return;
+        }
+        
+        if (platform.name !== "Aircall") {
+          let activeNames = [];
+          for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
+            const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
+            if (nm) activeNames.push(nm);
+          }
+          let awayData = [];
+          for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
+            const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
+            if (!nm) continue;
+            const rsn = fetchedData[r]?.[platform.colIndexData]?.trim() || "";
+            awayData.push({ name: nm, reason: rsn });
+          }
+          if (currentSearchTerm) {
+            activeNames = activeNames.filter(n => n.toLowerCase().includes(currentSearchTerm.toLowerCase()));
+            awayData = awayData.filter(item => item.name.toLowerCase().includes(currentSearchTerm.toLowerCase()));
+          }
+          activeNames = activeNames.filter(n => passReallocAndLang(n));
+          awayData = awayData.filter(item => passReallocAndLang(item.name));
+          
+          let showActive = true, showAway = true;
+          if (currentStatusFilter === "active") showAway = false;
+          else if (currentStatusFilter === "away") showActive = false;
+          
+          let html = `<div class="platform-card">
+              <h5>
+                <a href="${platform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть ${platform.name}">
+                  ${platform.name}
+                </a>
+                <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name] || ''}">ℹ️</span>
+              </h5>`;
+          if (showActive) {
+            html += `<p><small>Активные (${activeNames.length})</small></p><ul>`;
+            activeNames.forEach(n => {
+              html += `<li class="employee-item" data-employee="${n}">${n}</li>`;
+            });
+            html += `</ul>`;
+          }
+          if (showAway) {
+            html += `<p><small>Away (${awayData.length})</small></p><ul>`;
+            awayData.forEach(item => {
+              html += `<li class="employee-item" data-employee="${item.name}">${item.name}`;
+              if (item.reason) html += ` (${item.reason})`;
+              html += `</li>`;
+            });
+            html += `</ul>`;
+          }
+          html += `</div>`;
+          container.innerHTML += html;
+        } else {
+          let filteredActive = aircallActive.slice().filter(n => n.toLowerCase() !== "away");
+          let filteredAway = aircallAway.slice().filter(item => item.name.toLowerCase() !== "away");
+          if (currentSearchTerm) {
+            filteredActive = filteredActive.filter(n => n.toLowerCase().includes(currentSearchTerm.toLowerCase()));
+            filteredAway = filteredAway.filter(item => item.name.toLowerCase().includes(currentSearchTerm.toLowerCase()));
+          }
+          filteredActive = filteredActive.filter(n => passReallocAndLang(n));
+          filteredAway = filteredAway.filter(item => passReallocAndLang(item.name));
+          
+          let showActive = true, showAway = true;
+          if (currentStatusFilter === "active") showAway = false;
+          else if (currentStatusFilter === "away") showActive = false;
+          renderAircallCardWithStatuses(filteredActive, filteredAway, showActive, showAway);
+        }
+      });
+      
+      const employeeItems = document.querySelectorAll(".employee-item");
+      employeeItems.forEach(item => {
+        item.addEventListener("click", function() {
+          const empName = this.getAttribute("data-employee");
+          openEmployeeModal(empName);
+        });
+      });
+      
+      $('[data-toggle="tooltip"]').tooltip();
+    }
     
-    // Пример: после DOMContentLoaded запускаем initPlatformCheckboxes, fetchData, fetchWeather
+    function renderAircallCardWithStatuses(activeList, awayList, showActive = true, showAway = true) {
+      const aircallPlatform = platforms.find(p => p.name === "Aircall");
+      let html = `<div class="platform-card">
+            <h5>
+              <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть Aircall">
+                Aircall
+              </a>
+              <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ''}">ℹ️</span>
+            </h5>`;
+      if (showActive) {
+        html += `<p><small>Активные (${activeList.length})</small></p>
+                 <ul id="aircall-active-list">` +
+                 activeList.map((n, index) => {
+                   const safeId = `aircall-active-${index}`;
+                   return `<li id="${safeId}" class="employee-item" data-employee="${n}">${n} - <span style="color:blue;">Loading...</span></li>`;
+                 }).join("") +
+                 `</ul>`;
+      }
+      if (showAway) {
+        html += `<p><small>Away (${awayList.length})</small></p>
+                 <ul>` +
+                 awayList.map(a => {
+                   const extra = a.reason ? " - " + a.reason : "";
+                   return `<li class="employee-item" data-employee="${a.name}">${a.name}${extra}</li>`;
+                 }).join("") +
+                 `</ul>`;
+      }
+      html += `</div>`;
+      document.getElementById("platforms-container").innerHTML += html;
+    }
+    
+    function renderShiftSummary(data) {
+      const tableEl = document.getElementById("summary-table"); 
+      tableEl.innerHTML = "";
+    
+      const summaryCards = [
+        {
+          title: "On shift now",
+          value: data[6][27] || "",
+        },
+        {
+          title: "Should be on shift",
+          value: data[6][29] || "",
+        },
+        {
+          title: "CS",
+          value: data[6][31] || "",
+          away: data[8][31] || "",
+        },
+        {
+          title: "CS/Post Order",
+          value: data[6][33] || "",
+          away: data[8][33] || "",
+        },
+        {
+          title: "PSR",
+          value: data[6][35] || "",
+          away: data[8][35] || "",
+        },
+        {
+          title: "Venue",
+          value: data[6][37] || "",
+          away: data[8][37] || "",
+        },
+        {
+          title: "Aircall",
+          value: data[6][39] || "",
+          away: data[8][39] || "",
+        },
+        {
+          title: "Simo",
+          value: data[6][41] || "",
+          away: data[8][41] || "",
+        },
+        {
+          title: "ST",
+          value: data[6][43] || "",
+          away: data[8][43] || "",
+        },
+        {
+          title: "Not here",
+          value: (data[8][29] || "") + (data[10][29] ? ", " + data[10][29] : ""),
+          customClass: "small-font-card"
+        },
+        {
+          title: "Will not attend the shift",
+          value: (data[8][27] || "") + (data[10][27] ? ", " + data[10][27] : ""),
+          customClass: "small-font-card"
+        }
+      ];
+    
+      let html = `<div class="shift-summary-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">`;
+    
+      summaryCards.forEach(card => {
+        html += `
+          <div class="shift-card ${card.customClass ? card.customClass : ""}" style="
+            background: var(--card-bg-color);
+            color: var(--card-text-color);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 16px;
+            min-width: 150px;
+          ">
+            <h6 class="shift-card-title">
+              ${card.title}
+            </h6>
+            <div style="margin-bottom: 0.5rem;">${card.value || ""}</div>
+        `;
+        if (card.away) {
+          html += `
+            <div class="shift-card-away">
+              <strong>Away:</strong> ${card.away}
+            </div>
+          `;
+        }
+        html += `</div>`;
+      });
+    
+      html += `</div>`;
+      tableEl.innerHTML = html;
+    }
+    
+    async function fetchBreaksData() {
+      const data = await fetchSheetData(BREAKS_RANGE);
+      if (!data) return;
+      const breaksObjects = arrayToObjects(data);
+      const now = new Date();
+      const currMinutes = now.getHours() * 60 + now.getMinutes();
+      let filteredBreaks = breaksObjects;
+      if (currentBreakFilter === "upcoming") {
+        const horizon = currMinutes + 60;
+        filteredBreaks = breaksObjects.filter(item => {
+          if (!item["Break Time"]) return false;
+          const timeStr = item["Break Time"].trim();
+          const minutes = parseTimeToMinutes(timeStr);
+          return (minutes >= currMinutes && minutes <= horizon);
+        });
+        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
+      } else if (currentBreakFilter === "all") {
+        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
+      }
+      let html = `<div class="break-card">
+                    <h5>${currentBreakFilter === "upcoming" ? "Upcoming breaks in the next hour" : "All Breaks"}</h5>
+                    <ul>`;
+      filteredBreaks.forEach(item => {
+        html += `
+          <li>
+            <strong>${item["Name"]}</strong><br/>
+            Break at: <strong>${item["Break Time"]}</strong><br/>
+            Shift: ${item["Shift Start Time"]} | ${item["Working Space"]}
+          </li>`;
+      });
+      html += `</ul></div>`;
+      document.getElementById("breaks-app").innerHTML = html;
+    }
+    
+    function parseTimeToMinutes(timeStr) {
+      timeStr = timeStr.trim();
+      let parts = timeStr.split(":");
+      if (parts.length < 2) return 0;
+      let hours = parseInt(parts[0], 10);
+      let minutes = parseInt(parts[1], 10);
+      return hours * 60 + minutes;
+    }
+    
+    function arrayToObjects(arr) {
+      if (!arr.length) return [];
+      const header = arr[0];
+      return arr.slice(1).map(row => {
+        const obj = {};
+        header.forEach((key, i) => {
+          obj[key] = row[i] || "";
+        });
+        return obj;
+      });
+    }
+    
+    async function fetchAircallStatuses() {
+      const activeElements = document.querySelectorAll("[id^='aircall-active-']");
+      for (let elem of activeElements) {
+        const name = elem.textContent.split(" - ")[0].trim();
+        elem.querySelector("span").textContent = "Fetching ID...";
+        const email = generateWoltEmail(name);
+        const userId = await getAircallUserId(email);
+        if (!userId) {
+          elem.querySelector("span").textContent = "No ID";
+          continue;
+        }
+        elem.querySelector("span").textContent = "Fetching status...";
+        const status = await getAircallAvailability(userId);
+        elem.querySelector("span").textContent = status;
+      }
+    }
+    
+    let autoRefreshEnabled = true;
+    let refreshInterval = 15;
+    let refreshTimer = null;
+    let countdownTimer = null;
+    let countdownValue = refreshInterval;
+    
+    function resetAutoRefresh() {
+      clearTimeout(refreshTimer);
+      clearInterval(countdownTimer);
+      countdownValue = refreshInterval;
+      updateCountdownDisplay();
+      refreshTimer = setTimeout(fetchData, refreshInterval * 1000);
+      countdownTimer = setInterval(() => {
+        countdownValue--;
+        updateCountdownDisplay();
+        if (countdownValue <= 0) clearInterval(countdownTimer);
+      }, 1000);
+    }
+    function updateCountdownDisplay() {
+      const countdownElem = document.getElementById("countdown");
+      if (countdownElem) {
+        countdownElem.textContent = countdownValue;
+      }
+    }
+    function toggleAutoRefresh() {
+      autoRefreshEnabled = !autoRefreshEnabled;
+      const btn = document.getElementById("toggle-autorefresh");
+      if (autoRefreshEnabled) {
+        btn.textContent = "Disable Auto Refresh";
+        resetAutoRefresh();
+      } else {
+        btn.textContent = "Enable Auto Refresh";
+        clearTimeout(refreshTimer);
+        clearInterval(countdownTimer);
+      }
+    }
+    // Кнопка Refresh Now и автообновление вызывают эту функцию
+    function refreshNow() {
+      document.getElementById("refresh-spinner").style.display = "inline-block";
+      fetchData();
+    }
+    
+    async function fetchData() {
+      document.getElementById("refresh-spinner").style.display = "inline-block";
+      const data = await fetchSheetData(RANGE);
+      if (!data) {
+        document.getElementById("refresh-spinner").style.display = "none";
+        return;
+      }
+      fetchedData = data;
+      
+      await fetchEmployeeList();
+      
+      // Заполнение данных для Aircall
+      const aircallConfig = platforms.find(p => p.name === "Aircall");
+      aircallActive = [];
+      aircallAway = [];
+      for (let r = aircallConfig.rowActiveNamesStart; r <= aircallConfig.rowActiveNamesEnd; r++) {
+        const name = data[r]?.[aircallConfig.colIndexNames]?.trim();
+        if (name) aircallActive.push(name);
+      }
+      for (let r = aircallConfig.rowAwayNamesStart; r <= aircallConfig.rowAwayNamesEnd; r++) {
+        const name = data[r]?.[aircallConfig.colIndexNames]?.trim();
+        const reason = data[r]?.[aircallConfig.colIndexData]?.trim() || "";
+        if (name) aircallAway.push({ name, reason });
+      }
+      
+      renderShiftSummary(data);
+      fetchBreaksData();
+      applyFilters();
+      fetchAircallStatuses();
+      
+      document.getElementById("refresh-spinner").style.display = "none";
+      if (autoRefreshEnabled) resetAutoRefresh();
+    }
+    
+    function generateWoltEmail(name) {
+      if (!name) return "";
+      const parts = name.split(" ");
+      return parts.length < 2
+        ? parts[0].toLowerCase() + "@wolt.com"
+        : parts[0].toLowerCase() + "." + parts[1].toLowerCase() + "@wolt.com";
+    }
+    
+    function loadThemePreference() {
+      const saved = localStorage.getItem("darkThemeEnabled");
+      if (saved === "true") {
+        document.body.classList.add("dark-theme");
+        const themeCheckbox = document.getElementById("theme-checkbox");
+        if (themeCheckbox) themeCheckbox.checked = true;
+      }
+    }
+    function toggleTheme(e) {
+      const isDark = e.target.checked;
+      document.body.classList.toggle("dark-theme", isDark);
+      localStorage.setItem("darkThemeEnabled", isDark.toString());
+    }
+    
+    function initPlatformCheckboxes() {
+      const dropdownMenu = document.getElementById("platform-dropdown-menu");
+      while (dropdownMenu.children.length > 1) {
+        dropdownMenu.removeChild(dropdownMenu.lastChild);
+      }
+      platforms.forEach(platform => {
+        const div = document.createElement("div");
+        div.className = "dropdown-item platform-checkbox";
+        div.innerHTML = `
+          <div class="form-check">
+            <input class="form-check-input platform-option" type="checkbox" value="${platform.name}" id="platform-${platform.name}">
+            <label class="form-check-label" for="platform-${platform.name}">${platform.name}</label>
+          </div>
+        `;
+        dropdownMenu.appendChild(div);
+      });
+    }
+    
+    function updatePlatformFilter() {
+      const checkboxes = document.querySelectorAll(".platform-option");
+      const selected = [];
+      checkboxes.forEach(chk => {
+        if (chk.checked) {
+          selected.push(chk.value);
+        }
+      });
+      currentPlatformFilter = selected.length ? selected : ["all"];
+      applyFilters();
+    }
+    
     document.addEventListener("DOMContentLoaded", () => {
-      // Изначально body.hidden => ждём onAuthStateChanged
-      
-      // Остальные функции (инициализация, фильтры) можно запускать, 
-      // но итоговый рендер будет виден только после auth.
-      initPlatformCheckboxes();
       loadThemePreference();
+      initPlatformCheckboxes();
       
-      // Навешиваем обработчики
-      // ...
+      const platformCheckboxes = document.querySelectorAll(".platform-option");
+      platformCheckboxes.forEach(chk => {
+        chk.addEventListener("change", function() {
+          if (this.value === "all") {
+            if (this.checked) {
+              platformCheckboxes.forEach(cb => {
+                if (cb.value !== "all") {
+                  cb.checked = false;
+                }
+              });
+            }
+          } else {
+            document.getElementById("platform-all").checked = false;
+          }
+          updatePlatformFilter();
+        });
+      });
       
-      // Запуск загрузки
+      document.getElementById("employee-search").addEventListener("input", function(e) {
+        currentSearchTerm = e.target.value;
+        applyFilters();
+      });
+      document.getElementById("status-filter").addEventListener("change", function(e) {
+        currentStatusFilter = e.target.value;
+        applyFilters();
+      });
+      document.getElementById("realloc-filter").addEventListener("change", function(e) {
+        currentReallocFilter = e.target.value;
+        applyFilters();
+      });
+      document.getElementById("lang-filter").addEventListener("change", function(e) {
+        currentLangFilter = e.target.value;
+        applyFilters();
+      });
+      document.getElementById("break-filter").addEventListener("change", function(e) {
+        currentBreakFilter = e.target.value;
+        fetchBreaksData();
+      });
+      
+      const overlay = document.getElementById("modal-overlay");
+      const modalClose = document.getElementById("modal-close");
+      overlay.addEventListener("click", closeEmployeeModal);
+      modalClose.addEventListener("click", closeEmployeeModal);
+      
+      document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
+      
+      document.getElementById("hamburger-menu").addEventListener("click", function() {
+        document.getElementById("sidebar").classList.toggle("active");
+      });
+      document.getElementById("sidebar-close").addEventListener("click", function() {
+        document.getElementById("sidebar").classList.remove("active");
+      });
+      
       fetchData();
       fetchWeather();
     });
