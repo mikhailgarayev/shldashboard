@@ -1,60 +1,185 @@
 <!DOCTYPE html>
-<html lang="eng">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in with Google</title>
   <!-- Подключаем Firebase через CDN (compat-версия для простоты) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <!-- Подключаем Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Подключаем Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary-color: #4285F4;
+      --primary-hover: #3367D6;
+      --error-color: #EA4335;
+      --text-color: #202124;
+      --text-secondary: #5F6368;
+      --border-radius: 12px;
+      --box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      --transition: all 0.2s ease-in-out;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
     body {
-      font-family: sans-serif;
-      background: #f7f7f7;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
+      color: var(--text-color);
+      line-height: 1.6;
     }
+    
     .login-container {
       background: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-      width: 300px;
+      padding: 40px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      width: 100%;
+      max-width: 420px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
+    
+    .login-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #4285F4 0%, #34A853 33%, #FBBC05 66%, #EA4335 100%);
+    }
+    
+    .logo {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .logo svg {
+      width: 48px;
+      height: 48px;
+    }
+    
     h1 {
-      margin-bottom: 20px;
-      font-size: 1.8rem;
+      margin-bottom: 24px;
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--text-color);
     }
-    button {
-      width: 95%;
-      padding: 10px;
-      margin: 10px 0;
-      background: #4285F4;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
+    
+    .subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 32px;
       font-size: 1rem;
+      font-weight: 400;
+    }
+    
+    .google-btn {
+      width: 100%;
+      padding: 12px 24px;
+      margin: 10px 0;
+      background: #fff;
+      color: var(--text-color);
+      border: 1px solid #dadce0;
+      border-radius: var(--border-radius);
+      font-size: 0.95rem;
+      font-weight: 500;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
     }
-    button:hover {
-      background: #357ae8;
+    
+    .google-btn:hover {
+      background: #f8f9fa;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+    
+    .google-btn:active {
+      background: #f1f3f4;
+    }
+    
+    .google-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 12px;
+    }
+    
     .error-message {
-      color: red;
+      color: var(--error-color);
       font-size: 0.9rem;
-      margin-top: 10px;
+      margin-top: 16px;
+      padding: 12px;
+      background-color: rgba(234, 67, 53, 0.1);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .error-message i {
+      font-size: 1.1rem;
+    }
+    
+    .footer {
+      margin-top: 32px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+    
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 32px 24px;
+        margin: 0 16px;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h1>Login to Dashboard</h1>
-    <!-- Только кнопка входа через Google -->
-    <button id="google-signin-btn">Sign in with Google</button>
-    <div class="error-message" id="login-error"></div>
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#4285F4">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+      </svg>
+    </div>
+    <h1>Welcome to SUMO Dashboard</h1>
+    <p class="subtitle">Sign in with your company account to continue</p>
+    
+    <button id="google-signin-btn" class="google-btn">
+      <img src="https://www.svgrepo.com/show/380993/google-logo-search-new.svg" alt="Google logo" class="google-icon">
+      Sign in with Google
+    </button>
+    
+    <div class="error-message" id="login-error" style="display: none;">
+      <i class="material-icons">error_outline</i>
+      <span id="error-text"></span>
+    </div>
+    
+    <div class="footer">
+      © 2025 Mikhail Garayev. All rights reserved.
+    </div>
   </div>
 
   <script>
@@ -63,7 +188,7 @@
       apiKey: "AIzaSyAHyxC12UaO6QU_nCiWFnegul1Vix5skm8",
       authDomain: "shldashboard.firebaseapp.com",
       projectId: "shldashboard",
-      storageBucket: "shldashboard.firebasestorage.app",
+      storageBucket: "shldashboard.appspot.com",
       messagingSenderId: "362566153595",
       appId: "1:362566153595:web:ee35c2588bd0f798e6f9de"
     };
@@ -80,25 +205,38 @@
 
     // Обработчик клика на кнопку "Войти через Google"
     const googleBtn = document.getElementById("google-signin-btn");
+    const errorDiv = document.getElementById("login-error");
+    const errorText = document.getElementById("error-text");
+    
     googleBtn.addEventListener("click", () => {
+      errorDiv.style.display = "none";
+      googleBtn.disabled = true;
+      googleBtn.innerHTML = `<span class="material-icons" style="margin-right: 8px;">hourglass_empty</span> Signing in...`;
+      
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithPopup(provider)
         .then((result) => {
           const user = result.user;
           // Проверяем, входит ли email пользователя в список разрешённых
           if (allowedEmails.includes(user.email)) {
-            console.log("Acces restircted:", user.email);
+            console.log("Access granted:", user.email);
             window.location.href = "index.html"; // Перенаправляем на защищённую страницу
           } else {
-            console.error("Acces resctricted for: " + user.email);
+            console.error("Access restricted for: " + user.email);
             // Выводим сообщение об ошибке и выходим
-            document.getElementById("login-error").textContent = "You are not allowed to visit this site :)";
+            errorText.textContent = "Access denied. Your account is not authorized.";
+            errorDiv.style.display = "flex";
             auth.signOut();
           }
         })
         .catch((error) => {
           console.error("Failed to login with Google:", error.message);
-          document.getElementById("login-error").textContent = error.message;
+          errorText.textContent = error.message;
+          errorDiv.style.display = "flex";
+        })
+        .finally(() => {
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = `<img src="https://www.svgrepo.com/show/380993/google-logo-search-new.svg" alt="Google logo" class="google-icon"> Sign in with Google`;
         });
     });
 
