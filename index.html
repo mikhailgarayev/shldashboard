@@ -26,7 +26,7 @@
     }
     /* Тёмная тема */
     body.dark-theme {
-      --bg-color: linear-gradient(120deg, #2a2a2a 0%, #3c3c3c 100%);
+      --bg-color: linear-gradient(120deg, #2a2a2a 0%, #3c3a3c 100%);
       --text-color: #f0f0f0;
       --card-bg-color: #3a3a3a;
       --card-text-color: #e5e5e5;
@@ -669,7 +669,7 @@
 
   <script>
     // ===============================
-    // WEATHER SECTION WITH CACHING
+    // WEATHER SECTION WITH CACHING & EMOJI
     const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d";
     const CITY_NAME = "Baku,AZ";
     async function fetchWeather() {
@@ -705,8 +705,29 @@
     function updateWeatherUI(data) {
       const temperature = data.main?.temp ?? null;
       const windSpeed = data.wind?.speed ?? null;
+      // Определяем погодный смайлик
+      let weatherEmoji = "";
+      if (data.weather && data.weather.length > 0) {
+        const condition = data.weather[0].main;
+        switch (condition) {
+          case "Clear":
+            weatherEmoji = "☀️"; break;
+          case "Clouds":
+            weatherEmoji = "☁️"; break;
+          case "Rain":
+          case "Drizzle":
+            weatherEmoji = "🌧️"; break;
+          case "Thunderstorm":
+            weatherEmoji = "⛈️"; break;
+          case "Snow":
+            weatherEmoji = "❄️"; break;
+          default:
+            weatherEmoji = ""; break;
+        }
+      }
+      
       document.getElementById("baku-temp").textContent =
-        temperature ? `${Math.round(temperature)} °C` : "-- °C";
+        temperature ? `${Math.round(temperature)} °C ${weatherEmoji}` : "-- °C";
       document.getElementById("baku-wind").textContent =
         windSpeed ? `${windSpeed} m/s` : "-- m/s";
     }
@@ -933,11 +954,18 @@
                 <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name] || ''}">ℹ️</span>
               </h5>`;
           if (showActive) {
-            html += `<p><small>Активные (${activeNames.length})</small></p><ul>`;
-            activeNames.forEach(n => {
-              html += `<li class="employee-item" data-employee="${n}">${n}</li>`;
-            });
-            html += `</ul>`;
+            if (activeNames.length === 0) {
+              html += `<p><small style="color: red; font-weight: bold;">Активные (0)</small>
+                <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">
+                  &#9888;
+                </span></p>`;
+            } else {
+              html += `<p><small>Активные (${activeNames.length})</small></p><ul>`;
+              activeNames.forEach(n => {
+                html += `<li class="employee-item" data-employee="${n}">${n}</li>`;
+              });
+              html += `</ul>`;
+            }
           }
           if (showAway) {
             html += `<p><small>Away (${awayData.length})</small></p><ul>`;
@@ -951,6 +979,7 @@
           html += `</div>`;
           container.innerHTML += html;
         } else {
+          // Для Aircall используем отдельную функцию
           let filteredActive = aircallActive.slice().filter(n => n.toLowerCase() !== "away");
           let filteredAway = aircallAway.slice().filter(item => item.name.toLowerCase() !== "away");
           if (currentSearchTerm) {
@@ -988,13 +1017,21 @@
               <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ''}">ℹ️</span>
             </h5>`;
       if (showActive) {
-        html += `<p><small>Активные (${activeList.length})</small></p>
-                 <ul id="aircall-active-list">` +
-                 activeList.map((n, index) => {
-                   const safeId = `aircall-active-${index}`;
-                   return `<li id="${safeId}" class="employee-item" data-employee="${n}">${n} - <span style="color:blue;">Loading...</span></li>`;
-                 }).join("") +
-                 `</ul>`;
+        if (activeList.length === 0) {
+          html += `<p><small style="color: red; font-weight: bold;">Активные (0)</small>
+                    <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">
+                      &#9888;
+                    </span>
+                  </p>`;
+        } else {
+          html += `<p><small>Активные (${activeList.length})</small></p>
+                   <ul id="aircall-active-list">` +
+                   activeList.map((n, index) => {
+                     const safeId = `aircall-active-${index}`;
+                     return `<li id="${safeId}" class="employee-item" data-employee="${n}">${n} - <span style="color: blue;">Loading...</span></li>`;
+                   }).join("") +
+                   `</ul>`;
+        }
       }
       if (showAway) {
         html += `<p><small>Away (${awayList.length})</small></p>
