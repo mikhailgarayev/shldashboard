@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>SUMO Dashboard</title>
-  <!-- Подключаем Bootstrap (опционально) -->
+  <!-- Подключаем Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
     :root {
@@ -15,6 +15,10 @@
       --card-border-color: #dee2e6;
       --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
       --card-hover-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      --menu-bg-color: #ffffff;
+      --menu-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      --menu-width: 250px;
+      --transition-speed: 0.3s;
     }
     /* Тёмная тема */
     body.dark-theme {
@@ -25,7 +29,9 @@
       --card-border-color: #555555;
       --card-shadow: 0 4px 16px rgba(255,255,255,0.08);
       --card-hover-shadow: 0 6px 20px rgba(255,255,255,0.12);
+      --menu-bg-color: #3a3a3a;
     }
+    
     /* Общий сброс и фон */
     html, body {
       margin: 0;
@@ -36,47 +42,156 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow-x: hidden;
       color: var(--text-color);
-      transition: background 0.3s ease, color 0.3s ease;
+      transition: background var(--transition-speed) ease, color var(--transition-speed) ease;
     }
+    
+    /* Сайдбар (меню) */
+    .hamburger-menu {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      cursor: pointer;
+    }
+    .hamburger-menu span {
+      font-size: 28px;
+      color: var(--text-color);
+    }
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: var(--menu-width);
+      height: 100%;
+      background: var(--menu-bg-color);
+      box-shadow: var(--menu-shadow);
+      transition: left var(--transition-speed) ease;
+      z-index: 1099;
+      padding-top: 20px;
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+    #sidebar.active {
+      left: 0;
+    }
+    #sidebar .close-btn {
+      display: block;
+      text-align: right;
+      font-size: 24px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+    #sidebar a {
+      display: block;
+      padding: 10px 5px;
+      color: var(--text-color);
+      text-decoration: none;
+      border-bottom: 1px solid var(--card-border-color);
+    }
+    #sidebar a:hover {
+      background-color: var(--bg-color);
+    }
+    
     .dashboard-container {
       width: 100%;
       margin: 0;
-      padding: 40px 20px;
+      padding: 20px;
       box-sizing: border-box;
     }
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       font-weight: 500;
       font-size: 2rem;
       color: var(--text-color);
     }
-    /* Блок инструментов */
-    .tools-bar {
+    
+    /* Панель фильтров */
+    .filter-panel {
+      background: var(--card-bg-color);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
       display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      box-shadow: var(--card-shadow);
+    }
+    .stats-card {
+      padding: 10px 15px;
+      background: var(--bg-color);
+      border-radius: 8px;
+      border: 1px solid var(--card-border-color);
+      min-width: 180px;
+    }
+    .stats-title {
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+    .stats-value {
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    .filter-section {
+      display: flex;
+      gap: 10px;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
     }
-    .tools-bar > * {
-      margin: 5px;
+    .filter-dropdown {
+      padding: 8px 12px;
+      border: 1px solid var(--card-border-color);
+      border-radius: 6px;
+      background: var(--card-bg-color);
+      min-width: 120px;
+      color: var(--text-color);
     }
+    .search-section {
+      display: flex;
+      margin-left: auto;
+    }
+    .search-input {
+      padding: 8px 12px;
+      border: 1px solid var(--card-border-color);
+      border-radius: 6px 0 0 6px;
+      background: var(--card-bg-color);
+      width: 200px;
+      color: var(--text-color);
+    }
+    .search-btn {
+      padding: 8px 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+    }
+    .search-btn:hover {
+      background: #0069d9;
+    }
+    
+    /* Dropdown с чекбоксами */
+    .dropdown-menu {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .platform-checkbox {
+      padding: 5px 15px;
+    }
+    
     /* Переключатель темы */
     .theme-toggle-container {
       display: flex;
       align-items: center;
-    }
-    .theme-toggle-label {
-      margin-right: 8px;
-      font-size: 0.9rem;
+      gap: 5px;
     }
     .theme-switch {
       position: relative;
       display: inline-block;
-      width: 52px;
-      height: 28px;
+      width: 50px;
+      height: 24px;
     }
     .theme-switch input {
       opacity: 0;
@@ -88,121 +203,91 @@
       cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
       background-color: #ccc;
-      border-radius: 34px;
-      transition: 0.4s;
+      transition: .4s;
+      border-radius: 24px;
     }
     .slider:before {
       position: absolute;
       content: "☀";
-      color: #f39c12;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      width: 22px;
-      height: 22px;
+      height: 18px;
+      width: 18px;
       left: 3px;
       bottom: 3px;
+      background-color: white;
+      transition: .4s;
       border-radius: 50%;
-      background-color: #fff;
-      transition: 0.4s;
+      font-size: 12px;
+      line-height: 18px;
+      text-align: center;
+      color: #f39c12;
     }
     input:checked + .slider {
       background-color: #007bff;
     }
     input:checked + .slider:before {
-      transform: translateX(24px);
+      transform: translateX(26px);
       content: "🌙";
       color: #f1c40f;
     }
-    /* Стили для кнопок */
-    .btn {
-      transition: background-color 0.3s, box-shadow 0.3s;
-    }
-    /* Фильтры */
-    .tools-bar input[type="text"],
-    .tools-bar select {
-      padding: 8px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    .tools-bar input[type="text"]:focus,
-    .tools-bar select:focus {
-      outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 5px rgba(0,123,255,0.5);
-    }
-    /* Горизонтальная лента карточек */
+    
+    /* Карточки и таблицы */
     .platforms-row {
       display: flex;
       flex-wrap: nowrap;
       align-items: flex-start;
       justify-content: space-between;
       overflow-x: auto;
-      width: 100%;
       gap: 10px;
     }
     .platform-card {
       flex: 1 1 220px;
       min-width: 220px;
-      box-sizing: border-box;
       background: var(--card-bg-color);
       color: var(--card-text-color);
       border-radius: 16px;
       padding: 20px;
       box-shadow: var(--card-shadow);
-      transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
-      white-space: normal;
+      transition: transform 0.2s, box-shadow 0.2s;
       overflow-wrap: break-word;
-      word-break: normal;
     }
     .platform-card:hover {
       transform: translateY(-3px);
       box-shadow: var(--card-hover-shadow);
     }
     .platform-card h5 {
-      color: var(--text-color);
-      margin-bottom: 12px;
       text-align: center;
       font-weight: 600;
       font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: var(--text-color);
     }
-    .platform-card h5 a {
-      text-decoration: underline;
-      color: #007bff;
+    .platform-card h5 .info-icon {
+      display: inline-block;
+      margin-left: 5px;
       cursor: pointer;
-    }
-    .platform-card h5 a:hover {
-      color: #0056b3;
+      font-size: 0.9rem;
+      vertical-align: middle;
     }
     .platform-card p {
       text-align: center;
-      color: #6c757d;
       margin: 10px 0;
       font-size: 0.85rem;
+      color: #6c757d;
     }
     .platform-card ul {
       list-style: none;
       padding-left: 0;
-      margin: 0;
       font-size: 0.85rem;
       color: var(--card-text-color);
     }
-    /* Убираем доп. текст, оставляем только имя */
     .platform-card ul li {
-      border-bottom: 1px solid var(--card-border-color);
       padding: 4px 0;
-      white-space: normal;
-      overflow-wrap: break-word;
-      word-break: normal;
       cursor: pointer;
+      border-bottom: 1px solid var(--card-border-color);
     }
     .platform-card ul li:last-child {
       border-bottom: none;
     }
-    /* Shift Summary Card */
     .shift-summary-card {
       background: var(--card-bg-color);
       color: var(--card-text-color);
@@ -210,11 +295,8 @@
       box-shadow: var(--card-shadow);
       padding: 20px;
       margin: 0 auto 40px;
-      width: auto;
       text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
       overflow-wrap: break-word;
-      word-break: normal;
     }
     .shift-summary-card:hover {
       transform: translateY(-3px);
@@ -237,7 +319,6 @@
       padding: 8px 12px;
       text-align: center;
       font-size: 0.85rem;
-      white-space: normal;
       color: var(--card-text-color);
     }
     .shift-summary-grid th {
@@ -249,7 +330,6 @@
       border: 1px solid var(--card-border-color);
       border-radius: 8px;
     }
-    /* Upcoming Breaks */
     #breaks-section {
       margin-top: 40px;
     }
@@ -269,9 +349,7 @@
       margin: 0 auto 40px;
       max-width: 600px;
       text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
       overflow-wrap: break-word;
-      word-break: normal;
     }
     .break-card:hover {
       transform: translateY(-3px);
@@ -280,13 +358,12 @@
     .break-card h5 {
       margin-bottom: 12px;
       font-weight: 600;
-      color: var(--text-color);
       font-size: 1.1rem;
+      color: var(--text-color);
     }
     .break-card ul {
       list-style: none;
       padding-left: 0;
-      margin: 0;
       font-size: 0.85rem;
       color: var(--card-text-color);
     }
@@ -297,19 +374,7 @@
     .break-card ul li:last-child {
       border-bottom: none;
     }
-    /* Отладочный блок */
-    #debug-section {
-      margin: 20px auto;
-      width: 90%;
-      max-width: 900px;
-      background: #fff2;
-      color: #f00;
-      padding: 10px;
-      font-size: 0.85rem;
-      white-space: pre-wrap;
-      max-height: 200px;
-      overflow-y: auto;
-    }
+    
     /* Модальное окно сотрудника */
     #modal-overlay {
       display: none;
@@ -336,8 +401,7 @@
       width: 330px;
     }
     #employee-modal h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
+      margin: 0 0 8px 0;
     }
     #employee-modal .close-btn {
       position: absolute;
@@ -353,101 +417,102 @@
     #employee-modal a:hover {
       color: #0056b3;
     }
-    .platform-link-hint {
-      display: inline-block;
-      margin-left: 5px;
-      cursor: pointer;
-    }
-    .platform-link-hint::before {
-      content: "i";
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      line-height: 16px;
-      text-align: center;
-      border-radius: 50%;
-      background-color: #eee;
-      color: #333;
-      font-size: 12px;
-      font-weight: bold;
-      vertical-align: middle;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .platform-link-hint:hover::before {
-      background-color: #0056b3;
-      color: #fff;
-    }
   </style>
-  <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
+  <!-- Гамбургер-меню -->
+  <div class="hamburger-menu" id="hamburger-menu">
+    <span>&#9776;</span>
+  </div>
+  <!-- Сайдбар с навигацией -->
+  <div id="sidebar">
+    <div class="close-btn" id="sidebar-close">&times;</div>
+    <a href="https://example.com" target="_blank">YIGIM Dashboard</a>
+    <a href="https://anotherexample.com" target="_blank">City states</a>
+    <a href="https://yetanother.com" target="_blank">City Tools</a>
+  </div>
+
   <div class="dashboard-container">
     <h1>Support Monitoring Dashboard</h1>
     
-    <div class="tools-bar">
-      <!-- Тема -->
+    <!-- Панель фильтров с расширенными опциями -->
+    <div class="filter-panel">
+      <div class="stats-card">
+        <span class="stats-title">Baku Central</span>
+        <span class="stats-value">1.1</span>
+      </div>
+      
+      <div class="filter-section">
+        <!-- Status Filter -->
+        <select id="status-filter" class="filter-dropdown">
+          <option value="both">Status</option>
+          <option value="active">Active</option>
+          <option value="away">Away</option>
+        </select>
+        <!-- Dropdown для выбора платформ -->
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="platformDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Platform
+          </button>
+          <div class="dropdown-menu" aria-labelledby="platformDropdown" id="platform-dropdown-menu">
+            <div class="dropdown-item platform-checkbox">
+              <div class="form-check">
+                <input class="form-check-input platform-option" type="checkbox" value="all" id="platform-all" checked>
+                <label class="form-check-label" for="platform-all">All platforms</label>
+              </div>
+            </div>
+            <!-- Платформы динамически добавляются -->
+          </div>
+        </div>
+        <!-- Reallocate Filter -->
+        <select id="realloc-filter" class="filter-dropdown">
+          <option value="all">Reallocate: All</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+        <!-- Language Filter -->
+        <select id="lang-filter" class="filter-dropdown">
+          <option value="all">Language: All</option>
+          <option value="two">Bilingual</option>
+          <option value="three">Trilingual</option>
+        </select>
+        <!-- Break Filter -->
+        <select id="break-filter" class="filter-dropdown">
+          <option value="upcoming">Breaks: Upcoming</option>
+          <option value="all">Breaks: All</option>
+        </select>
+      </div>
+      
+      <div class="search-section">
+        <input type="text" id="employee-search" placeholder="Search..." class="search-input">
+        <button class="search-btn">Search</button>
+      </div>
+      
+      <!-- Переключатель темной и светлой темы -->
       <div class="theme-toggle-container">
-        <span class="theme-toggle-label">Тема:</span>
+        <span>Тheme:</span>
         <label class="theme-switch">
-          <input type="checkbox" id="theme-checkbox"/>
+          <input type="checkbox" id="theme-checkbox">
           <span class="slider"></span>
         </label>
       </div>
-      <button id="toggle-autorefresh" class="btn btn-outline-primary">Disable Auto Refresh</button>
-      <button id="refresh-now" class="btn btn-outline-secondary">Refresh now</button>
-      <span>Auto refresh in <span id="countdown">15</span> sec</span>
-
-      <!-- Основные фильтры -->
-      <input type="text" id="employee-search" placeholder="Поиск по сотрудникам" />
-      <select id="platform-filter">
-        <option value="all">Все платформы</option>
-        <option value="CS">CS</option>
-        <option value="CS/Post order">CS/Post order</option>
-        <option value="PSR">PSR</option>
-        <option value="SiMo">SiMo</option>
-        <option value="Aircall">Aircall</option>
-        <option value="Venue">Venue</option>
-        <option value="Trainee">Trainee</option>
-        <option value="ST">ST</option>
-      </select>
-      <select id="status-filter">
-        <option value="both">Активные и Away</option>
-        <option value="active">Активные</option>
-        <option value="away">Away</option>
-      </select>
-      <!-- Фильтры Reallocate и Language -->
-      <select id="realloc-filter">
-        <option value="all">Reallocate: All</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-      <select id="lang-filter">
-        <option value="All">Language: All</option>
-        <option value="two">Bilingual🇦🇿 🇬🇧</option>
-        <option value="three">Trilingual🇦🇿🇷🇺🇬🇧</option>
-      </select>
-      <!-- Новый фильтр для брейков -->
-      <select id="break-filter">
-        <option value="upcoming">Брейки в ближайший час</option>
-        <option value="all">Все брейки</option>
-      </select>
+      
     </div>
-
+    
+    <!-- Контент -->
     <div id="shift-summary" class="shift-summary-card">
       <div class="shift-summary-title">Statistics per platform</div>
       <table class="shift-summary-grid" id="summary-table"></table>
     </div>
-
+    
     <div id="platforms-container" class="platforms-row"></div>
-
+    
     <div id="breaks-section">
-      <h2>Upcoming Breaks</h2>
+      <h2>Breaks panel</h2>
       <div id="breaks-app"></div>
     </div>
-
-    <div id="debug-section"></div>
   </div>
-
+  
   <!-- Модальное окно сотрудника -->
   <div id="modal-overlay"></div>
   <div id="employee-modal">
@@ -464,40 +529,49 @@
   </div>
   
   <script>
-    /********* Глобальные переменные **********/
+    // Краткая информация по платформам (можно изменять)
+    const platformInfo = {
+      "CS": "Поддержка клиентов через чат и звонки.",
+      "CS/Post order": "Обработка вопросов по заказам после оформления.",
+      "PSR": "Поддержка по техническим вопросам.",
+      "SiMo": "Симуляция операций внутри системы.",
+      "Aircall": "Телефонная поддержка с использованием Aircall.",
+      "Venue": "Поддержка клиентов в определенных регионах.",
+      "Trainee": "Стажеры, находящиеся на обучении.",
+      "ST": "Местная техническая поддержка."
+    };
+
     let fetchedData = null;
     let currentSearchTerm = "";
-    let currentPlatformFilter = "all";
     let currentStatusFilter = "both";
+    let currentPlatformFilter = ["all"];
     let currentReallocFilter = "all";
-    let currentLangFilter = "All";
+    let currentLangFilter = "all";
+    let currentBreakFilter = "upcoming";
 
     const SPREADSHEET_ID = "1dICKOxxz9R3x8MY3FKQ9I-IwR9fBUDfMOT9PFDLloAE";
     const RANGE = "list1!A1:BJ100";
-    const EMP_LIST_RANGE = "emplist!A1:F";
     const BREAKS_RANGE = "prebreaks!A1:D40";
     const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxU-4AAiow6Y0TV4ChSY";
 
     let employeeData = {};
 
     const platforms = [
-      { name: "CS",             url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6643245bfadf62c6edc28feb", colIndexNames: 3,  colIndexData: 4,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
-      { name: "CS/Post order",  url: "https://ops.wolt.com/support/converse/conversations?conversationListId=664324a0510ac011feaa798c", colIndexNames: 5,  colIndexData: 6,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
-      { name: "PSR",            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6567a44af7d470550b11dc68", colIndexNames: 7,  colIndexData: 8,  rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
-      { name: "SiMo",           url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6668088fc6d870f3cfd61653", colIndexNames: 9,  colIndexData: 10, rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
-      { name: "Aircall",        url: "https://ops.wolt.com/support/converse/conversations?conversationListId=671a26a2a5b9ae4a2ca603fb", colIndexNames: 11, colIndexData: 12, rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
-      { name: "Venue",          url: "https://ops.wolt.com/support/converse/conversations?conversationListId=666807fc28b3f1231948f407", colIndexNames: 13, colIndexData: 14, rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
-      { name: "Trainee",        url: "https://wolt.com/", colIndexNames: 15, colIndexData: 16, rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
-      { name: "ST",             url: "https://wolt.com/", colIndexNames: 17, colIndexData: 18, rowActiveNamesStart: 4,  rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 }
+      { name: "CS",             url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6643245bfadf62c6edc28feb", colIndexNames: 3, colIndexData: 4,  rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "CS/Post order",  url: "https://ops.wolt.com/support/converse/conversations?conversationListId=664324a0510ac011feaa798c", colIndexNames: 5, colIndexData: 6,  rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "PSR",            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6567a44af7d470550b11dc68", colIndexNames: 7, colIndexData: 8,  rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "SiMo",           url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6668088fc6d870f3cfd61653", colIndexNames: 9, colIndexData: 10, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "Aircall",        url: "https://ops.wolt.com/support/converse/conversations?conversationListId=671a26a2a5b9ae4a2ca603fb", colIndexNames: 11, colIndexData: 12, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "Venue",          url: "https://ops.wolt.com/support/converse/conversations?conversationListId=666807fc28b3f1231948f407", colIndexNames: 13, colIndexData: 14, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "Trainee",        url: "https://wolt.com/", colIndexNames: 15, colIndexData: 16, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 },
+      { name: "ST",             url: "https://wolt.com/", colIndexNames: 17, colIndexData: 18, rowActiveNamesStart: 4, rowActiveNamesEnd: 27, rowAwayNamesStart: 28, rowAwayNamesEnd: 47 }
     ];
 
     let aircallActive = [];
     let aircallAway = [];
 
-    // Функция для вывода отладочных сообщений в отладочный блок
     function logDebug(message) {
-      const debugDiv = document.getElementById("debug-section");
-      debugDiv.textContent += message + "\n";
+      console.log(message);
     }
 
     async function fetchSheetData(range) {
@@ -517,7 +591,7 @@
     }
 
     async function fetchEmployeeList() {
-      const data = await fetchSheetData(EMP_LIST_RANGE);
+      const data = await fetchSheetData("emplist!A1:F");
       if (!data || data.length < 2) return;
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
@@ -569,7 +643,6 @@
     const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";
     const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";
 
-    // Функция получения ID пользователя Aircall по email с добавлением логов
     async function getAircallUserId(email) {
       const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
       const url = `https://api.aircall.io/v1/users/${encodeURIComponent(email)}`;
@@ -588,7 +661,6 @@
         return null;
       }
     }
-    // Функция получения статуса Aircall с логированием
     async function getAircallAvailability(userId) {
       if (!userId) {
          logDebug("getAircallAvailability: userId не передан");
@@ -613,25 +685,37 @@
       }
     }
 
-    function applyFilters() {
-      const debugDiv = document.getElementById("debug-section");
-      // Очищаем текущие логи отладки перед обновлением фильтра
-      debugDiv.textContent = "Отладка applyFilters():\n";
-      debugDiv.textContent += ` - currentPlatformFilter: ${currentPlatformFilter}\n`;
-      debugDiv.textContent += ` - currentStatusFilter: ${currentStatusFilter}\n`;
-      debugDiv.textContent += ` - currentReallocFilter: ${currentReallocFilter}\n`;
-      debugDiv.textContent += ` - currentLangFilter: ${currentLangFilter}\n`;
-      debugDiv.textContent += ` - search: '${currentSearchTerm}'\n`;
+    function passReallocAndLang(empName) {
+      const info = employeeData[empName];
+      if (!info) return false;
+      
+      if (currentReallocFilter !== "all") {
+        if (info.canReallocate !== currentReallocFilter) return false;
+      }
+      if (currentLangFilter !== "all") {
+        let lang = info.languages.replace(/\s+/g, "");
+        if (currentLangFilter === "two") {
+          if (!(lang.includes("🇦🇿") && lang.includes("🇬🇧")) || lang.includes("🇷🇺")) {
+            return false;
+          }
+        } else if (currentLangFilter === "three") {
+          if (!(lang.includes("🇦🇿") && lang.includes("🇬🇧") && lang.includes("🇷🇺"))) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
 
+    function applyFilters() {
       const container = document.getElementById("platforms-container");
       container.innerHTML = "";
-
+      
       platforms.forEach(platform => {
-        if (currentPlatformFilter !== "all" &&
-            platform.name.toLowerCase() !== currentPlatformFilter.toLowerCase()) {
+        if (!currentPlatformFilter.includes("all") && !currentPlatformFilter.includes(platform.name)) {
           return;
         }
-
+        
         if (platform.name !== "Aircall") {
           let activeNames = [];
           for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
@@ -645,28 +729,24 @@
             const rsn = fetchedData[r]?.[platform.colIndexData]?.trim() || "";
             awayData.push({ name: nm, reason: rsn });
           }
-
           if (currentSearchTerm) {
             activeNames = activeNames.filter(n => n.toLowerCase().includes(currentSearchTerm.toLowerCase()));
             awayData = awayData.filter(item => item.name.toLowerCase().includes(currentSearchTerm.toLowerCase()));
           }
-
-          // Применяем фильтрацию
           activeNames = activeNames.filter(n => passReallocAndLang(n));
           awayData = awayData.filter(item => passReallocAndLang(item.name));
-
+          
           let showActive = true, showAway = true;
           if (currentStatusFilter === "active") showAway = false;
           else if (currentStatusFilter === "away") showActive = false;
-
+          
           let html = `<div class="platform-card">
               <h5>
                 <a href="${platform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть ${platform.name}">
                   ${platform.name}
                 </a>
-                <span class="platform-link-hint" title="Перейти на страницу CS"></span>
+                <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name] || ''}">ℹ️</span>
               </h5>`;
-
           if (showActive) {
             html += `<p><small>Активные (${activeNames.length})</small></p><ul>`;
             activeNames.forEach(n => {
@@ -686,28 +766,19 @@
           html += `</div>`;
           container.innerHTML += html;
         } else {
-          let filteredActive = aircallActive.slice();
-          let filteredAway = aircallAway.slice();
+          let filteredActive = aircallActive.slice().filter(n => n.toLowerCase() !== "away");
+          let filteredAway = aircallAway.slice().filter(item => item.name.toLowerCase() !== "away");
           if (currentSearchTerm) {
             filteredActive = filteredActive.filter(n => n.toLowerCase().includes(currentSearchTerm.toLowerCase()));
             filteredAway = filteredAway.filter(item => item.name.toLowerCase().includes(currentSearchTerm.toLowerCase()));
           }
-          filteredActive = filteredActive.filter(n => passReallocAndLang(n));
-          filteredAway = filteredAway.filter(item => passReallocAndLang(item.name));
-
           let showActive = true, showAway = true;
           if (currentStatusFilter === "active") showAway = false;
           else if (currentStatusFilter === "away") showActive = false;
           renderAircallCardWithStatuses(filteredActive, filteredAway, showActive, showAway);
         }
       });
-
-      // Вывод финального списка сотрудников
-      const allItems = document.querySelectorAll(".employee-item");
-      const finalList = Array.from(allItems).map(item => item.getAttribute("data-employee"));
-      debugDiv.textContent += "Сотрудники после фильтров:\n" + finalList.join(", ") + "\n\n";
-
-      // Навесим клик
+      
       const employeeItems = document.querySelectorAll(".employee-item");
       employeeItems.forEach(item => {
         item.addEventListener("click", function() {
@@ -715,6 +786,9 @@
           openEmployeeModal(empName);
         });
       });
+      
+      // Инициализация тултипов для иконок
+      $('[data-toggle="tooltip"]').tooltip();
     }
 
     function renderAircallCardWithStatuses(activeList, awayList, showActive = true, showAway = true) {
@@ -724,47 +798,28 @@
               <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть Aircall">
                 Aircall
               </a>
-              <span class="platform-link-hint" title="Перейти на страницу CS"></span>
+              <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ''}">ℹ️</span>
             </h5>`;
       if (showActive) {
-        html += `<p><small>Активные (${activeList.length})</small></p><ul id="aircall-active-list">`;
-        activeList.forEach(n => {
-          html += `<li class="employee-item" data-employee="${n}">${n} - <span style="color:blue;">Loading...</span></li>`;
-        });
-        html += `</ul>`;
+        html += `<p><small>Активные (${activeList.length})</small></p>
+                 <ul id="aircall-active-list">` +
+                 activeList.map((n, index) => {
+                   const safeId = `aircall-active-${index}`;
+                   return `<li id="${safeId}" class="employee-item" data-employee="${n}">${n} - <span style="color:blue;">Loading...</span></li>`;
+                 }).join("") +
+                 `</ul>`;
       }
       if (showAway) {
-        html += `<p><small>Away (${awayList.length})</small></p><ul>`;
-        awayList.forEach(a => {
-          html += `<li class="employee-item" data-employee="${a.name}">${a.name}</li>`;
-        });
-        html += `</ul>`;
+        html += `<p><small>Away (${awayList.length})</small></p>
+                 <ul>` +
+                 awayList.map(a => {
+                   const extra = a.reason ? " - " + a.reason : "";
+                   return `<li class="employee-item" data-employee="${a.name}">${a.name}${extra}</li>`;
+                 }).join("") +
+                 `</ul>`;
       }
       html += `</div>`;
       document.getElementById("platforms-container").innerHTML += html;
-    }
-
-    function passReallocAndLang(empName) {
-      const info = employeeData[empName];
-      if (!info) return false;
-      let lang = info.languages.replace(/\s+/g, "");
-      if (currentReallocFilter !== "all") {
-        if (info.canReallocate !== currentReallocFilter) {
-          return false;
-        }
-      }
-      if (currentLangFilter !== "All") {
-        if (currentLangFilter === "two") {
-          if (!(lang.includes("🇦🇿") && lang.includes("🇬🇧")) || lang.includes("🇷🇺")) {
-            return false;
-          }
-        } else if (currentLangFilter === "three") {
-          if (!(lang.includes("🇦🇿") && lang.includes("🇷🇺") && lang.includes("🇬🇧"))) {
-            return false;
-          }
-        }
-      }
-      return true;
     }
 
     function renderShiftSummary(data) {
@@ -786,37 +841,28 @@
       tableEl.innerHTML = html;
     }
 
-    // Функция, обновленная для отображения либо всех брейков, либо только брейков в ближайший час
     async function fetchBreaksData() {
       const data = await fetchSheetData(BREAKS_RANGE);
       if (!data) return;
       const breaksObjects = arrayToObjects(data);
-      let filteredBreaks = breaksObjects;
-
-      // Получаем выбранное значение фильтра брейков
-      const breakFilter = document.getElementById("break-filter").value;
       const now = new Date();
       const currMinutes = now.getHours() * 60 + now.getMinutes();
-
-      if (breakFilter === "upcoming") {
+      let filteredBreaks = breaksObjects;
+      if (currentBreakFilter === "upcoming") {
         const horizon = currMinutes + 60;
         filteredBreaks = breaksObjects.filter(item => {
           if (!item["Break Time"]) return false;
           const timeStr = item["Break Time"].trim();
-          // При вычислении передаем currMinutes, чтобы корректно обработать брейки следующего дня
-          const minutes = parseTimeToMinutes(timeStr, currMinutes);
+          const minutes = parseTimeToMinutes(timeStr);
           return (minutes >= currMinutes && minutes <= horizon);
         });
-        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"], currMinutes) - parseTimeToMinutes(b["Break Time"], currMinutes));
-      } else if (breakFilter === "all") {
-        // При выборе "Все брейки" — сортируем все брейки по времени, с учетом корректировки для следующих дней
-        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"], currMinutes) - parseTimeToMinutes(b["Break Time"], currMinutes));
+        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
+      } else if (currentBreakFilter === "all") {
+        filteredBreaks.sort((a, b) => parseTimeToMinutes(a["Break Time"]) - parseTimeToMinutes(b["Break Time"]));
       }
-
       let html = `<div class="break-card">
-                    <h5>`;
-      html += breakFilter === "upcoming" ? `Upcoming breaks in the next hour` : `All Breaks`;
-      html += `</h5><ul>`;
+                    <h5>${currentBreakFilter === "upcoming" ? "Upcoming breaks in the next hour" : "All Breaks"}</h5>
+                    <ul>`;
       filteredBreaks.forEach(item => {
         html += `
           <li>
@@ -829,18 +875,13 @@
       document.getElementById("breaks-app").innerHTML = html;
     }
 
-    function parseTimeToMinutes(timeStr, currMinutes) {
+    function parseTimeToMinutes(timeStr) {
       timeStr = timeStr.trim();
       let parts = timeStr.split(":");
       if (parts.length < 2) return 0;
       let hours = parseInt(parts[0], 10);
       let minutes = parseInt(parts[1], 10);
-      let total = hours * 60 + minutes;
-      // Если передан currMinutes и время брейка меньше текущего, то предполагаем, что брейк назначен на следующий день
-      if (typeof currMinutes !== "undefined" && total < currMinutes) {
-        total += 1440; // добавляем 24 часа в минутах
-      }
-      return total;
+      return hours * 60 + minutes;
     }
 
     function arrayToObjects(arr) {
@@ -855,38 +896,20 @@
       });
     }
 
-    // Функция для получения статусов Aircall с добавлением отладочных логов
     async function fetchAircallStatuses() {
-      const activeElements = document.querySelectorAll("#aircall-active-list li");
-      logDebug(`Начало запроса статусов Aircall. Найдено элементов: ${activeElements.length}`);
+      const activeElements = document.querySelectorAll("[id^='aircall-active-']");
       for (let elem of activeElements) {
-        const text = elem.textContent;
-        // Разделяем строку по " - ", первый кусок — имя
-        const [name] = text.split(" - ");
-        const span = elem.querySelector("span");
-        if (!name || !span) {
-          logDebug("Пропускается элемент – отсутствует имя или span.");
-          continue;
-        }
-        span.textContent = "Fetching ID...";
-        logDebug(`Запрос статуса для сотрудника: ${name}`);
-        // Обратите внимание: функция generateWoltEmail должна быть определена!
+        const name = elem.textContent.split(" - ")[0].trim();
+        elem.querySelector("span").textContent = "Fetching ID...";
         const email = generateWoltEmail(name);
-        if (!email) {
-          span.textContent = "No email";
-          logDebug(`generateWoltEmail не вернула email для ${name}`);
-          continue;
-        }
-        logDebug(`Сгенерированный email для ${name}: ${email}`);
         const userId = await getAircallUserId(email);
         if (!userId) {
-          span.textContent = "No ID";
-          logDebug(`Не найден Aircall ID для ${name} (email: ${email})`);
+          elem.querySelector("span").textContent = "No ID";
           continue;
         }
-        span.textContent = "Fetching status...";
+        elem.querySelector("span").textContent = "Fetching status...";
         const status = await getAircallAvailability(userId);
-        span.textContent = status;
+        elem.querySelector("span").textContent = status;
       }
     }
 
@@ -909,7 +932,10 @@
       }, 1000);
     }
     function updateCountdownDisplay() {
-      document.getElementById("countdown").textContent = countdownValue;
+      const countdownElem = document.getElementById("countdown");
+      if (countdownElem) {
+        countdownElem.textContent = countdownValue;
+      }
     }
     function toggleAutoRefresh() {
       autoRefreshEnabled = !autoRefreshEnabled;
@@ -921,7 +947,6 @@
         btn.textContent = "Enable Auto Refresh";
         clearTimeout(refreshTimer);
         clearInterval(countdownTimer);
-        document.getElementById("countdown").textContent = "";
       }
     }
     function refreshNow() {
@@ -929,12 +954,10 @@
     }
 
     async function fetchData() {
-      // Перед каждым запросом очищаем отладочный блок
-      document.getElementById("debug-section").textContent = "Начало обновления данных...\n";
       const data = await fetchSheetData(RANGE);
       if (!data) return;
       fetchedData = data;
-
+      
       await fetchEmployeeList();
 
       const aircallConfig = platforms.find(p => p.name === "Aircall");
@@ -949,29 +972,26 @@
         const reason = data[r]?.[aircallConfig.colIndexData]?.trim() || "";
         if (name) aircallAway.push({ name, reason });
       }
-
+      
       renderShiftSummary(data);
       fetchBreaksData();
       applyFilters();
       fetchAircallStatuses();
-
       if (autoRefreshEnabled) resetAutoRefresh();
     }
 
-    // Пример реализации функции generateWoltEmail: преобразует имя сотрудника в email в формате lowercase с точкой и доменом @wolt.com
     function generateWoltEmail(name) {
-      // Например, "Иван Иванов" -> "иван.иванов@wolt.com"
       if (!name) return "";
-      let parts = name.split(" ");
-      if (parts.length < 2) return parts[0].toLowerCase() + "@wolt.com";
-      return parts[0].toLowerCase() + "." + parts[1].toLowerCase() + "@wolt.com";
+      const parts = name.split(" ");
+      return parts.length < 2 ? parts[0].toLowerCase() + "@wolt.com" : parts[0].toLowerCase() + "." + parts[1].toLowerCase() + "@wolt.com";
     }
 
     function loadThemePreference() {
       const saved = localStorage.getItem("darkThemeEnabled");
       if (saved === "true") {
         document.body.classList.add("dark-theme");
-        document.getElementById("theme-checkbox").checked = true;
+        const themeCheckbox = document.getElementById("theme-checkbox");
+        if (themeCheckbox) themeCheckbox.checked = true;
       }
     }
     function toggleTheme(e) {
@@ -979,43 +999,99 @@
       document.body.classList.toggle("dark-theme", isDark);
       localStorage.setItem("darkThemeEnabled", isDark.toString());
     }
-
+    
+    function initPlatformCheckboxes() {
+      const dropdownMenu = document.getElementById("platform-dropdown-menu");
+      while (dropdownMenu.children.length > 1) {
+        dropdownMenu.removeChild(dropdownMenu.lastChild);
+      }
+      platforms.forEach(platform => {
+        const div = document.createElement("div");
+        div.className = "dropdown-item platform-checkbox";
+        div.innerHTML = `
+          <div class="form-check">
+            <input class="form-check-input platform-option" type="checkbox" value="${platform.name}" id="platform-${platform.name}">
+            <label class="form-check-label" for="platform-${platform.name}">${platform.name}</label>
+          </div>
+        `;
+        dropdownMenu.appendChild(div);
+      });
+    }
+    
+    function updatePlatformFilter() {
+      const checkboxes = document.querySelectorAll(".platform-option");
+      const selected = [];
+      checkboxes.forEach(chk => {
+        if (chk.checked) {
+          selected.push(chk.value);
+        }
+      });
+      currentPlatformFilter = selected.length ? selected : ["all"];
+      applyFilters();
+    }
+    
     document.addEventListener("DOMContentLoaded", () => {
       loadThemePreference();
-
-      document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
-      document.getElementById("toggle-autorefresh").addEventListener("click", toggleAutoRefresh);
-      document.getElementById("refresh-now").addEventListener("click", refreshNow);
-
-      document.getElementById("employee-search").addEventListener("input", function(e){
+      initPlatformCheckboxes();
+      
+      const platformCheckboxes = document.querySelectorAll(".platform-option");
+      platformCheckboxes.forEach(chk => {
+        chk.addEventListener("change", function() {
+          if (this.value === "all") {
+            if (this.checked) {
+              platformCheckboxes.forEach(cb => {
+                if (cb.value !== "all") {
+                  cb.checked = false;
+                }
+              });
+            }
+          } else {
+            document.getElementById("platform-all").checked = false;
+          }
+          updatePlatformFilter();
+        });
+      });
+      
+      document.getElementById("employee-search").addEventListener("input", function(e) {
         currentSearchTerm = e.target.value;
         applyFilters();
       });
-      document.getElementById("platform-filter").addEventListener("change", function(e){
-        currentPlatformFilter = e.target.value;
-        applyFilters();
-      });
-      document.getElementById("status-filter").addEventListener("change", function(e){
+      document.getElementById("status-filter").addEventListener("change", function(e) {
         currentStatusFilter = e.target.value;
         applyFilters();
       });
-
-      document.getElementById("realloc-filter").addEventListener("change", function(e){
+      document.getElementById("realloc-filter").addEventListener("change", function(e) {
         currentReallocFilter = e.target.value;
         applyFilters();
       });
-      document.getElementById("lang-filter").addEventListener("change", function(e){
+      document.getElementById("lang-filter").addEventListener("change", function(e) {
         currentLangFilter = e.target.value;
         applyFilters();
       });
-      // Добавляем обработчик для фильтра брейков
-      document.getElementById("break-filter").addEventListener("change", fetchBreaksData);
-
-      document.getElementById("modal-overlay").addEventListener("click", closeEmployeeModal);
-      document.getElementById("modal-close").addEventListener("click", closeEmployeeModal);
-
+      document.getElementById("break-filter").addEventListener("change", function(e) {
+        currentBreakFilter = e.target.value;
+        fetchBreaksData();
+      });
+      
+      const overlay = document.getElementById("modal-overlay");
+      const modalClose = document.getElementById("modal-close");
+      overlay.addEventListener("click", closeEmployeeModal);
+      modalClose.addEventListener("click", closeEmployeeModal);
+      
+      document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
+      
+      // Гамбургер-меню и закрытие сайдбара
+      document.getElementById("hamburger-menu").addEventListener("click", function() {
+        document.getElementById("sidebar").classList.toggle("active");
+      });
+      document.getElementById("sidebar-close").addEventListener("click", function() {
+        document.getElementById("sidebar").classList.remove("active");
+      });
+      
       fetchData();
     });
   </script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
