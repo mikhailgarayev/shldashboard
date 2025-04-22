@@ -169,19 +169,8 @@
       border: 1px solid var(--card-border-color);
       border-radius: 6px 0 0 6px;
       background: var(--card-bg-color);
-      width: 200px;
+      width: 150px;
       color: var(--text-color);
-    }
-    .search-btn {
-      padding: 8px 15px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 0 6px 6px 0;
-      cursor: pointer;
-    }
-    .search-btn:hover {
-      background: #0069d9;
     }
     
     /* Секция обновления страницы */
@@ -533,7 +522,7 @@
   <!-- Блок отображения аккаунта и кнопка Log Out -->
   <div id="user-info" style="text-align: right; padding: 10px; font-size: 1rem; color: var(--text-color);">
     Logged in as: <span id="user-display-name"></span>
-    <button id="logout-btn" class="btn btn-danger btn-sm" style="margin-left: 10px;">Log Out</button>
+    <button id="logout-btn" class="btn btn-danger btn-sm" style="margin-left: 10px; background-color: #495057;">Log Out</button>
   </div>
   
   <!-- Гамбургер-меню -->
@@ -585,7 +574,7 @@
             <div class="dropdown-item platform-checkbox">
               <div class="form-check">
                 <input class="form-check-input platform-option" type="checkbox" value="all" id="platform-all" checked>
-                <label class="form-check-label" for="platform-all">Все платформы</label>
+                <label class="form-check-label" for="platform-all">All platforms</label>
               </div>
             </div>
             <!-- Платформы динамически добавляются -->
@@ -612,7 +601,6 @@
       
       <div class="search-section">
         <input type="text" id="employee-search" placeholder="Search..." class="search-input">
-        <button class="search-btn">Search</button>
       </div>
       
       <!-- Переключатель темы -->
@@ -637,7 +625,7 @@
     
     <!-- Контент -->
     <div id="shift-summary" class="shift-summary-card">
-      <div class="shift-summary-title">Statistics per platform</div>
+      <div class="shift-summary-title">Metrics per platform</div>
       <table class="shift-summary-grid" id="summary-table"></table>
     </div>
     
@@ -808,14 +796,14 @@
     
     // Информация по платформам
     const platformInfo = {
-      "CS": "Поддержка клиентов через чат и звонки.",
-      "CS/Post order": "Обработка вопросов по заказам после оформления.",
-      "PSR": "Поддержка по техническим вопросам.",
-      "SiMo": "Симуляция операций внутри системы.",
-      "Aircall": "Телефонная поддержка с использованием Aircall.",
-      "Venue": "Поддержка клиентов в определенных регионах.",
-      "Trainee": "Стажеры, находящиеся на обучении.",
-      "ST": "Местная техническая поддержка."
+      "CS": "Click on the link to open the CS platform.\nClick on employee name to open their profile.",
+      "CS/Post order": "Click on the link to open the CS PO AZE platform.\nClick on employee name to open their profile.",
+      "PSR": "Click on the link to open the PSR platform.\nClick on employee name to open their profile.",
+      "SiMo": "Click on the link to open the Support Inbox.\nClick on employee name to open their profile.",
+      "Aircall": "Click on the link to open the CS platform.\nClick on employee name to open their profile.\n You can see employee's status in the Aircall.",
+      "Venue": "Click on the link to open the Venue platform.\nClick on employee name to open their profile.",
+      "Trainee": "Click on employee name to open their profile.",
+      "ST": "Click on employee name to open their profile."
     };
     
     let fetchedData = null;
@@ -1117,7 +1105,7 @@
                    <ul id="aircall-active-list">` +
                    activeList.map((n, index) => {
                      const safeId = `aircall-active-${index}`;
-                     return `<li id="${safeId}" class="employee-item" data-employee="${n}">${n} - <span style="color: blue;">Loading...</span></li>`;
+                     return `<li id="${safeId}" class="employee-item" data-employee="${n}">${n} - <span style="color: green;">Checking status...</span></li>`;
                    }).join("") +
                    `</ul>`;
         }
@@ -1285,14 +1273,12 @@
       const activeElements = document.querySelectorAll("[id^='aircall-active-']");
       for (let elem of activeElements) {
         const name = elem.textContent.split(" - ")[0].trim();
-        elem.querySelector("span").textContent = "Fetching ID...";
         const email = generateWoltEmail(name);
         const userId = await getAircallUserId(email);
         if (!userId) {
           elem.querySelector("span").textContent = "No ID";
           continue;
         }
-        elem.querySelector("span").textContent = "Fetching status...";
         const status = await getAircallAvailability(userId);
         elem.querySelector("span").textContent = status;
       }
