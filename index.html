@@ -948,10 +948,16 @@
           
           let html = `<div class="platform-card">
               <h5>
-                <a href="${platform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть ${platform.name}">
+                <a href="${platform.url}" target="_blank" rel="noopener" title="Click to navigate to ${platform.name}"  style="vertical-align: middle;">
                   ${platform.name}
                 </a>
-                <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name] || ''}">ℹ️</span>
+                <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name] || ''}" style="display: inline-block; vertical-align: middle; margin-left: 6px;">
+                  <img 
+                    src="https://www.svgrepo.com/show/474873/info.svg" 
+                    alt="Info" 
+                    style="width:16px; height:16px; cursor:pointer; vertical-align:middle;"
+                  />
+                </span>
               </h5>`;
           if (showActive) {
             if (activeNames.length === 0) {
@@ -1011,10 +1017,16 @@
       const aircallPlatform = platforms.find(p => p.name === "Aircall");
       let html = `<div class="platform-card">
             <h5>
-              <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Нажмите, чтобы открыть Aircall">
+              <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Click to navigate to Snooze inbox" style="vertical-align: middle;">
                 Aircall
               </a>
-              <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ''}">ℹ️</span>
+              <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ''}" style="display: inline-block; vertical-align: middle; margin-left: 6px;">
+                  <img 
+                    src="https://www.svgrepo.com/show/474873/info.svg" 
+                    alt="Info" 
+                    style="width:16px; height:16px; cursor:pointer; vertical-align:middle;"
+                  />
+                </span>
             </h5>`;
       if (showActive) {
         if (activeList.length === 0) {
