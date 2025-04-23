@@ -597,6 +597,10 @@
         font-weight: bold;
         animation: pulse 1s infinite;
       }
+      .employee-item.king .employee-name {
+        color: gold !important;
+        font-weight: bold;
+      }
 
       @keyframes pulse {
         0% {
@@ -744,7 +748,9 @@
         <div class="refresh-section d-flex align-items-center gap-2">
           <span id="timer-label"
             >Refresh in: 
+            
             <span id="countdown">15</span>s
+          
           </span
           >
           <div
@@ -1336,6 +1342,7 @@
               else if (currentStatusFilter === "away") showActive = false;
 
               let html = `
+        
         <div class="platform-card">
           <h5>
             <a href="${platform.url}" target="_blank" rel="noopener" title="Click to navigate to ${platform.name}" style="vertical-align: middle;">
@@ -1350,26 +1357,40 @@
               if (showActive) {
                 if (activeNames.length === 0) {
                   html += `
+          
           <p>
             <small style="color: red; font-weight: bold;">Active (0)</small>
             <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
           </p>`;
                 } else {
                   html += `
+          
           <p>
             <small>Active (${activeNames.length})</small>
           </p>
           <ul>`;
-                  activeNames.forEach((n) => {
-                    html += `
-            <li class="employee-item" data-employee="${n}">${n}</li>`;
-                  });
+            const myName = "Mikhail Garayev";
+
+              // Где вы рендерите activeNames:
+              activeNames.forEach((n) => {
+                const isYou = n.trim().toLowerCase() === myName.toLowerCase();
+                const crown = isYou ? "👑" : "";
+                const className = isYou ? "employee-item king" : "employee-item";
+
+                html += `
+            <li class="${className}" data-employee="${n}">
+              <span class="employee-name">${n}</span> ${crown}
+                
+            </li>`;
+              });
                   html += `
+          
           </ul>`;
                 }
               }
               if (showAway) {
                 html += `
+          
           <p>
             <small>Away (${awayData.length})</small>
           </p>
@@ -1386,15 +1407,18 @@
                     }
 
                     html += `
+            
             <li class="employee-item ${reasonClass}" data-employee="${item.name}">${item.name}`;
                     if (reasonText) html += ` (${reasonText})`;
                     html += `</li>`;
                   });
 
                 html += `
+          
           </ul>`;
               }
               html += `
+        
         </div>`;
               container.innerHTML += html;
             } else {
@@ -1445,6 +1469,7 @@
         ) {
           const aircallPlatform = platforms.find((p) => p.name === "Aircall");
           let html = `
+        
         <div class="platform-card">
           <h5>
             <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Click to navigate to Snooze inbox" style="vertical-align: middle;">
@@ -1459,12 +1484,14 @@
           if (showActive) {
             if (activeList.length === 0) {
               html += `
+          
           <p>
             <small style="color: red; font-weight: bold;">Active (0)</small>
             <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
           </p>`;
             } else {
               html += `
+          
           <p>
             <small>Active (${activeList.length})</small>
           </p>
@@ -1473,17 +1500,21 @@
                   .map((n, index) => {
                     const safeId = `aircall-active-${index}`;
                     return `
+            
             <li id="${safeId}" class="employee-item" data-employee="${n}">${n} - 
+              
               <span style="color: green;">Checking status...</span>
             </li>`;
                   })
                   .join("") +
                 `
+          
           </ul>`;
             }
           }
           if (showAway) {
             html += `
+          
           <p>
             <small>Away (${awayList.length})</small>
           </p>
@@ -1492,13 +1523,16 @@
                 .map((a) => {
                   const extra = a.reason ? " - " + a.reason : "";
                   return `
+            
             <li class="employee-item" data-employee="${a.name}">${a.name}${extra}</li>`;
                 })
                 .join("") +
               `
+          
           </ul>`;
           }
           html += `
+        
         </div>`;
           document.getElementById("platforms-container").innerHTML += html;
         }
@@ -1568,11 +1602,13 @@
           ];
 
           let html = `
+        
         <div class="shift-summary-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">`;
 
           summaryCards.forEach((card) => {
             html += `
               
+          
           <div class="shift-card ${
                 card.customClass ? card.customClass : ""
               }" style="
@@ -1591,17 +1627,21 @@
             if (card.away) {
               html += `
                 
+            
             <div class="shift-card-away">
               <strong>Away:</strong> ${card.away}
                 
+            
             </div>
               `;
             }
             html += `
+          
           </div>`;
           });
 
           html += `
+        
         </div>`;
           tableEl.innerHTML = html;
         }
@@ -1615,6 +1655,7 @@
 
   let html = `
     
+        
         <div class="shift-summary-card" id="responsible-card">
           <div class="shift-summary-title">👥 Responsible People</div>
           <table class="shift-summary-grid" style="max-width: 500px; margin: 0 auto;">
@@ -1632,6 +1673,7 @@
     if (name && role) {
       html += `
         
+              
               <tr>
                 <td>
                   <span style="font-weight: bold;">${name}</span>
@@ -1644,6 +1686,7 @@
   });
 
   html += `
+            
             </tbody>
           </table>
         </div>`;
@@ -1684,6 +1727,7 @@
             );
           }
           let html = `
+        
         <div class="break-card">
           <h5>${
                           currentBreakFilter === "upcoming"
@@ -1694,17 +1738,21 @@
           filteredBreaks.forEach((item) => {
             html += `
               
+            
             <li>
               <strong>${item["Name"]}</strong>
               <br/>
                 Break at: 
+              
               <strong>${item["Break Time"]}</strong>
               <br/>
                 Shift: ${item["Shift Start Time"]} | ${item["Working Space"]}
               
+            
             </li>`;
           });
           html += `
+          
           </ul>
         </div>`;
           document.getElementById("breaks-app").innerHTML = html;
@@ -1942,6 +1990,7 @@
   fetchData();
   fetchWeather();
 });
+      
       
       </script>
     </div>
