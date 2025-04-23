@@ -59,10 +59,7 @@
     
     /* Сайдбар (меню) */
     .hamburger-menu {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1100;
+      margin-right: 12px;
       cursor: pointer;
     }
     .hamburger-menu span {
@@ -145,6 +142,7 @@
     .stats-value {
       font-weight: bold;
       font-size: 1.2rem;
+      margin-top: 4px;
     }
     .filter-section {
       display: flex;
@@ -213,54 +211,52 @@
       font-size: 1rem;
     }
     /* Переключатель темы */
-    .theme-toggle-container {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
+      .theme-toggle-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
       .theme-switch {
-      display: inline-flex;        /* используем inline-flex, чтобы потомок (slider) легко центрировался */
-      align-items: center;
-      justify-content: center;
       position: relative;
+      display: inline-block;
       width: 50px;
       height: 24px;
-      margin: 0;
-      padding: 0;
-      vertical-align: middle;       /* гарантируем выравнивание с текстом */
     }
     .theme-switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
-      .slider {
+    .slider {
       position: absolute;
+      cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
       background-color: #ccc;
-      transition: .45s;
+      transition: .4s;
       border-radius: 24px;
-      cursor: pointer;
-      display: flex;
-      padding: 2.5px;
     }
-/* Иконка в слайдере */
+
+    /* Слайдер переключателя */
     .slider:before {
-      content: "☀";
-      /* Настройка размеров и выравнивания внутри слайдера */
-      display: inline-block;
-      width: 18px;
+      position: absolute;
+      content: "☀️";
       height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      font-size: 12px;
       line-height: 18px;
       text-align: center;
-      border-radius: 50%;
-      background-color: white;
-      transition: .45s;
       color: #f39c12;
     }
     input:checked + .slider {
       background-color: #007bff;
     }
+
     input:checked + .slider:before {
       transform: translateX(26px);
       content: "🌙";
@@ -472,6 +468,51 @@
     #employee-modal a:hover {
       color: #0056b3;
     }
+    .dashboard-header {
+  background: var(--card-bg-color);
+  border-bottom: 1px solid var(--card-border-color);
+  box-shadow: var(--card-shadow);
+  border-radius: 0 0 12px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.filters-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.filters-wrapper select,
+.filters-wrapper input,
+.filters-wrapper .dropdown {
+  flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  .filters-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters-wrapper > * {
+    width: 100%;
+  }
+}
+
+.header-gap > * {
+  margin-right: 10px;
+  margin-bottom: 6px;
+}
+.header-gap > *:last-child {
+  margin-right: 0;
+}
+
+.info-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
   </style>
   
   <!-- Подключаем Firebase -->
@@ -531,16 +572,82 @@
   </script>
 </head>
 <body class="hidden">
-  <!-- Блок отображения аккаунта и кнопка Log Out -->
-  <div id="user-info" style="text-align: right; padding: 10px; font-size: 1rem; color: var(--text-color);">
-    Logged in as: <span id="user-display-name"></span>
-    <button id="logout-btn" class="btn btn-danger btn-sm" style="margin-left: 10px; background-color: #495057;">Log Out</button>
-  </div>
+
+  <header class="dashboard-header d-flex flex-wrap align-items-center justify-content-between gap-3 px-3 py-2">
+    <!-- Левая часть: бургер + заголовок -->
+    <div class="d-flex align-items-center gap-3">
+      <div class="hamburger-menu" id="hamburger-menu">
+        <span style="font-size: 24px; cursor: pointer;">☰</span>
+      </div>
+      <h1 class="mb-0" style="font-size: 1.3rem;">Support Monitoring Dashboard</h1>
+    </div>
   
-  <!-- Гамбургер-меню -->
-  <div class="hamburger-menu" id="hamburger-menu">
-    <span>&#9776;</span>
-  </div>
+    <!-- Центр: фильтры -->
+    <div class="filters-wrapper d-flex flex-wrap align-items-center flex-grow-1 justify-content-center header-gap">
+      <select id="status-filter" class="filter-dropdown">
+        <option value="both">Status</option>
+        <option value="active">Active</option>
+        <option value="away">Away</option>
+      </select>
+      <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="platformDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Platform
+        </button>
+        <div class="dropdown-menu" id="platform-dropdown-menu" aria-labelledby="platformDropdown">
+          <div class="dropdown-item platform-checkbox">
+            <div class="form-check">
+              <input class="form-check-input platform-option" type="checkbox" value="all" id="platform-all" checked>
+              <label class="form-check-label" for="platform-all">All platforms</label>
+            </div>
+          </div>
+          <!-- Остальные чекбоксы добавляются динамически -->
+        </div>
+      </div>
+      <select id="realloc-filter" class="filter-dropdown">
+        <option value="all">Reallocate: All</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+      <select id="lang-filter" class="filter-dropdown">
+        <option value="all">Language: All</option>
+        <option value="two">Bilingual</option>
+        <option value="three">Trilingual</option>
+      </select>
+      <select id="break-filter" class="filter-dropdown">
+        <option value="upcoming">Breaks: Upcoming</option>
+        <option value="all">Breaks: All</option>
+      </select>
+      <input type="text" id="employee-search" placeholder="Search..." class="search-input" />
+    </div>
+  
+    <!-- Правая часть: тема + refresh + имя + logout -->
+    <div class="d-flex align-items-center flex-wrap header-gap">
+<!-- Переключатель темы -->
+      <div class="d-flex align-items-center gap-2">
+        <span>Theme:</span>
+        <label class="theme-switch mb-0" style="margin-left: 8px;">
+          <input type="checkbox" id="theme-checkbox" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="refresh-section d-flex align-items-center gap-2">
+        <span id="timer-label">Refresh in: <span id="countdown">15</span>s</span>
+        <div style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;">
+        <div id="refresh-spinner" class="spinner-border text-primary" role="status" style="display:none;">
+          <span class="sr-only">Loading...</span>
+        </div>
+      </div>
+        <button class="refresh-btn btn btn-sm btn-success" onclick="refreshNow()">Refresh now</button>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span id="user-display-name" class="small text-muted"></span>
+        <button id="logout-btn" class="btn btn-sm btn-outline-secondary" style="margin-left: 8px;">Log Out</button>
+      </div>
+    </div>
+  </header>
+  
+  
   <!-- Сайдбар с навигацией -->
   <div id="sidebar">
     <div class="close-btn" id="sidebar-close">&times;</div>
@@ -552,88 +659,36 @@
   </div>
 
   <div class="dashboard-container">
-    <h1>Support Monitoring Dashboard</h1>
     
-    <!-- Панель фильтров с расширенными опциями -->
-    <div class="filter-panel">
-      <div class="stats-card">
-        <span class="stats-title">Baku Central</span>
-        <span class="stats-value">1.1</span>
-      </div>
-      
-      <!-- WEATHER CARD -->
+    <div class="info-cards d-flex flex-wrap gap-3 my-3 px-3">
       <div class="stats-card" id="weather-card">
         <span class="stats-title">Baku Weather</span>
-        <span class="stats-value" id="baku-temp">-- °C</span>
-        <br/>
+        <span class="stats-value" id="baku-temp">-- °C</span><br />
         <span class="stats-title">Wind Speed</span>
         <span class="stats-value" id="baku-wind">-- m/s</span>
       </div>
-      
-      <div class="filter-section">
-        <!-- Status Filter -->
-        <select id="status-filter" class="filter-dropdown">
-          <option value="both">Status</option>
-          <option value="active">Active</option>
-          <option value="away">Away</option>
-        </select>
-        <!-- Dropdown для платформ -->
-        <div class="dropdown">
-          <button class="btn btn-secondary dropdown-toggle" type="button" id="platformDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Platform
-          </button>
-          <div class="dropdown-menu" aria-labelledby="platformDropdown" id="platform-dropdown-menu">
-            <div class="dropdown-item platform-checkbox">
-              <div class="form-check">
-                <input class="form-check-input platform-option" type="checkbox" value="all" id="platform-all" checked>
-                <label class="form-check-label" for="platform-all">All platforms</label>
-              </div>
-            </div>
-            <!-- Платформы динамически добавляются -->
-          </div>
-        </div>
-        <!-- Reallocate Filter -->
-        <select id="realloc-filter" class="filter-dropdown">
-          <option value="all">Reallocate: All</option>
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-        </select>
-        <!-- Language Filter -->
-        <select id="lang-filter" class="filter-dropdown">
-          <option value="all">Language: All</option>
-          <option value="two">Bilingual</option>
-          <option value="three">Trilingual</option>
-        </select>
-        <!-- Break Filter -->
-        <select id="break-filter" class="filter-dropdown">
-          <option value="upcoming">Breaks: Upcoming</option>
-          <option value="all">Breaks: All</option>
-        </select>
+      <div class="stats-card">
+        <div class="stats-title">Baku Central</div>
+        <div class="stats-value">0.0</div>
       </div>
-      
-      <div class="search-section">
-        <input type="text" id="employee-search" placeholder="Search..." class="search-input">
+      <div class="stats-card">
+        <div class="stats-title">Ganja</div>
+        <div class="stats-value">0.0</div>
       </div>
-      
-      <!-- Переключатель темы -->
-      <div class="theme-toggle-container">
-        <span class="theme-text">Theme:</span>
-        <label class="theme-switch">
-          <input type="checkbox" id="theme-checkbox">
-          <span class="slider"></span>
-        </label>
+      <div class="stats-card">
+        <div class="stats-title">Lankaran</div>
+        <div class="stats-value">0.0</div>
       </div>
-      
-      <!-- Секция обновления страницы с таймером и кнопкой refresh now -->
-      <div class="refresh-section">
-        <span id="timer-label">Refresh in: <span id="countdown">15</span> s</span>
-        <div id="refresh-spinner" class="spinner-border text-primary" role="status" style="display:none;">
-          <span class="sr-only">Loading...</span>
-        </div>
-        <button class="refresh-btn" onclick="refreshNow()">Refresh now</button>
+      <div class="stats-card">
+        <div class="stats-title">Mingachevir</div>
+        <div class="stats-value">0.0</div>
       </div>
-      
+      <div class="stats-card">
+        <div class="stats-title">Nakchivan</div>
+        <div class="stats-value">0.0</div>
+      </div>
     </div>
+      
     
     <!-- Контент -->
     <div id="shift-summary" class="shift-summary-card">
@@ -644,7 +699,7 @@
     <div id="platforms-container" class="platforms-row"></div>
     
     <div id="breaks-section">
-      <h2>Upcoming Breaks</h2>
+      <h2>Breaks</h2>
       <div id="breaks-app"></div>
     </div>
   </div>
@@ -1145,7 +1200,7 @@
           value: data[6][27] || "",
         },
         {
-          title: "Should be on shift",
+          title: "Should be",
           value: data[6][29] || "",
         },
         {
@@ -1189,7 +1244,7 @@
           customClass: "small-font-card"
         },
         {
-          title: "Will not attend the shift",
+          title: "WNATS",
           value: (data[8][27] || "") + (data[10][27] ? ", " + data[10][27] : ""),
           customClass: "small-font-card"
         }
