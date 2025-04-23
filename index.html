@@ -82,36 +82,55 @@
         position: fixed;
         top: 0;
         left: -250px;
-        width: var(--menu-width);
+        width: 250px;
         height: 100%;
         background: var(--menu-bg-color);
-        box-shadow: var(--menu-shadow);
-        transition: left var(--transition-speed) ease;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+        transition: left 0.3s ease;
         z-index: 1099;
-        padding-top: 20px;
-        padding-left: 15px;
-        padding-right: 15px;
+        padding: 30px 20px;
       }
+
       #sidebar.active {
         left: 0;
       }
-      #sidebar .close-btn {
-        display: block;
-        text-align: right;
-        font-size: 24px;
-        cursor: pointer;
-        margin-bottom: 10px;
-        color: var(--text-color);
-      }
+
       #sidebar a {
-        display: block;
-        padding: 10px 5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 10px;
+        font-size: 1rem;
         color: var(--text-color);
-        text-decoration: none;
         border-bottom: 1px solid var(--card-border-color);
+        transition: background 0.2s ease, transform 0.2s ease;
+        text-decoration: none;
       }
+
       #sidebar a:hover {
-        background-color: var(--bg-color);
+        background: rgba(0, 123, 255, 0.05);
+        transform: translateX(4px);
+        border-radius: 6px;
+      }
+
+      #sidebar .close-btn {
+        font-size: 24px;
+        text-align: right;
+        cursor: pointer;
+        color: var(--text-color);
+        margin-bottom: 20px;
+      }
+
+      body.dark-theme #sidebar {
+        background: #2b2b2b;
+      }
+
+      body.dark-theme #sidebar a {
+        color: #f0f0f0;
+      }
+
+      body.dark-theme #sidebar a:hover {
+        background: rgba(255, 255, 255, 0.1);
       }
 
       .dashboard-container {
@@ -545,56 +564,54 @@
       }
 
       body.dark-theme #employee-modal {
-  background-color: #2b2b2b;
-  color: #f0f0f0;
-  border: 1px solid #444;
-}
+        background-color: #2b2b2b;
+        color: #f0f0f0;
+        border: 1px solid #444;
+      }
 
-body.dark-theme #employee-modal h5 {
-  color: #fff;
-}
+      body.dark-theme #employee-modal h5 {
+        color: #fff;
+      }
 
-body.dark-theme #employee-modal small {
-  color: #aaa;
-}
+      body.dark-theme #employee-modal small {
+        color: #aaa;
+      }
 
-body.dark-theme #employee-modal strong {
-  color: #ddd;
-}
+      body.dark-theme #employee-modal strong {
+        color: #ddd;
+      }
 
-body.dark-theme #employee-modal a,
-body.dark-theme #employee-modal .btn-outline-primary {
-  color: #66b0ff;
-  border-color: #66b0ff;
-}
+      body.dark-theme #employee-modal a,
+      body.dark-theme #employee-modal .btn-outline-primary {
+        color: #66b0ff;
+        border-color: #66b0ff;
+      }
 
-body.dark-theme #employee-modal .btn-outline-primary:hover {
-  background-color: #66b0ff;
-  color: white;
-}
+      body.dark-theme #employee-modal .btn-outline-primary:hover {
+        background-color: #66b0ff;
+        color: white;
+      }
 
-.break-overdue {
-  color: #dc3545; /* Bootstrap red */
-  font-weight: bold;
-  animation: pulse 1s infinite;
-}
+      .break-overdue {
+        color: #dc3545; /* Bootstrap red */
+        font-weight: bold;
+        animation: pulse 1s infinite;
+      }
 
-@keyframes pulse {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.05);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.6;
+          transform: scale(1.05);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
     </style>
-
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -665,7 +682,6 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
           Support Monitoring Dashboard
         </h1>
       </div>
-
       <!-- Центр: фильтры -->
       <div
         class="filters-wrapper d-flex flex-wrap align-items-center flex-grow-1 justify-content-center header-gap"
@@ -715,7 +731,6 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
           class="search-input"
         />
       </div>
-
       <!-- Правая часть: тема + refresh + имя + logout -->
       <div class="d-flex align-items-center flex-wrap header-gap">
         <!-- Переключатель темы -->
@@ -726,10 +741,11 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
             <span class="slider"></span>
           </label>
         </div>
-
         <div class="refresh-section d-flex align-items-center gap-2">
           <span id="timer-label"
-            >Refresh in: <span id="countdown">15</span>s</span
+            >Refresh in: 
+            <span id="countdown">15</span>s
+          </span
           >
           <div
             style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;"
@@ -762,118 +778,121 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
         </div>
       </div>
     </header>
-
-    <!-- Сайдбар с навигацией -->
     <div id="sidebar">
       <div class="close-btn" id="sidebar-close">&times;</div>
-      <a href="https://example.com" target="_blank">YIGIM Dashboard</a>
-      <a href="https://anotherexample.com" target="_blank">Datadog Dashboard</a>
-      <a href="https://yetanother.com" target="_blank">City States</a>
-      <a href="https://yetanother.com" target="_blank">City Tools</a>
-      <a href="https://yetanother.com" target="_blank">Converse Admin Panel</a>
+      <a href="https://example.com" target="_blank">📊 YIGIM Dashboard</a>
+      <a href="https://anotherexample.com" target="_blank">📈 Datadog Dashboard</a>
+      <a href="https://yetanother.com" target="_blank">🏙️ City States</a>
+      <a href="https://yetanother.com" target="_blank">🛠️ City Tools</a>
+      <a href="https://yetanother.com" target="_blank">🧭 Converse Admin Panel</a>
     </div>
-
     <div class="dashboard-container">
       <div class="info-cards d-flex flex-wrap gap-3 my-3 px-3">
         <div class="stats-card" id="weather-card">
           <span class="stats-title">Baku Weather</span>
-          <span class="stats-value" id="baku-temp">-- °C</span><br />
+          <span class="stats-value" id="baku-temp">-- °C</span>
+          <br />
           <span class="stats-title">Wind Speed</span>
           <span class="stats-value" id="baku-wind">-- m/s</span>
         </div>
         <div class="stats-card">
           <div class="stats-title">Baku Central</div>
-          <div class="stats-value">0.0</div>
+          <div class="stats-value" style="color: #218838;">1034/1027(1.02)</div>
+          <div class="stats-value" style="color: #888;">PuE: 8 min</div>
         </div>
         <div class="stats-card">
           <div class="stats-title">Ganja</div>
-          <div class="stats-value">0.0</div>
+          <div class="stats-value" style="color: #f39c12;">100/234 (2.4)</div>
+          <div class="stats-value" style="color: #888;">PuE: 8 min</div>
         </div>
         <div class="stats-card">
           <div class="stats-title">Lankaran</div>
-          <div class="stats-value">0.0</div>
+          <div class="stats-value" style="color: #dc3545;">15/10 (3.0)</div>
+          <div class="stats-value" style="color: #888;">PuE: 8 min</div>
         </div>
         <div class="stats-card">
           <div class="stats-title">Mingachevir</div>
-          <div class="stats-value">0.0</div>
+          <div class="stats-value" style="color: #888;">Disabled</div>
         </div>
         <div class="stats-card">
           <div class="stats-title">Nakchivan</div>
-          <div class="stats-value">0.0</div>
+          <div class="stats-value" style="color: #888;">Disabled</div>
         </div>
       </div>
-
       <!-- Контент -->
       <div id="shift-summary" class="shift-summary-card">
         <div class="shift-summary-title">Metrics per platform</div>
         <table class="shift-summary-grid" id="summary-table"></table>
       </div>
-
       <div id="platforms-container" class="platforms-row"></div>
-
       <div id="breaks-section">
         <h2>Breaks</h2>
         <div id="breaks-app"></div>
       </div>
     </div>
-
     <!-- Модальное окно сотрудника -->
     <div id="modal-overlay"></div>
     <div
       id="employee-modal">
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 0 20px;">
-      <div style="display: flex; align-items: center;">
-        <img 
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 0 20px;">
+        <div style="display: flex; align-items: center;">
+          <img 
           id="modal-emp-avatar" 
           src="https://i.ibb.co/YrbxqCn/favicon.jpg" 
           alt="Avatar" 
           style="width: 60px; height: 60px; border-radius: 50%; margin-right: 15px;"
         />
-        <div>
-          <h5 id="modal-emp-name" style="margin: 0; font-weight: 600;">Employee Name</h5>
-          <small id="modal-emp-email" style="color: #888;">employee.email@wolt.com</small>
+          <div>
+            <h5 id="modal-emp-name" style="margin: 0; font-weight: 600;">Employee Name</h5>
+            <small id="modal-emp-email" style="color: #888;">employee.email@wolt.com</small>
+          </div>
+        </div>
+        <span class="close-btn" id="modal-close" style="cursor: pointer; font-size: 24px; color: #999;">&times;</span>
+      </div>
+      <!-- Информация -->
+      <div style="padding: 15px 20px 0 20px; text-align: left;">
+        <div style="margin-bottom: 10px;">
+          <strong>Role:</strong>
+          <span id="modal-emp-role">Support Associate</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Prime platform:</strong>
+          <span id="modal-emp-prime">CS</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Preferred platform:</strong>
+          <span id="modal-emp-pref">PSR</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Can reallocate?:</strong>
+          <span id="modal-emp-realloc">Yes</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Language:</strong>
+          <span id="modal-emp-languages">AZ RUGB</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Capacity:</strong>
+          <span id="modal-emp-capacity">—</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Shift:</strong>
+          <span id="modal-emp-shift">—</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Break:</strong>
+          <span id="modal-emp-break">—</span>
         </div>
       </div>
-      <span class="close-btn" id="modal-close" style="cursor: pointer; font-size: 24px; color: #999;">&times;</span>
-    </div>
-    
-    <!-- Информация -->
-    <div style="padding: 15px 20px 0 20px; text-align: left;">
-      <div style="margin-bottom: 10px;">
-        <strong>Role:</strong> <span id="modal-emp-role">Support Associate</span>
+      <!-- Кнопки -->
+      <div style="padding: 20px; text-align: right;">
+        <button id="modal-inbox-link" class="btn btn-primary" style="margin-right: 10px;">Open Inbox</button>
+        <button id="modal-admin-link" class="btn btn-outline-primary">Admin Panel</button>
       </div>
-      <div style="margin-bottom: 10px;">
-        <strong>Prime platform:</strong> <span id="modal-emp-prime">CS</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>Preferred platform:</strong> <span id="modal-emp-pref">PSR</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>Can reallocate?:</strong> <span id="modal-emp-realloc">Yes</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>Language:</strong> <span id="modal-emp-languages">AZ RUGB</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>Shift:</strong> <span id="modal-emp-shift">—</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>Break:</strong> <span id="modal-emp-break">—</span>
-      </div>      
-    </div>
-    
-    <!-- Кнопки -->
-    <div style="padding: 20px; text-align: right;">
-      <button id="modal-inbox-link" class="btn btn-primary" style="margin-right: 10px;">Open Inbox</button>
-      <button id="modal-admin-link" class="btn btn-outline-primary">Admin Panel</button>
-    </div>
-    
-      
       <!-- Подключаем jQuery, Bootstrap JS и Bootstrap-Select JS -->
       <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/js/bootstrap-select.min.js"></script>
-
       <script>
         // ===============================
         // WEATHER SECTION WITH CACHING & EMOJI
@@ -1088,7 +1107,7 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
         }
 
         async function fetchEmployeeList() {
-          const data = await fetchSheetData("emplist!A1:F");
+          const data = await fetchSheetData("emplist!A1:G");
           if (!data || data.length < 2) return;
           for (let i = 1; i < data.length; i++) {
             const row = data[i];
@@ -1104,7 +1123,8 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
               canReallocate: canRealloc,
               prime: primePlatform,
               pref: preferredPlatform,
-              languages: languages
+              languages: languages,
+              capacity: row[6]?.trim() || "N/A"
             };
           }
         }
@@ -1171,6 +1191,8 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
             info.pref || "N/A";
           document.getElementById("modal-emp-languages").textContent =
             info.languages || "N/A";
+          document.getElementById("modal-emp-capacity").textContent =
+            info.capacity || "N/A";
           document.getElementById("modal-inbox-link").onclick = () => {
             window.open(generateInboxLink(info.id), "_blank");
           };
@@ -1313,32 +1335,45 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
               if (currentStatusFilter === "active") showAway = false;
               else if (currentStatusFilter === "away") showActive = false;
 
-              let html = `<div class="platform-card">
-                        <h5>
-                          <a href="${platform.url}" target="_blank" rel="noopener" title="Click to navigate to ${platform.name}" style="vertical-align: middle;">
+              let html = `
+        <div class="platform-card">
+          <h5>
+            <a href="${platform.url}" target="_blank" rel="noopener" title="Click to navigate to ${platform.name}" style="vertical-align: middle;">
                             ${platform.name}
                           </a>
-                          <span class="info-icon" data-toggle="tooltip" title="${
+            <span class="info-icon" data-toggle="tooltip" title="${
                             platformInfo[platform.name] || ""
                           }" style="display: inline-block; vertical-align: middle; margin-left: 6px;">
-                            <img src="https://www.svgrepo.com/show/474873/info.svg" alt="Info" style="width:16px; height:16px; cursor:pointer; vertical-align:middle;" />
-                          </span>
-                        </h5>`;
+              <img src="https://www.svgrepo.com/show/474873/info.svg" alt="Info" style="width:16px; height:16px; cursor:pointer; vertical-align:middle;" />
+            </span>
+          </h5>`;
               if (showActive) {
                 if (activeNames.length === 0) {
-                  html += `<p><small style="color: red; font-weight: bold;">Active (0)</small>
-                          <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
-                        </p>`;
+                  html += `
+          <p>
+            <small style="color: red; font-weight: bold;">Active (0)</small>
+            <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
+          </p>`;
                 } else {
-                  html += `<p><small>Active (${activeNames.length})</small></p><ul>`;
+                  html += `
+          <p>
+            <small>Active (${activeNames.length})</small>
+          </p>
+          <ul>`;
                   activeNames.forEach((n) => {
-                    html += `<li class="employee-item" data-employee="${n}">${n}</li>`;
+                    html += `
+            <li class="employee-item" data-employee="${n}">${n}</li>`;
                   });
-                  html += `</ul>`;
+                  html += `
+          </ul>`;
                 }
               }
               if (showAway) {
-                html += `<p><small>Away (${awayData.length})</small></p><ul>`;
+                html += `
+          <p>
+            <small>Away (${awayData.length})</small>
+          </p>
+          <ul>`;
                   awayData.forEach((item) => {
                     let reasonText = item.reason || "";
                     let reasonClass = "";
@@ -1350,14 +1385,17 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
                       }
                     }
 
-                    html += `<li class="employee-item ${reasonClass}" data-employee="${item.name}">${item.name}`;
+                    html += `
+            <li class="employee-item ${reasonClass}" data-employee="${item.name}">${item.name}`;
                     if (reasonText) html += ` (${reasonText})`;
                     html += `</li>`;
                   });
 
-                html += `</ul>`;
+                html += `
+          </ul>`;
               }
-              html += `</div>`;
+              html += `
+        </div>`;
               container.innerHTML += html;
             } else {
               // Для Aircall используем отдельную функцию
@@ -1406,46 +1444,62 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
           showAway = true
         ) {
           const aircallPlatform = platforms.find((p) => p.name === "Aircall");
-          let html = `<div class="platform-card">
-                    <h5>
-                      <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Click to navigate to Snooze inbox" style="vertical-align: middle;">
+          let html = `
+        <div class="platform-card">
+          <h5>
+            <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Click to navigate to Snooze inbox" style="vertical-align: middle;">
                         Aircall
                       </a>
-                      <span class="info-icon" data-toggle="tooltip" title="${
+            <span class="info-icon" data-toggle="tooltip" title="${
                         platformInfo["Aircall"] || ""
                       }" style="display: inline-block; vertical-align: middle; margin-left: 6px;">
-                          <img src="https://www.svgrepo.com/show/474873/info.svg" alt="Info" style="width:16px; height:16px; cursor:pointer; vertical-align:middle;" />
-                        </span>
-                    </h5>`;
+              <img src="https://www.svgrepo.com/show/474873/info.svg" alt="Info" style="width:16px; height:16px; cursor:pointer; vertical-align:middle;" />
+            </span>
+          </h5>`;
           if (showActive) {
             if (activeList.length === 0) {
-              html += `<p><small style="color: red; font-weight: bold;">Active (0)</small>
-                        <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
-                      </p>`;
+              html += `
+          <p>
+            <small style="color: red; font-weight: bold;">Active (0)</small>
+            <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
+          </p>`;
             } else {
-              html += `<p><small>Active (${activeList.length})</small></p>
-                       <ul id="aircall-active-list">` +
+              html += `
+          <p>
+            <small>Active (${activeList.length})</small>
+          </p>
+          <ul id="aircall-active-list">` +
                 activeList
                   .map((n, index) => {
                     const safeId = `aircall-active-${index}`;
-                    return `<li id="${safeId}" class="employee-item" data-employee="${n}">${n} - <span style="color: green;">Checking status...</span></li>`;
+                    return `
+            <li id="${safeId}" class="employee-item" data-employee="${n}">${n} - 
+              <span style="color: green;">Checking status...</span>
+            </li>`;
                   })
                   .join("") +
-                `</ul>`;
+                `
+          </ul>`;
             }
           }
           if (showAway) {
-            html += `<p><small>Away (${awayList.length})</small></p>
-                     <ul>` +
+            html += `
+          <p>
+            <small>Away (${awayList.length})</small>
+          </p>
+          <ul>` +
               awayList
                 .map((a) => {
                   const extra = a.reason ? " - " + a.reason : "";
-                  return `<li class="employee-item" data-employee="${a.name}">${a.name}${extra}</li>`;
+                  return `
+            <li class="employee-item" data-employee="${a.name}">${a.name}${extra}</li>`;
                 })
                 .join("") +
-              `</ul>`;
+              `
+          </ul>`;
           }
-          html += `</div>`;
+          html += `
+        </div>`;
           document.getElementById("platforms-container").innerHTML += html;
         }
 
@@ -1513,11 +1567,13 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
             }
           ];
 
-          let html = `<div class="shift-summary-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">`;
+          let html = `
+        <div class="shift-summary-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">`;
 
           summaryCards.forEach((card) => {
             html += `
-              <div class="shift-card ${
+              
+          <div class="shift-card ${
                 card.customClass ? card.customClass : ""
               }" style="
                 background: var(--card-bg-color);
@@ -1527,22 +1583,26 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
                 padding: 16px;
                 min-width: 150px;
               ">
-                <h6 class="shift-card-title">
+            <h6 class="shift-card-title">
                   ${card.title}
                 </h6>
-                <div style="margin-bottom: 0.5rem;">${card.value || ""}</div>
+            <div style="margin-bottom: 0.5rem;">${card.value || ""}</div>
             `;
             if (card.away) {
               html += `
-                <div class="shift-card-away">
-                  <strong>Away:</strong> ${card.away}
-                </div>
+                
+            <div class="shift-card-away">
+              <strong>Away:</strong> ${card.away}
+                
+            </div>
               `;
             }
-            html += `</div>`;
+            html += `
+          </div>`;
           });
 
-          html += `</div>`;
+          html += `
+        </div>`;
           tableEl.innerHTML = html;
         }
 
@@ -1554,30 +1614,39 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
   if (existing) existing.remove();
 
   let html = `
-    <div class="shift-summary-card" id="responsible-card">
-      <div class="shift-summary-title">👥 Responsible People</div>
-      <table class="shift-summary-grid" style="max-width: 500px; margin: 0 auto;">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Position</th>
-          </tr>
-        </thead>
-        <tbody>`;
+    
+        <div class="shift-summary-card" id="responsible-card">
+          <div class="shift-summary-title">👥 Responsible People</div>
+          <table class="shift-summary-grid" style="max-width: 500px; margin: 0 auto;">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Position</th>
+              </tr>
+            </thead>
+            <tbody>`;
 
   data.forEach(row => {
     const name = row[0]?.trim() || "";
     const role = row[1]?.trim() || "";
     if (name && role) {
       html += `
-        <tr>
-          <td><span style="font-weight: bold;">${name}</span></td>
-          <td><span style="background:#e7f1ff; color:#0056b3; padding: 2px 6px; border-radius: 6px; font-size: 0.85rem;">${role}</span></td>
-        </tr>`;
+        
+              <tr>
+                <td>
+                  <span style="font-weight: bold;">${name}</span>
+                </td>
+                <td>
+                  <span style="background:#e7f1ff; color:#0056b3; padding: 2px 6px; border-radius: 6px; font-size: 0.85rem;">${role}</span>
+                </td>
+              </tr>`;
     }
   });
 
-  html += `</tbody></table></div>`;
+  html += `
+            </tbody>
+          </table>
+        </div>`;
 
   const container = document.getElementById("shift-summary");
   container.insertAdjacentHTML("afterend", html);
@@ -1614,22 +1683,30 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
                 parseTimeToMinutes(b["Break Time"])
             );
           }
-          let html = `<div class="break-card">
-                        <h5>${
+          let html = `
+        <div class="break-card">
+          <h5>${
                           currentBreakFilter === "upcoming"
                             ? "Upcoming breaks in the next hour"
                             : "All Breaks"
                         }</h5>
-                        <ul>`;
+          <ul>`;
           filteredBreaks.forEach((item) => {
             html += `
-              <li>
-                <strong>${item["Name"]}</strong><br/>
-                Break at: <strong>${item["Break Time"]}</strong><br/>
+              
+            <li>
+              <strong>${item["Name"]}</strong>
+              <br/>
+                Break at: 
+              <strong>${item["Break Time"]}</strong>
+              <br/>
                 Shift: ${item["Shift Start Time"]} | ${item["Working Space"]}
-              </li>`;
+              
+            </li>`;
           });
-          html += `</ul></div>`;
+          html += `
+          </ul>
+        </div>`;
           document.getElementById("breaks-app").innerHTML = html;
         }
 
@@ -1800,62 +1877,72 @@ body.dark-theme #employee-modal .btn-outline-primary:hover {
         });
 
         document.addEventListener("DOMContentLoaded", () => {
-          loadThemePreference();
+  loadThemePreference();
 
-          document
-            .getElementById("employee-search")
-            .addEventListener("input", function (e) {
-              currentSearchTerm = e.target.value;
-              applyFilters();
-            });
-          document
-            .getElementById("status-filter")
-            .addEventListener("change", function (e) {
-              currentStatusFilter = e.target.value;
-              applyFilters();
-            });
-          document
-            .getElementById("realloc-filter")
-            .addEventListener("change", function (e) {
-              currentReallocFilter = e.target.value;
-              applyFilters();
-            });
-          document
-            .getElementById("lang-filter")
-            .addEventListener("change", function (e) {
-              currentLangFilter = e.target.value;
-              applyFilters();
-            });
-          document
-            .getElementById("break-filter")
-            .addEventListener("change", function (e) {
-              currentBreakFilter = e.target.value;
-              fetchBreaksData();
-            });
+  const sidebar = document.getElementById("sidebar");
+  const hamburger = document.getElementById("hamburger-menu");
+  const closeBtn = document.getElementById("sidebar-close");
 
-          const overlay = document.getElementById("modal-overlay");
-          const modalClose = document.getElementById("modal-close");
-          overlay.addEventListener("click", closeEmployeeModal);
-          modalClose.addEventListener("click", closeEmployeeModal);
+  if (hamburger) {
+    hamburger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      sidebar.classList.add("active");
+    });
+  }
 
-          document
-            .getElementById("theme-checkbox")
-            .addEventListener("change", toggleTheme);
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      sidebar.classList.remove("active");
+    });
+  }
 
-          document
-            .getElementById("hamburger-menu")
-            .addEventListener("click", function () {
-              document.getElementById("sidebar").classList.toggle("active");
-            });
-          document
-            .getElementById("sidebar-close")
-            .addEventListener("click", function () {
-              document.getElementById("sidebar").classList.remove("active");
-            });
+  document.addEventListener("click", (e) => {
+    if (
+      sidebar.classList.contains("active") &&
+      !sidebar.contains(e.target) &&
+      !e.target.closest("#hamburger-menu")
+    ) {
+      sidebar.classList.remove("active");
+    }
+  });
 
-          fetchData();
-          fetchWeather();
-        });
+  // другие инициализации...
+  document.getElementById("employee-search").addEventListener("input", function (e) {
+    currentSearchTerm = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById("status-filter").addEventListener("change", function (e) {
+    currentStatusFilter = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById("realloc-filter").addEventListener("change", function (e) {
+    currentReallocFilter = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById("lang-filter").addEventListener("change", function (e) {
+    currentLangFilter = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById("break-filter").addEventListener("change", function (e) {
+    currentBreakFilter = e.target.value;
+    fetchBreaksData();
+  });
+
+  const overlay = document.getElementById("modal-overlay");
+  const modalClose = document.getElementById("modal-close");
+  overlay.addEventListener("click", closeEmployeeModal);
+  modalClose.addEventListener("click", closeEmployeeModal);
+
+  document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
+
+  fetchData();
+  fetchWeather();
+});
+      
       </script>
     </div>
   </body>
