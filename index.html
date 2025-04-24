@@ -653,6 +653,35 @@
         color: white;
       }
 
+      /* Стили для карточек в dark-theme */
+      body.dark-theme .stats-card {
+        background: var(--card-bg-color) !important;    /* из ваших переменных тёмной темы */
+        border-color: var(--card-border-color) !important;
+        color: var(--card-text-color) !important;       /* общий цвет текста */
+      }
+
+      /* Заголовки внутри карточек (stats-title) */
+      body.dark-theme .stats-card .stats-title {
+        color: rgba(255,255,255,0.7) !important;
+      }
+
+      /* Основные большие цифры (stats-value) */
+      body.dark-theme .stats-card .stats-value {
+        color: #ffffff !important;
+      }
+
+      /* Мелкий дополнительный текст (класс .small или inline) */
+      body.dark-theme .stats-card .small,
+      body.dark-theme .stats-card .stats-value small {
+        color: rgba(255,255,255,0.6) !important;
+      }
+
+      /* Иконка тултипа тоже светлее */
+      body.dark-theme .stats-card .info-icon {
+        filter: brightness(0) invert(1) !important;
+      }
+
+
       .break-overdue {
         color: #dc3545; /* Bootstrap red */
         font-weight: bold;
