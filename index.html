@@ -176,6 +176,10 @@
         font-size: 1.2rem;
         margin-top: 4px;
       }
+      .red-card {
+        background-color: #ffe5e5; /* светло-красный фон */
+        border-color: #dc3545;     /* красная граница */
+      }
       .filter-section {
         display: flex;
         gap: 10px;
@@ -1718,8 +1722,14 @@ activeNames.forEach((n) => {
         const splitted = card.value.split(",");
         const count = splitted[0].trim();
         const tooltipDetails = splitted.slice(1).map(e => e.trim()).join("<br>");
+
+        let cardClass = card.customClass ? card.customClass : "";
+        if (count !== "0") {
+          cardClass += " red-card";
+        }
+        
         html += `
-          <div class="stats-card ${card.customClass ? card.customClass : ""}">
+          <div class="stats-card ${cardClass}">
             <div class="stats-title">${card.title}</div>
             <div class="stats-value" style="display:inline-flex; align-items:center; gap:4px;">
               ${count}
