@@ -1499,6 +1499,7 @@ activeNames.forEach((n) => {
                 }
               }
               if (showAway) {
+                let brbCount = 0;
                 html += `
           
           <p>
@@ -1516,6 +1517,10 @@ activeNames.forEach((n) => {
                       }
                     }
 
+                    if (reasonText.includes("BRB")) {
+                      brbCount++;
+                    }
+
                     html += `
             
             <li class="employee-item ${reasonClass}" data-employee="${item.name}">${item.name}`;
@@ -1526,6 +1531,12 @@ activeNames.forEach((n) => {
                 html += `
           
           </ul>`;
+                if (brbCount >= 2) {
+                  html += `
+                    <p style="color:red; font-weight:bold; margin-top:8px;">
+                      Warning: 2 or more employees are on BRB!
+                    </p>`;
+              }
               }
               html += `
         
