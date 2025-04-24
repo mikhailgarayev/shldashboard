@@ -786,6 +786,7 @@
         </div>
       </div>
     </header>
+
     <div id="sidebar">
       <div class="close-btn" id="sidebar-close">&times;</div>
       <a href="https://example.com" target="_blank">📊 YIGIM Dashboard</a>
@@ -794,104 +795,99 @@
       <a href="https://yetanother.com" target="_blank">🛠️ City Tools</a>
       <a href="https://yetanother.com" target="_blank">🧭 Converse Admin Panel</a>
     </div>
+
     <div class="dashboard-container">
+      <!-- Блок с карточками "Baku Central", "Ganja" и т.д. (кроме погоды) -->
       <div class="info-cards d-flex flex-wrap gap-3 my-3 px-3">
-        <div class="stats-card" id="weather-card">
-          <span class="stats-title">Baku Weather</span>
-          <span class="stats-value" id="baku-temp">-- °C</span>
-          <br />
-          <span class="stats-title">Wind Speed</span>
-          <span class="stats-value" id="baku-wind">-- m/s</span>
+        <div class="stats-card">
+          <div class="stats-title">Baku Central</div>
+          
+          <!--  Коэффициент покажем как основной текст  -->
+          <div 
+          class="stats-value"
+          style="
+          color: #218838;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          ">
+            1.02
+            <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              title="1034 / 1027"
+              style="cursor: pointer; margin-left: 6px;"
+            >
+              <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
+              <img
+                src="https://www.svgrepo.com/show/474873/info.svg"
+                alt="Details"
+                style="width:16px; height:16px; vertical-align: middle;"
+              />
+            </span>
+          </div>
+
+          <!-- Остальная информация, например PuE: 8 min -->
+          <div class="stats-value" style="color: #888;">
+            PuE: 8 min
+          </div>
         </div>
         <div class="stats-card">
-        <div class="stats-title">Baku Central</div>
-        
-        <!--  Коэффициент покажем как основной текст  -->
-        <div 
-        class="stats-value"
-        style="
-        color: #218838;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        ">
-          1.02
-          <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
-          <span
-            data-toggle="tooltip"
-            data-placement="top"
-            title="1034 / 1027"
-            style="cursor: pointer; margin-left: 6px;"
-          >
-            <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
-            <img
-              src="https://www.svgrepo.com/show/474873/info.svg"
-              alt="Details"
-              style="width:16px; height:16px; vertical-align: middle;"
-            />
-          </span>
+          <div class="stats-title">Ganja</div>
+          
+          <!--  Коэффициент покажем как основной текст  -->
+          <div class="stats-value" style="color: #f39c12;">
+            2.40
+            <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              title="1034 / 1027"
+              style="cursor: pointer; margin-left: 6px;"
+            >
+              <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
+              <img
+                src="https://www.svgrepo.com/show/474873/info.svg"
+                alt="Details"
+                style="width:16px; height:16px; vertical-align:middle;"
+              />
+            </span>
+          </div>
+
+          <!-- Остальная информация, например PuE: 8 min -->
+          <div class="stats-value" style="color: #888;">
+            PuE: 12 min
+          </div>
         </div>
 
-        <!-- Остальная информация, например PuE: 8 min -->
-        <div class="stats-value" style="color: #888;">
-          PuE: 8 min
+        <div class="stats-card">
+          <div class="stats-title">Lankaran</div>
+          
+          <!--  Коэффициент покажем как основной текст  -->
+          <div class="stats-value" style="color: #dc3545;">
+            3.0
+            <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              title="1034 / 1027"
+              style="cursor: pointer; margin-left: 6px;"
+            >
+              <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
+              <img
+                src="https://www.svgrepo.com/show/474873/info.svg"
+                alt="Details"
+                style="width:16px; height:16px; vertical-align:middle;"
+              />
+            </span>
+          </div>
+
+          <!-- Остальная информация, например PuE: 8 min -->
+          <div class="stats-value" style="color: #888;">
+            PuE: 22 min
+          </div>
         </div>
-      </div>
-      <div class="stats-card">
-  <div class="stats-title">Ganja</div>
-  
-  <!--  Коэффициент покажем как основной текст  -->
-  <div class="stats-value" style="color: #f39c12;">
-    2.40
-    <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
-    <span
-      data-toggle="tooltip"
-      data-placement="top"
-      title="1034 / 1027"
-      style="cursor: pointer; margin-left: 6px;"
-    >
-      <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
-      <img
-        src="https://www.svgrepo.com/show/474873/info.svg"
-        alt="Details"
-        style="width:16px; height:16px; vertical-align:middle;"
-      />
-    </span>
-  </div>
-
-  <!-- Остальная информация, например PuE: 8 min -->
-  <div class="stats-value" style="color: #888;">
-    PuE: 12 min
-  </div>
-</div>
-
-<div class="stats-card">
-  <div class="stats-title">Lankaran</div>
-  
-  <!--  Коэффициент покажем как основной текст  -->
-  <div class="stats-value" style="color: #dc3545;">
-    3.0
-    <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
-    <span
-      data-toggle="tooltip"
-      data-placement="top"
-      title="1034 / 1027"
-      style="cursor: pointer; margin-left: 6px;"
-    >
-      <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
-      <img
-        src="https://www.svgrepo.com/show/474873/info.svg"
-        alt="Details"
-        style="width:16px; height:16px; vertical-align:middle;"
-      />
-    </span>
-  </div>
-
-  <!-- Остальная информация, например PuE: 8 min -->
-  <div class="stats-value" style="color: #888;">
-    PuE: 22 min
-  </div>
-</div>
 
         <div class="stats-card">
           <div class="stats-title">Mingachevir</div>
@@ -902,12 +898,25 @@
           <div class="stats-value" style="color: #888;">Disabled</div>
         </div>
       </div>
+
       <!-- Контент -->
       <div id="shift-summary" class="shift-summary-card">
         <div class="shift-summary-title">📊 Metrics per platform</div>
         <table class="shift-summary-grid" id="summary-table"></table>
       </div>
+
+      <!-- Ряд карточек платформ (динамически заполняется JS) -->
       <div id="platforms-container" class="platforms-row"></div>
+
+      <!-- Перемещённая карточка погоды (теперь находится здесь) -->
+      <div class="stats-card" id="weather-card" style="margin-left: 8px; margin-top: 8px;">
+        <span class="stats-title">Baku Weather</span>
+        <span class="stats-value" id="baku-temp">-- °C</span>
+        <br />
+        <span class="stats-title">Wind Speed</span>
+        <span class="stats-value" id="baku-wind">-- m/s</span>
+      </div>
+
       <div id="breaks-section">
         <h2>⏰ Breaks</h2>
         <div id="breaks-app"></div>
@@ -1077,7 +1086,7 @@
         const RANGE = "list1!A1:BJ100";
         const RESPONSIBLES_RANGE = "list1!B5:C27";
         const BREAKS_RANGE = "prebreaks!A1:D40";
-        const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxU-4AAiow6Y0TV4ChSY";
+        const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxq-4AAiow6Y0TV4ChSY";
 
         let employeeData = {};
 
