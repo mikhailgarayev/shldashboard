@@ -1,290 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Employee Platform Changes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Bootstrap CSS (опционально для базовых стилей) -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Platform Transfers</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Базовый сброс стилей */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9f9f9;
-      color: #333;
-      padding: 20px;
-    }
-    /* Центрированный контейнер фиксированной ширины */
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 20px 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    h1 { text-align: center; margin-bottom: 20px; color: #444; }
-    /* Фильтры в один ряд */
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .filters .filter-group { flex: 1; }
-    .filters label { font-size: 0.9em; margin-bottom: 5px; color: #555; display: block; }
-    .filters input[type="date"],
-    .filters input[type="text"],
-    .filters select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    /* Таблица */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      text-align: left;
-      padding: 12px 15px;
-      border-bottom: 1px solid #ddd;
-    }
-    th { background-color: #55608f; color: #fff; text-transform: uppercase; letter-spacing: 0.03em; }
-    tr:hover { background-color: #f1f1f1; }
-    /* Сообщения и спиннер */
-    .message { text-align: center; padding: 20px; font-size: 1em; color: #666; }
-    .spinner {
-      margin: 50px auto;
-      width: 60px;
-      height: 60px;
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #55608f;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    /* Пагинация */
-    .pagination { display: flex; justify-content: center; list-style: none; padding: 10px 0; }
-    .pagination li { margin: 0 5px; }
-    .pagination li a {
-      display: block; padding: 6px 12px;
-      border: 1px solid #ccc; border-radius: 4px;
-      text-decoration: none; color: #55608f;
-    }
-    .pagination li a.active { background: #55608f; color: #fff; }
+    body { background: #f8f9fa; }
+    th.sortable { cursor: pointer; }
+    th.sorted-asc::after { content: ' ▲'; }
+    th.sorted-desc::after { content: ' ▼'; }
+    .filter-card { border-radius: .5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .table-responsive { border-radius: .5rem; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Employee Platform Changes</h1>
-    <!-- Фильтры в один ряд -->
-    <div class="filters">
-      <div class="filter-group">
-        <label for="fromDate">From Date</label>
-        <input type="date" id="fromDate" />
-      </div>
-      <div class="filter-group">
-        <label for="toDate">To Date</label>
-        <input type="date" id="toDate" />
-      </div>
-      <div class="filter-group">
-        <label for="employeeFilter">Employee Name</label>
-        <input type="text" id="employeeFilter" placeholder="Enter name" />
-      </div>
-      <div class="filter-group">
-        <label for="platformFilter">Platform</label>
-        <select id="platformFilter">
-          <option value="">All</option>
-          <option value="CS">CS</option>
-          <option value="CS / Post Order">CS / Post Order</option>
-          <option value="PSR">PSR</option>
-          <option value="Aircall">Aircall</option>
-          <option value="Venue">Venue</option>
-          <option value="SiMo">SiMo</option>
-          <option value="ST">ST</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label for="perPageSelect">Records per page</label>
-        <select id="perPageSelect">
-          <option value="10">10</option>
-          <option value="20" selected>20</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
+  <nav class="navbar navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="#">Platform Transfers</a>
+      <div class="d-flex">
+        <a href="https://mikhailgarayev.github.io/shldashboard/index.html" class="btn btn-outline-light">Back to Dashboard</a>
       </div>
     </div>
-    <!-- Анимация загрузки -->
-    <div id="loading" class="spinner"></div>
-    <!-- Сообщения -->
-    <div id="message" class="message" style="display: none;"></div>
-    <!-- Таблица -->
-    <table id="report-table" style="display: none;">
-      <thead>
-        <tr>
-          <th>Employee Name</th>
-          <th>Main Platform</th>
-          <th>Changed Platform</th>
-          <th>Change Time</th>
-          <th>End Time</th>
-          <th>Duration</th>
-        </tr>
-      </thead>
-      <tbody id="report-body"></tbody>
-    </table>
-    <!-- Пагинация -->
-    <ul id="pagination" class="pagination" style="display: none;"></ul>
+  </nav>
+
+  <div class="container">
+    <div class="card filter-card mb-4">
+      <div class="card-body">
+        <form class="row g-3 align-items-center">
+          <div class="col-auto">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by name">
+          </div>
+          <div class="col-auto">
+            <input type="date" id="startDate" class="form-control">
+          </div>
+          <div class="col-auto">
+            <input type="date" id="endDate" class="form-control">
+          </div>
+          <div class="col-auto">
+            <select id="platformFilter" class="form-select">
+              <option value="">All Platforms</option>
+              <option>CS</option>
+              <option>CS / Post Order</option>
+              <option>PSR</option>
+              <option>Aircall</option>
+              <option>Venue</option>
+              <option>Simo</option>
+              <option>ST</option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <select id="pageSizeSelect" class="form-select">
+              <option value="10">10 rows</option>
+              <option value="20">20 rows</option>
+              <option value="50">50 rows</option>
+              <option value="100">100 rows</option>
+            </select>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="table-responsive mb-3">
+      <table class="table table-hover table-striped mb-0 align-middle bg-white" id="transfersTable">
+        <thead class="table-light">
+          <tr>
+            <th class="sortable" data-key="name">Employee</th>
+            <th class="sortable" data-key="primary">Primary Platform</th>
+            <th class="sortable" data-key="newPlatform">New Platform</th>
+            <th class="sortable" data-key="time">Start Time</th>
+            <th class="sortable" data-key="endEvent">End Time</th>
+            <th class="sortable" data-key="duration">Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <nav>
+      <ul class="pagination justify-content-center" id="pagination"></ul>
+    </nav>
   </div>
 
-  <!-- Основной JavaScript для загрузки, фильтрации и постраничного вывода данных -->
+  <!-- Bootstrap JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
-    // URL веб-приложения Google Apps Script (замените на ваш)
-    const jsonUrl = 'https://script.google.com/macros/s/AKfycbzJa9QRREOoMUydE_MRhnfTqU-Lxf9Z67q5Q5zXc7d8tATOY2jHjZWzNSXQbNhPxfMD/exec';
-    let allData = [];
-    let currentPage = 1;
-    let recordsPerPage = 20;
+    const API_URL = 'https://script.google.com/macros/s/AKfycbz1QN5KuR4ZDGxkrApKqDzHDj1ewm5UTVP0vDjblopXqlOKlsDea7JOkldx_fBZ-GrA/exec?json=true';
 
-    // Функция форматирования даты-времени в формате YYYY-MM-DD HH:mm:ss
-    function formatDateTime(dateString) {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString;
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      const seconds = String(date.getSeconds()).padStart(2, "0");
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
+    let transfersData = [], filteredData = [];
+    let currentSort = { key: 'time', asc: true };
+    let currentPage = 1, pageSize = 10;
 
-    // Функция отображения данных в таблице с постраничным выводом
-    function displayData(data) {
-      const tbody = document.getElementById("report-body");
-      tbody.innerHTML = "";
-      if (data.length === 0) {
-        document.getElementById("message").textContent = "No data to display";
-        document.getElementById("message").style.display = "block";
-        document.getElementById("report-table").style.display = "none";
-        document.getElementById("pagination").style.display = "none";
-        return;
-      }
-      document.getElementById("message").style.display = "none";
-      document.getElementById("report-table").style.display = "table";
-      
-      // Определяем диапазон записей для текущей страницы
-      const start = (currentPage - 1) * recordsPerPage;
-      const end = start + recordsPerPage;
-      const pageData = data.slice(start, end);
+    const parseDate = str => new Date(str.replace(' ', 'T'));
+    const compareItems = (a, b) => {
+      let diff = ['time','endEvent'].includes(currentSort.key)
+        ? parseDate(a[currentSort.key]) - parseDate(b[currentSort.key])
+        : a[currentSort.key].localeCompare(b[currentSort.key]);
+      return currentSort.asc ? diff : -diff;
+    };
 
-      pageData.forEach(item => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${item.employee}</td>
-          <td>${item.mainPlatform}</td>
-          <td>${item.changedPlatform}</td>
-          <td>${formatDateTime(item.changeTime)}</td>
-          <td>${item.endTime ? formatDateTime(item.endTime) : "-"}</td>
-          <td>${item.duration || "-"}</td>
-        `;
-        tbody.appendChild(row);
-      });
-
-      setupPagination(data.length);
-    }
-
-    // Функция настройки пагинации
-    function setupPagination(totalRecords) {
-      const paginationEl = document.getElementById("pagination");
-      paginationEl.innerHTML = "";
-      const totalPages = Math.ceil(totalRecords / recordsPerPage);
-      if (totalPages <= 1) {
-        paginationEl.style.display = "none";
-        return;
-      }
-      paginationEl.style.display = "flex";
-      for (let i = 1; i <= totalPages; i++) {
-        const li = document.createElement("li");
-        const a = document.createElement("a");
-        a.href = "#";
-        a.textContent = i;
-        if (i === currentPage) a.classList.add("active");
-        a.addEventListener("click", (e) => {
-          e.preventDefault();
-          currentPage = i;
-          displayData(filteredData());
-        });
-        li.appendChild(a);
-        paginationEl.appendChild(li);
-      }
-    }
-
-    // Функция фильтрации данных по дате, сотруднику и платформе
-    function filteredData() {
-      const fromDate = document.getElementById("fromDate").value;
-      const toDate = document.getElementById("toDate").value;
-      const employeeFilter = document.getElementById("employeeFilter").value.trim().toLowerCase();
-      const platformFilter = document.getElementById("platformFilter").value;
-
-      return allData.filter(item => {
-        const employeeMatch = !employeeFilter || item.employee.toLowerCase().includes(employeeFilter);
-        const platformMatch = !platformFilter || item.changedPlatform === platformFilter;
-        let dateMatch = true;
-        if (fromDate || toDate) {
-          const changeDate = new Date(item.changeTime);
-          if (fromDate) {
-            const from = new Date(fromDate);
-            from.setHours(0, 0, 0, 0);
-            if (changeDate < from) dateMatch = false;
-          }
-          if (toDate) {
-            const to = new Date(toDate);
-            to.setHours(23, 59, 59, 999);
-            if (changeDate > to) dateMatch = false;
-          }
-        }
-        return employeeMatch && platformMatch && dateMatch;
-      });
-    }
-
-    // Функция загрузки данных с анимацией
-    function loadData() {
-      document.getElementById("loading").style.display = "block";
-      fetch(jsonUrl)
-        .then(response => {
-          if (!response.ok) throw new Error("Network error: " + response.status);
-          return response.json();
-        })
-        .then(data => {
-          allData = data;
-          currentPage = 1;
-          document.getElementById("loading").style.display = "none";
-          displayData(filteredData());
-        })
-        .catch(error => {
-          document.getElementById("loading").style.display = "none";
-          document.getElementById("message").textContent = "Error loading data: " + error.message;
-          document.getElementById("message").style.display = "block";
-          console.error("Data load error:", error);
-        });
-    }
-
-    // Обработчики фильтров
-    document.getElementById("fromDate").addEventListener("change", () => { currentPage = 1; displayData(filteredData()); });
-    document.getElementById("toDate").addEventListener("change", () => { currentPage = 1; displayData(filteredData()); });
-    document.getElementById("employeeFilter").addEventListener("input", () => { currentPage = 1; displayData(filteredData()); });
-    document.getElementById("platformFilter").addEventListener("change", () => { currentPage = 1; displayData(filteredData()); });
-    document.getElementById("perPageSelect").addEventListener("change", function() {
-      recordsPerPage = parseInt(this.value, 10);
+    function applyFilters() {
+      pageSize = parseInt(document.getElementById('pageSizeSelect').value);
       currentPage = 1;
-      displayData(filteredData());
-    });
+      let data = transfersData.slice();
 
-    // Инициализация: загрузка данных после загрузки документа
-    document.addEventListener("DOMContentLoaded", loadData);
+      const nameQ = document.getElementById('searchInput').value.toLowerCase();
+      if (nameQ) data = data.filter(i => i.name.toLowerCase().includes(nameQ));
+
+      const sd = document.getElementById('startDate').value;
+      if (sd) {
+        const d0 = new Date(sd);
+        data = data.filter(i => parseDate(i.time) >= d0);
+      }
+
+      const ed = document.getElementById('endDate').value;
+      if (ed) {
+        const d1 = new Date(ed);
+        d1.setHours(23,59,59,999);
+        data = data.filter(i => parseDate(i.time) <= d1);
+      }
+
+      const pf = document.getElementById('platformFilter').value;
+      if (pf) data = data.filter(i => i.newPlatform === pf);
+
+      filteredData = data.sort(compareItems);
+      updateTable();
+    }
+
+    function updateTable() {
+      const tbody = document.querySelector('#transfersTable tbody');
+      const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
+
+      if (!pageItems.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No records</td></tr>';
+      } else {
+        tbody.innerHTML = '';
+        pageItems.forEach(item => {
+          const tr = document.createElement('tr');
+          ['name','primary','newPlatform','time','endEvent','duration'].forEach(k => {
+            const td = document.createElement('td');
+            td.textContent = item[k] || '';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      const createPageItem = (text, page, disabled=false, active=false) => {
+        const li = document.createElement('li');
+        li.className = 'page-item' + (disabled ? ' disabled' : '') + (active ? ' active' : '');
+        const a = document.createElement('a');
+        a.className = 'page-link';
+        a.href = '#';
+        a.textContent = text;
+        if (!disabled && !active) {
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            currentPage = page;
+            updateTable();
+          });
+        }
+        li.appendChild(a);
+        return li;
+      };
+
+      pagination.appendChild(createPageItem('Prev', currentPage-1, currentPage===1));
+      for (let i = 1; i <= totalPages; i++) {
+        pagination.appendChild(createPageItem(i, i, false, i===currentPage));
+      }
+      pagination.appendChild(createPageItem('Next', currentPage+1, currentPage===totalPages));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      ['searchInput','startDate','endDate','platformFilter','pageSizeSelect'].forEach(id => {
+        document.getElementById(id).addEventListener('input', applyFilters);
+      });
+
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          transfersData = data;
+          applyFilters();
+        });
+
+      document.querySelectorAll('#transfersTable th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.key;
+          if (currentSort.key === key) {
+            currentSort.asc = !currentSort.asc;
+          } else {
+            document.querySelectorAll('th.sorted-asc, th.sorted-desc')
+              .forEach(h => h.classList.remove('sorted-asc','sorted-desc'));
+            currentSort.key = key;
+            currentSort.asc = true;
+          }
+          th.classList.toggle('sorted-asc', currentSort.asc);
+          th.classList.toggle('sorted-desc', !currentSort.asc);
+          applyFilters();
+        });
+      });
+    });
   </script>
 </body>
 </html>
