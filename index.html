@@ -159,13 +159,68 @@
         gap: 15px;
         box-shadow: var(--card-shadow);
       }
+      #summary-grid {
+        display: grid !important;
+        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+        grid-auto-rows: auto;
+        gap: 0.5rem 0.75rem !important;
+        max-width: 1150px !important;
+        margin: 0 auto 2rem;
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0;
+      }
       .stats-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         margin: 8px;
-        padding: 10px 15px;
+        padding: 0.8rem 0.6rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         background: var(--bg-color);
         border-radius: 8px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
         border: 1px solid var(--card-border-color);
         min-width: 180px;
+      }
+      .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      }
+      .stats-card .stats-title {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.05rem;
+        margin-bottom: 0.3rem;
+      }
+      .stats-card .stats-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #343a40;
+        margin-bottom: 0.2rem;
+      }
+      .stats-card .small {
+        font-size: 0.75rem;
+        color: #868e96;
+        margin-top: 0.25rem;
+      }
+      .stats-card .info-icon {
+        width: 1rem;
+        height: 1rem;
+        marging-left: 0.5rem;
+        filter: grayscale(100%);
+        transition: filter 0.2s ease;
+        cursor: pointer;
+      }
+      .stats-card .info-icon:hover {
+        filter: none;
+      }
+      .stats-card.red-card {
+        background-color: #fff5ff;
+        border: 1px solid #ff6b6b;     /* красная граница */
       }
       .stats-title {
         font-size: 0.9rem;
@@ -177,8 +232,9 @@
         margin-top: 4px;
       }
       .red-card {
-        background-color: #ffe5e5 !important; /* светло-красный фон */
+        background-color: #dc3545 !important; /* светло-красный фон */
         border-color: #dc3545;     /* красная граница */
+        border: 1px solid #ff6b6b;
       }
       .filter-section {
         display: flex;
@@ -827,7 +883,7 @@
     </header>
     <div id="sidebar">
       <div class="close-btn" id="sidebar-close">&times;</div>
-      <a href="https://mikhailgarayev.github.io/shldashboard/allocations.html" target="_blank">📈 Allocation stats</a>
+      <a href="https://mikhailgarayev.github.io/shldashboard/allocations.html">📈 Allocation stats</a>
       <a href="https://my.yigim.az/login" target="_blank">📊 YIGIM Dashboard</a>
       <a href="https://wolt-prod.datadoghq.eu/dashboard/zpt-745-5da/city-health-dashboard-template-24h-aze?fromUser=false&refresh_mode=sliding&tpl_var_area_name%5B0%5D=baku&view=spans&from_ts=1745505436253&to_ts=1745507236253&live=true" target="_blank">📈 Datadog Dashboard</a>
       <a href="https://ops.wolt.com/city-states?country=AZE" target="_blank">🏙️ City States</a>
@@ -840,117 +896,16 @@
     </div>
     <div class="dashboard-container">
       <div class="info-cards d-flex flex-wrap gap-3 my-3 px-3">
-        <div class="stats-card" id="weather-card">
-          <span class="stats-title">Baku Weather</span>
-          <span class="stats-value" id="baku-temp">-- °C</span>
-          <br />
-          <span class="stats-title">Wind Speed</span>
-          <span class="stats-value" id="baku-wind">-- m/s</span>
-        </div>
-        <div class="stats-card">
-        <div class="stats-title">Baku Central</div>
-        
-        <!--  Коэффициент покажем как основной текст  -->
-        <div 
-        class="stats-value"
-        style="
-        color: #218838;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        ">
-          1.02
-          <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
-          <span
-            data-toggle="tooltip"
-            data-placement="top"
-            title="1034 / 1027"
-            style="cursor: pointer; margin-left: 6px;"
-          >
-            <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
-            <img
-              src="https://www.svgrepo.com/show/474873/info.svg"
-              alt="Details"
-              style="width:16px; height:16px; vertical-align: middle;"
-            />
-          </span>
-        </div>
-
-        <!-- Остальная информация, например PuE: 8 min -->
-        <div class="stats-value" style="color: #888;">
-          PuE: 8 min
-        </div>
-      </div>
-      <div class="stats-card">
-  <div class="stats-title">Ganja</div>
-  
-  <!--  Коэффициент покажем как основной текст  -->
-  <div class="stats-value" style="color: #f39c12;">
-    2.40
-    <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
-    <span
-      data-toggle="tooltip"
-      data-placement="top"
-      title="1034 / 1027"
-      style="cursor: pointer; margin-left: 6px;"
-    >
-      <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
-      <img
-        src="https://www.svgrepo.com/show/474873/info.svg"
-        alt="Details"
-        style="width:16px; height:16px; vertical-align:middle;"
-      />
-    </span>
-  </div>
-
-  <!-- Остальная информация, например PuE: 8 min -->
-  <div class="stats-value" style="color: #888;">
-    PuE: 12 min
-  </div>
-</div>
-
-<div class="stats-card">
-  <div class="stats-title">Lankaran</div>
-  
-  <!--  Коэффициент покажем как основной текст  -->
-  <div class="stats-value" style="color: #dc3545;">
-    3.0
-    <!--  Иконка с tooltip при наведении, где title="1034 / 1027"  -->
-    <span
-      data-toggle="tooltip"
-      data-placement="top"
-      title="1034 / 1027"
-      style="cursor: pointer; margin-left: 6px;"
-    >
-      <!-- Можно вставить любую иконку; для примера — Emoji, SVG или FontAwesome -->
-      <img
-        src="https://www.svgrepo.com/show/474873/info.svg"
-        alt="Details"
-        style="width:16px; height:16px; vertical-align:middle;"
-      />
-    </span>
-  </div>
-
-  <!-- Остальная информация, например PuE: 8 min -->
-  <div class="stats-value" style="color: #888;">
-    PuE: 22 min
-  </div>
-</div>
-
-        <div class="stats-card">
-          <div class="stats-title">Mingachevir</div>
-          <div class="stats-value" style="color: #888;">Disabled</div>
-        </div>
-        <div class="stats-card">
-          <div class="stats-title">Nakchivan</div>
-          <div class="stats-value" style="color: #888;">Disabled</div>
-        </div>
       </div>
       <!-- Контент -->
       <div id="shift-summary" class="shift-summary-card">
-        <div class="shift-summary-title">📊 Metrics per platform</div>
-        <table class="shift-summary-grid" id="summary-table"></table>
-      </div>
+  <div class="shift-summary-title">📊 Metrics per platform</div>
+  <!-- flex-контейнер вместо таблицы -->
+  <div id="summary-grid" class="d-flex flex-wrap gap-3 justify-content-center">
+    <!-- сюда через JS будут вставлены все stats-card -->
+  </div>
+</div>
+
       <div id="platforms-container" class="platforms-row"></div>
       <div id="breaks-section">
         <h2>⏰ Breaks</h2>
@@ -1730,114 +1685,99 @@ activeNames.forEach((n) => {
         }
 
         function renderShiftSummary(data) {
-  const tableEl = document.getElementById("summary-table");
-  tableEl.innerHTML = "";
+  // контейнер, где рендерятся все stats-card
+  const container = document.getElementById("summary-grid");
+  container.innerHTML = "";
 
+  // ваши карточки: title — заголовок, value — строка из ячейки (например "2, Alice, Bob"), away — опционально
   const summaryCards = [
-    { title: "On shift now", value: data[6][27] || "" },
-    { title: "Should be", value: data[6][29] || "" },
-    { title: "CS", value: data[6][31] || "", away: data[8][31] || "" },
+    { title: "On shift now",  value: data[6][27] || "" },
+    { title: "Should be",     value: data[6][29] || "" },
+    { title: "CS",            value: data[6][31] || "", away: data[8][31] || "" },
     { title: "CS/Post Order", value: data[6][33] || "", away: data[8][33] || "" },
-    { title: "PSR", value: data[6][35] || "", away: data[8][35] || "" },
-    { title: "Venue", value: data[6][37] || "", away: data[8][37] || "" },
-    { title: "Aircall", value: data[6][39] || "", away: data[8][39] || "" },
-    { title: "Simo", value: data[6][41] || "", away: data[8][41] || "" },
-    { title: "ST", value: data[6][43] || "", away: data[8][43] || "" },
-    {
-      title: "Not here",
-      value: (data[8][29] || "") + (data[10][29] ? ", " + data[10][29] : ""),
-      customClass: "small-font-card"
+    { title: "PSR",           value: data[6][35] || "", away: data[8][35] || "" },
+    { title: "Venue",         value: data[6][37] || "", away: data[8][37] || "" },
+    { title: "Aircall",       value: data[6][39] || "", away: data[8][39] || "" },
+    { title: "Simo",          value: data[6][41] || "", away: data[8][41] || "" },
+    { title: "ST",            value: data[6][43] || "", away: data[8][43] || "" },
+    // Special: Not here и WNATS тоже делают из столбца 29 и 27, плюс детали из колонки 10
+    { 
+      title: "Not here", 
+      value: (data[8][29] || "") + (data[10][29] ? "," + data[10][29] : ""), 
+      customClass: "small-font-card" 
     },
-    {
-      title: "WNATS",
-      value: (data[8][27] || "") + (data[10][27] ? ", " + data[10][27] : ""),
-      customClass: "small-font-card"
+    { 
+      title: "WNATS", 
+      value: (data[8][27] || "") + (data[10][27] ? "," + data[10][27] : ""), 
+      customClass: "small-font-card" 
     }
   ];
 
-  let html = `<div class="d-flex flex-wrap gap-3 justify-content-center my-3 px-3">`;
+  summaryCards.forEach(card => {
+    // если нет даже count — пропускаем
+    if (!card.value) return;
 
-  summaryCards.forEach((card) => {
-    if (card.value) {
-      // Логика для карточки WNATS
-      if (card.title === "WNATS") {
-        const splitted = card.value.split(",");
-        const count = splitted[0].trim();
-        const tooltipDetails = splitted.slice(1).map(e => e.trim()).join("<br>");
-        html += `
-          <div class="stats-card ${card.customClass ? card.customClass : ""}">
-            <div class="stats-title">${card.title}</div>
-            <div class="stats-value" style="display:inline-flex; align-items:center; gap:4px;">
-              ${count}
-              <span 
-                class="info-icon" 
-                data-toggle="tooltip" 
-                data-html="true"
-                title="${tooltipDetails}" 
-                style="cursor: pointer; margin-left: 8px;">
-                <img 
-                  src="https://www.svgrepo.com/show/474873/info.svg" 
-                  alt="Details" 
-                  style="width:16px; height:16px; vertical-align:middle;">
-              </span>
-            </div>
-          </div>
-        `;
-      }
-      // Логика для карточки Not here
-      else if (card.title === "Not here") {
-        const splitted = card.value.split(",");
-        const count = splitted[0].trim();
-        const tooltipDetails = splitted.slice(1).map(e => e.trim()).join("<br>");
+    // создаём div.stats-card
+    const div = document.createElement("div");
+    div.className = `stats-card ${card.customClass || ""}`;
 
-        let cardClass = card.customClass ? card.customClass : "";
-        if (count !== "0") {
-          cardClass += " red-card";
-        }
-        
-        html += `
-          <div class="stats-card ${cardClass}">
-            <div class="stats-title">${card.title}</div>
-            <div class="stats-value" style="display:inline-flex; align-items:center; gap:4px;">
-              ${count}
-              <span 
-                class="info-icon" 
-                data-toggle="tooltip" 
-                data-html="true"
-                title="${tooltipDetails}" 
-                style="cursor: pointer; margin-left: 8px;">
-                <img 
-                  src="https://www.svgrepo.com/show/474873/info.svg" 
-                  alt="Details" 
-                  style="width:16px; height:16px; vertical-align:middle;">
-              </span>
-            </div>
-          </div>
-        `;
-      } else {
-        // Обычная карточка
-        html += `
-          <div class="stats-card ${card.customClass ? card.customClass : ""}">
-            <div class="stats-title">${card.title}</div>
-            <div class="stats-value">${card.value || ""}</div>
-            ${
-              card.away
-                ? `<div class="stats-value" style="color: #888; font-size: 0.95rem;">Away: ${card.away}</div>`
-                : ""
-            }
-          </div>
-        `;
+    // разбираем для специальных тултипов
+    if (card.title === "Not here" || card.title === "WNATS") {
+      // value = "count, detail1, detail2, …"
+      const parts = card.value.split(",").map(s => s.trim()).filter(s => s !== "");
+      const count = parts.shift();        // первое — число
+      const details = parts;              // остаток — массив тултипов
+      // если Not here и count ≠ 0, добавляем красный фон
+      if (card.title === "Not here" && count !== "0") {
+        div.classList.add("red-card");
       }
+      // формируем HTML
+      div.innerHTML = `
+        <div class="stats-title">${card.title}</div>
+        <div class="stats-value d-inline-flex align-items-center gap-1">
+          ${count}
+          <img
+            src="https://www.svgrepo.com/show/474873/info.svg"
+            data-toggle="tooltip"
+            data-html="true"
+            title="${details.join("<br/>")}"
+            class="info-icon"
+            style="width:16px; height:16px; cursor:pointer;"
+          />
+        </div>
+      `;
+    } else {
+      // обычная карточка: title, value, away
+      let html = `
+        <div class="stats-title">${card.title}</div>
+        <div class="stats-value">${card.value}</div>
+      `;
+      if (card.away) {
+        html += `<div class="stats-value" style="font-size:0.9rem; color:#666;">Away: ${card.away}</div>`;
+      }
+      div.innerHTML = html;
     }
+
+    container.appendChild(div);
   });
 
-  html += "</div>";
-  tableEl.innerHTML = html;
+  // вставляем погоду как последнюю карточку
+  const weatherCard = document.createElement("div");
+  weatherCard.className = "stats-card";
+  weatherCard.id = "weather-card";
+  weatherCard.innerHTML = `
+    <div class="stats-title">Baku Weather</div>
+    <div class="stats-value" id="baku-temp">-- °C</div>
+    <div class="small">Wind Speed -- m/s</div>
+  `;
+  container.appendChild(weatherCard);
 
-  // Инициализация tooltip (Bootstrap)
+  // реинициализируем Bootstrap-Tooltip для всех [data-toggle="tooltip"]
   $('[data-toggle="tooltip"]').tooltip();
-}
 
+  // и подгружаем погоду
+  fetchWeather();
+}
 
         function renderResponsiblePeople(data) {
   if (!data || data.length === 0) return;
