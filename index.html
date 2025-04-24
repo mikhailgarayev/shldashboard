@@ -210,13 +210,17 @@
       .stats-card .info-icon {
         width: 1rem;
         height: 1rem;
-        marging-left: 0.5rem;
+        marging-left: 0.5rem !important;
         filter: grayscale(100%);
         transition: filter 0.2s ease;
         cursor: pointer;
       }
       .stats-card .info-icon:hover {
         filter: none;
+      }
+      .stats-value.d-inline-flex {
+        gap: 0.25rem  !important;
+        align-items: center !important;
       }
       .stats-card.red-card {
         background-color: #fff5ff;
@@ -674,11 +678,6 @@
       body.dark-theme .stats-card .small,
       body.dark-theme .stats-card .stats-value small {
         color: rgba(255,255,255,0.6) !important;
-      }
-
-      /* Иконка тултипа тоже светлее */
-      body.dark-theme .stats-card .info-icon {
-        filter: brightness(0) invert(1) !important;
       }
 
 
