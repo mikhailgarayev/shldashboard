@@ -655,6 +655,21 @@
       };
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
+      
+      const TRANSFERS_API = 'https://script.google.com/macros/s/AKfycbz1QN5KuR4ZDGxkrApKqDzHDj1ewm5UTVP0vDjblopXqlOKlsDea7JOkldx_fBZ-GrA/exec?json=true';
+
+      // 2) Глобальная переменная для кеша:
+      let transfersData = [];
+
+      // 3) Функция загрузки архива/сегодняшних данных:
+      async function fetchTransfers() {
+        try {
+          const res = await fetch(TRANSFERS_API);
+          transfersData = await res.json();
+        } catch (e) {
+          console.error('Transfers load error', e);
+        }
+      }
 
       // Список разрешённых email
       const allowedEmails = [
@@ -995,6 +1010,12 @@
           <strong>Break:</strong>
           <span id="modal-emp-break">—</span>
         </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Platform changes today:</strong>
+          <span id="modal-platform-count">–</span>
+        </div>
+        <ul id="modal-platform-list" style="margin-left: 20px; font-size:0.9rem;"></ul>
+
       </div>
       <!-- Кнопки -->
       <div style="padding: 20px; text-align: right;">
@@ -1255,64 +1276,87 @@
           );
         }
 
-        function openEmployeeModal(empName) {
+        async function openEmployeeModal(empName) {
           const info = employeeData[empName];
           if (!info) {
             logDebug("Данные о сотруднике не найдены: " + empName);
             return;
           }
+
           // Получаем смену
           let shift = "—";
-
-            if (window.allShiftData && Array.isArray(window.allShiftData)) {
-              for (const row of window.allShiftData) {
-                for (const cell of row) {
-                  if (typeof cell === "string" && cell.toLowerCase().includes(empName.toLowerCase())) {
-                    // Берём всё, что до «- имя», т.е. до последнего минуса
-                    const dashindex = cell.lastIndexOf(" - ");
-                    if (dashindex !== -1) {
-                      shift = cell.substring(0, dashindex).trim(); 
-                    } else {
-                      shift = cell.trim(); // fallback — вся строка
-                    }
-                    break;
-                  }
+          if (window.allShiftData && Array.isArray(window.allShiftData)) {
+            for (const row of window.allShiftData) {
+              for (const cell of row) {
+                if (typeof cell === "string" && cell.toLowerCase().includes(empName.toLowerCase())) {
+                  const dashIndex = cell.lastIndexOf(" - ");
+                  shift = dashIndex !== -1
+                    ? cell.substring(0, dashIndex).trim()
+                    : cell.trim();
+                  break;
                 }
-                if (shift !== "—") break;
               }
+              if (shift !== "—") break;
             }
+          }
+          document.getElementById("modal-emp-shift").textContent = shift;
+
+          // Break time
           let breakTime = "—";
-            if (window.allBreaksData && Array.isArray(window.allBreaksData)) {
-              const foundBreak = allBreaksData.find(b => b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase());
-              if (foundBreak) {
-                breakTime = foundBreak["Break Time"] || "—";
-              }
+          if (window.allBreaksData && Array.isArray(window.allBreaksData)) {
+            const foundBreak = allBreaksData
+              .find(b => b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase());
+            if (foundBreak) {
+              breakTime = foundBreak["Break Time"] || "—";
             }
+          }
           document.getElementById("modal-emp-break").textContent = breakTime;
 
-          document.getElementById("modal-emp-shift").textContent = shift;
+          // Основная информация
           const parts = empName.trim().split(" ");
-          const email = parts.length >= 2 ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com` : `${parts[0].toLowerCase()}@wolt.com`;
+          const email = parts.length >= 2
+            ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com`
+            : `${parts[0].toLowerCase()}@wolt.com`;
           document.getElementById("modal-emp-name").textContent = empName;
           document.getElementById("modal-emp-email").textContent = email;
-          document.getElementById("modal-emp-realloc").textContent =
-            info.canReallocate || "N/A";
-          document.getElementById("modal-emp-prime").textContent =
-            info.prime || "N/A";
-          document.getElementById("modal-emp-pref").textContent =
-            info.pref || "N/A";
-          document.getElementById("modal-emp-languages").textContent =
-            info.languages || "N/A";
-          document.getElementById("modal-emp-capacity").textContent =
-            info.capacity || "N/A";
+          document.getElementById("modal-emp-realloc").textContent = info.canReallocate || "N/A";
+          document.getElementById("modal-emp-prime").textContent   = info.prime         || "N/A";
+          document.getElementById("modal-emp-pref").textContent    = info.pref          || "N/A";
+          document.getElementById("modal-emp-languages").textContent = info.languages    || "N/A";
+          document.getElementById("modal-emp-capacity").textContent  = info.capacity     || "N/A";
+
           document.getElementById("modal-inbox-link").onclick = () => {
             window.open(generateInboxLink(info.id), "_blank");
           };
           document.getElementById("modal-admin-link").onclick = () => {
             window.open(generateAdminLink(info.id), "_blank");
           };
-          document.getElementById("employee-modal").classList.add("show");
+
+          // Новая часть: подсчёт и список смен платформ
+          // transfersData — глобальный массив, полученный fetchTransfers()
+          const myTransfers = transfersData.filter(t =>
+            t.name.toLowerCase() === empName.toLowerCase()
+          );
+
+          // Количество смен
+          document.getElementById("modal-platform-count").textContent = myTransfers.length;
+
+          // Список смен (время HH:MM:SS → Новая платформа)
+          const listEl = document.getElementById("modal-platform-list");
+          if (myTransfers.length > 0) {
+            listEl.innerHTML = myTransfers
+              .map(t => {
+                const timeOnly = t.time.split(" ")[1] || t.time;
+                return `<li>${timeOnly} → ${t.newPlatform}</li>`;
+              })
+              .join("");
+          } else {
+            listEl.innerHTML = "<li>No changes</li>";
+          }
+
+          // Открываем модалку
           document.getElementById("modal-overlay").classList.add("show");
+          document.getElementById("employee-modal").classList.add("show");
         }
 
         function closeEmployeeModal() {
@@ -2035,6 +2079,8 @@ html += `
           fetchBreaksData();
           applyFilters();
           fetchAircallStatuses();
+          fetchTransfers();
+          
 
           document.getElementById("refresh-spinner").style.display = "none";
           if (autoRefreshEnabled) resetAutoRefresh();
