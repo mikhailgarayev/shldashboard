@@ -1,68 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Employee Platform Changes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap CSS (опционально для базовых стилей) -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
   <style>
     /* Базовый сброс стилей */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f9f9f9;
       color: #333;
-      line-height: 1.6;
       padding: 20px;
     }
-    /* Центрирование контейнера и фиксированная ширина */
+    /* Центрированный контейнер фиксированной ширины */
     .container {
-      max-width: 900px;
+      max-width: 800px;
       margin: 0 auto;
       background: #fff;
       padding: 20px 30px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #444;
-    }
-
-    /* Фильтры в одну строку */
+    h1 { text-align: center; margin-bottom: 20px; color: #444; }
+    /* Фильтры в один ряд */
     .filters {
       display: flex;
-      flex-wrap: nowrap;
-      align-items: flex-end;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 20px;
-      padding: 10px;
-      background-color: #f3f3f3;
-      border-radius: 8px;
     }
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-width: 0;
-    }
-    .filter-group label {
-      font-size: 0.9em;
-      margin-bottom: 5px;
-      color: #555;
-    }
-    .filter-group input[type="date"],
-    .filter-group input[type="text"],
-    .filter-group select {
+    .filters .filter-group { flex: 1; }
+    .filters label { font-size: 0.9em; margin-bottom: 5px; color: #555; display: block; }
+    .filters input[type="date"],
+    .filters input[type="text"],
+    .filters select {
+      width: 100%;
       padding: 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    /* Стили для таблицы */
+    /* Таблица */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -73,23 +53,10 @@
       padding: 12px 15px;
       border-bottom: 1px solid #ddd;
     }
-    th {
-      background-color: #55608f;
-      color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    tr:hover {
-      background-color: #f1f1f1;
-    }
-    /* Сообщения (нет данных, ошибка и т.д.) */
-    .message {
-      text-align: center;
-      padding: 20px;
-      font-size: 1em;
-      color: #666;
-    }
-    /* Спиннер загрузки */
+    th { background-color: #55608f; color: #fff; text-transform: uppercase; letter-spacing: 0.03em; }
+    tr:hover { background-color: #f1f1f1; }
+    /* Сообщения и спиннер */
+    .message { text-align: center; padding: 20px; font-size: 1em; color: #666; }
     .spinner {
       margin: 50px auto;
       width: 60px;
@@ -99,70 +66,34 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* Пагинация */
+    .pagination { display: flex; justify-content: center; list-style: none; padding: 10px 0; }
+    .pagination li { margin: 0 5px; }
+    .pagination li a {
+      display: block; padding: 6px 12px;
+      border: 1px solid #ccc; border-radius: 4px;
+      text-decoration: none; color: #55608f;
     }
-    /* Блок пагинации */
-    .pagination {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
-    .pagination .page-size {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .pagination button {
-      padding: 6px 12px;
-      border: 1px solid #ccc;
-      background: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .pagination button:hover {
-      background: #f3f3f3;
-    }
-    .pagination-info {
-      margin: 0 10px;
-      font-weight: 500;
-    }
-
-    /* Адаптивность */
-    @media (max-width: 600px) {
-      .filters {
-        flex-wrap: wrap;
-      }
-      .filter-group {
-        width: 100%;
-      }
-      .pagination {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-      }
-    }
+    .pagination li a.active { background: #55608f; color: #fff; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Employee Platform Changes</h1>
-    
-    <!-- Фильтры (в одну строку) -->
+    <!-- Фильтры в один ряд -->
     <div class="filters">
       <div class="filter-group">
         <label for="fromDate">From Date</label>
-        <input type="date" id="fromDate">
+        <input type="date" id="fromDate" />
       </div>
       <div class="filter-group">
         <label for="toDate">To Date</label>
-        <input type="date" id="toDate">
+        <input type="date" id="toDate" />
       </div>
       <div class="filter-group">
         <label for="employeeFilter">Employee Name</label>
-        <input type="text" id="employeeFilter" placeholder="Enter name">
+        <input type="text" id="employeeFilter" placeholder="Enter name" />
       </div>
       <div class="filter-group">
         <label for="platformFilter">Platform</label>
@@ -177,223 +108,182 @@
           <option value="ST">ST</option>
         </select>
       </div>
+      <div class="filter-group">
+        <label for="perPageSelect">Records per page</label>
+        <select id="perPageSelect">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
     </div>
-    
     <!-- Анимация загрузки -->
     <div id="loading" class="spinner"></div>
-    
-    <!-- Сообщение при ошибках или отсутствии данных -->
-    <div id="message" class="message" style="display:none;"></div>
-    
+    <!-- Сообщения -->
+    <div id="message" class="message" style="display: none;"></div>
     <!-- Таблица -->
-    <table id="report-table" style="display:none;">
+    <table id="report-table" style="display: none;">
       <thead>
         <tr>
           <th>Employee Name</th>
           <th>Main Platform</th>
           <th>Changed Platform</th>
           <th>Change Time</th>
+          <th>End Time</th>
+          <th>Duration</th>
         </tr>
       </thead>
-      <tbody id="report-body">
-        <!-- Данные отображаются здесь -->
-      </tbody>
+      <tbody id="report-body"></tbody>
     </table>
-
     <!-- Пагинация -->
-    <div class="pagination" style="display:none;" id="pagination">
-      <div class="page-size">
-        <label>Show</label>
-        <select id="pageSize">
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-        <span>entries</span>
-      </div>
-      <div>
-        <button id="prevPage">&laquo; Previous</button>
-        <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
-        <button id="nextPage">Next &raquo;</button>
-      </div>
-    </div>
+    <ul id="pagination" class="pagination" style="display: none;"></ul>
   </div>
 
+  <!-- Основной JavaScript для загрузки, фильтрации и постраничного вывода данных -->
   <script>
-    // Укажите URL веб-приложения Google Apps Script
-    let jsonUrl = 'https://script.google.com/macros/s/AKfycbz_-9-286nPVIFH_7-Qeg3zCZjbmDoHyFhdfkJnGYXiy_jjVakOEWcJLkL0IG60rFfv/exec';
-    
-    // Глобальные переменные
-    let allData = [];           // Все данные (после загрузки)
-    let filteredData = [];      // Данные после фильтра
-    let currentPage = 1;        // Текущая страница
-    let pageSize = 10;          // Количество записей на странице
+    // URL веб-приложения Google Apps Script (замените на ваш)
+    const jsonUrl = 'https://script.google.com/macros/s/AKfycbx2-TzQkCbG4-7VLv7S1Np1_Pah5EVXmP2dZaxBu1hlLkKhfcDlUg-5slrTgP2AWWTW/exec';
+    let allData = [];
+    let currentPage = 1;
+    let recordsPerPage = 20;
 
-    // Функция форматирования даты (YYYY-MM-DD HH:mm:ss)
+    // Функция форматирования даты-времени в формате YYYY-MM-DD HH:mm:ss
     function formatDateTime(dateString) {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString; // Если не удается распарсить
-      
+      if (isNaN(date.getTime())) return dateString;
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
       const hours = String(date.getHours()).padStart(2, "0");
       const minutes = String(date.getMinutes()).padStart(2, "0");
       const seconds = String(date.getSeconds()).padStart(2, "0");
-      
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
-    // Отображаем часть данных (пагинация)
-    function displayCurrentPage() {
-      const tbody = document.getElementById('report-body');
-      tbody.innerHTML = '';
+    // Функция отображения данных в таблице с постраничным выводом
+    function displayData(data) {
+      const tbody = document.getElementById("report-body");
+      tbody.innerHTML = "";
+      if (data.length === 0) {
+        document.getElementById("message").textContent = "No data to display";
+        document.getElementById("message").style.display = "block";
+        document.getElementById("report-table").style.display = "none";
+        document.getElementById("pagination").style.display = "none";
+        return;
+      }
+      document.getElementById("message").style.display = "none";
+      document.getElementById("report-table").style.display = "table";
       
-      // Вычисляем startIndex и endIndex
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const pageData = filteredData.slice(startIndex, endIndex);
+      // Определяем диапазон записей для текущей страницы
+      const start = (currentPage - 1) * recordsPerPage;
+      const end = start + recordsPerPage;
+      const pageData = data.slice(start, end);
 
       pageData.forEach(item => {
-        const row = document.createElement('tr');
+        const row = document.createElement("tr");
         row.innerHTML = `
           <td>${item.employee}</td>
           <td>${item.mainPlatform}</td>
           <td>${item.changedPlatform}</td>
           <td>${formatDateTime(item.changeTime)}</td>
+          <td>${item.endTime ? formatDateTime(item.endTime) : "-"}</td>
+          <td>${item.duration || "-"}</td>
         `;
         tbody.appendChild(row);
       });
 
-      updatePaginationInfo();
+      setupPagination(data.length);
     }
 
-    // Обновление информации о пагинации (Page X of Y)
-    function updatePaginationInfo() {
-      const paginationInfo = document.getElementById('paginationInfo');
-      const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
-      
-      // Ограничиваем currentPage в допустимых пределах
-      if (currentPage > totalPages) currentPage = totalPages;
-      if (currentPage < 1) currentPage = 1;
-      
-      paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-
-      // Включаем или отключаем кнопки prev/next
-      document.getElementById('prevPage').disabled = (currentPage <= 1);
-      document.getElementById('nextPage').disabled = (currentPage >= totalPages);
-    }
-
-    // Основная функция отображения данных (после фильтра и пагинации)
-    function displayData() {
-      // Если после фильтрации нет данных
-      if (filteredData.length === 0) {
-        document.getElementById('message').textContent = 'No data to display';
-        document.getElementById('message').style.display = 'block';
-        document.getElementById('report-table').style.display = 'none';
-        document.getElementById('pagination').style.display = 'none';
+    // Функция настройки пагинации
+    function setupPagination(totalRecords) {
+      const paginationEl = document.getElementById("pagination");
+      paginationEl.innerHTML = "";
+      const totalPages = Math.ceil(totalRecords / recordsPerPage);
+      if (totalPages <= 1) {
+        paginationEl.style.display = "none";
         return;
       }
-
-      // Прячем сообщение, показываем таблицу и блок пагинации
-      document.getElementById('message').style.display = 'none';
-      document.getElementById('report-table').style.display = 'table';
-      document.getElementById('pagination').style.display = 'flex';
-
-      // Перерисовываем текущую страницу
-      displayCurrentPage();
+      paginationEl.style.display = "flex";
+      for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = "#";
+        a.textContent = i;
+        if (i === currentPage) a.classList.add("active");
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          currentPage = i;
+          displayData(filteredData());
+        });
+        li.appendChild(a);
+        paginationEl.appendChild(li);
+      }
     }
 
-    // Фильтруем данные
-    function filterData() {
-      const fromDate = document.getElementById('fromDate').value;
-      const toDate = document.getElementById('toDate').value;
-      const employeeFilter = document.getElementById('employeeFilter').value.trim().toLowerCase();
-      const platformFilter = document.getElementById('platformFilter').value;
+    // Функция фильтрации данных по дате, сотруднику и платформе
+    function filteredData() {
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+      const employeeFilter = document.getElementById("employeeFilter").value.trim().toLowerCase();
+      const platformFilter = document.getElementById("platformFilter").value;
 
-      filteredData = allData.filter(item => {
-        // Фильтр по имени
+      return allData.filter(item => {
         const employeeMatch = !employeeFilter || item.employee.toLowerCase().includes(employeeFilter);
-
-        // Фильтр по платформе
         const platformMatch = !platformFilter || item.changedPlatform === platformFilter;
-
-        // Фильтр по дате
         let dateMatch = true;
         if (fromDate || toDate) {
           const changeDate = new Date(item.changeTime);
           if (fromDate) {
             const from = new Date(fromDate);
-            from.setHours(0,0,0,0);
+            from.setHours(0, 0, 0, 0);
             if (changeDate < from) dateMatch = false;
           }
           if (toDate) {
             const to = new Date(toDate);
-            to.setHours(23,59,59,999);
+            to.setHours(23, 59, 59, 999);
             if (changeDate > to) dateMatch = false;
           }
         }
         return employeeMatch && platformMatch && dateMatch;
       });
-
-      // После изменения фильтров сбрасываем страницу на 1
-      currentPage = 1;
-      displayData();
     }
 
-    // Загрузка данных
+    // Функция загрузки данных с анимацией
     function loadData() {
+      document.getElementById("loading").style.display = "block";
       fetch(jsonUrl)
         .then(response => {
-          if (!response.ok) {
-            throw new Error('Network error: ' + response.status);
-          }
+          if (!response.ok) throw new Error("Network error: " + response.status);
           return response.json();
         })
         .then(data => {
           allData = data;
-          document.getElementById('loading').style.display = 'none';
-          // Применяем фильтры (по умолчанию пустые) и отображаем первую страницу
-          filterData();
+          currentPage = 1;
+          document.getElementById("loading").style.display = "none";
+          displayData(filteredData());
         })
         .catch(error => {
-          document.getElementById('loading').style.display = 'none';
-          const messageDiv = document.getElementById('message');
-          messageDiv.textContent = 'Error loading data: ' + error.message;
-          messageDiv.style.display = 'block';
-          console.error('Data load error:', error);
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("message").textContent = "Error loading data: " + error.message;
+          document.getElementById("message").style.display = "block";
+          console.error("Data load error:", error);
         });
     }
 
-    // Изменение размера страницы (pageSize)
-    function onPageSizeChange() {
-      const select = document.getElementById('pageSize');
-      pageSize = parseInt(select.value, 10);
+    // Обработчики фильтров
+    document.getElementById("fromDate").addEventListener("change", () => { currentPage = 1; displayData(filteredData()); });
+    document.getElementById("toDate").addEventListener("change", () => { currentPage = 1; displayData(filteredData()); });
+    document.getElementById("employeeFilter").addEventListener("input", () => { currentPage = 1; displayData(filteredData()); });
+    document.getElementById("platformFilter").addEventListener("change", () => { currentPage = 1; displayData(filteredData()); });
+    document.getElementById("perPageSelect").addEventListener("change", function() {
+      recordsPerPage = parseInt(this.value, 10);
       currentPage = 1;
-      displayData();
-    }
+      displayData(filteredData());
+    });
 
-    // Обработчики для кнопок пагинации
-    function onPrevPage() {
-      currentPage--;
-      displayCurrentPage();
-    }
-    function onNextPage() {
-      currentPage++;
-      displayCurrentPage();
-    }
-
-    // Слушатели событий
-    document.getElementById('fromDate').addEventListener('change', filterData);
-    document.getElementById('toDate').addEventListener('change', filterData);
-    document.getElementById('employeeFilter').addEventListener('input', filterData);
-    document.getElementById('platformFilter').addEventListener('change', filterData);
-    document.getElementById('pageSize').addEventListener('change', onPageSizeChange);
-    document.getElementById('prevPage').addEventListener('click', onPrevPage);
-    document.getElementById('nextPage').addEventListener('click', onNextPage);
-
-    // Запуск загрузки после загрузки DOM
+    // Инициализация: загрузка данных после загрузки документа
     document.addEventListener("DOMContentLoaded", loadData);
   </script>
 </body>
