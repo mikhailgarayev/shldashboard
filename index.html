@@ -602,6 +602,10 @@
         font-weight: bold;
       }
 
+      .pink-name {
+        color: hotpink !important;
+      }
+
       @keyframes pulse {
         0% {
           opacity: 1;
@@ -1453,10 +1457,13 @@
                 const isYou = n.trim().toLowerCase() === myName.toLowerCase();
                 const crown = isYou ? "👑" : "";
                 const className = isYou ? "employee-item king" : "employee-item";
+                const isNaziya = item.name.trim().toLowerCase() === "naziya orujova";
+                const extraEmoji = isNaziya ? " 🎀" : "";
+                const className = isNaziya ? "employee-item pink-name" : "employee-item";
 
                 html += `
             <li class="${className}" data-employee="${n}">
-              <span class="employee-name">${n}</span> ${crown}
+              <span class="employee-name">${n}</span> ${crown}${extraEmoji}
                 
             </li>`;
               });
