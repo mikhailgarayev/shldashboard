@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Отчет по статусам сотрудников</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Сотрудники, изменившие платформу</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>ФИО сотрудника</th>
+        <th>Основная платформа</th>
+        <th>Платформа перехода</th>
+        <th>Время</th>
+      </tr>
+    </thead>
+    <tbody id="report-body">
+      <!-- Здесь будут данные -->
+    </tbody>
+  </table>
+
+  <script>
+    // Укажите путь к файлу JSON, который содержит данные отчёта.
+    // Файл должен быть размещён в репозитории GitHub вместе с этой страницей.
+    fetch('status_change_report.json')
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.getElementById('report-body');
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${item.employee}</td>
+            <td>${item.main_platform || item.mainPlatform}</td>
+            <td>${item.changed_platform || item.changedPlatform}</td>
+            <td>${item.change_time || item.changeTime}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(error => console.error('Ошибка загрузки данных:', error));
+  </script>
+</body>
+</html>
