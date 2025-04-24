@@ -1450,22 +1450,40 @@
             <small>Active (${activeNames.length})</small>
           </p>
           <ul>`;
-            const myName = "Mikhail Garayev";
+            // Предположим, что у вас где-то объявлено ваше имя, например:
+          const myName = "Mikhail Garayev";
+          
+          activeNames.forEach((n) => {
+            // Проверяем, что это вы
+            const isYou = n.trim().toLowerCase() === myName.toLowerCase();
+            // Если это вы, добавим корону
+            const crown = isYou ? "👑" : "";
+          
+            // Проверяем, что это Naziya
+            const isNaziya = n.trim().toLowerCase() === "naziya orujova";
+            // Если это Naziya, добавим эмодзи 🎀
+            const extraEmoji = isNaziya ? " 🎀" : "";
+          
+            // Базовый класс элемента
+            let className = "employee-item";
+          
+            // Если это вы, добавляем класс king
+            if (isYou) {
+              className += " king";
+            }
+          
+            // Если это Naziya, добавляем класс pink-name
+            if (isNaziya) {
+              className += " pink-name";
+            }
+          
+            // Формируем HTML
+            html += `
+              <li class="${className}" data-employee="${n}">
+                <span class="employee-name">${n}${extraEmoji}</span> ${crown}
+              </li>`;
+          });
 
-              // Где вы рендерите activeNames:
-              activeNames.forEach((n) => {
-                const isYou = n.trim().toLowerCase() === myName.toLowerCase();
-                const crown = isYou ? "👑" : "";
-                const className = isYou ? "employee-item king" : "employee-item";
-                const isNaziya = item.name.trim().toLowerCase() === "naziya orujova";
-                const extraEmoji = isNaziya ? " 🎀" : "";
-                const className = isNaziya ? "employee-item pink-name" : "employee-item";
-
-                html += `
-            <li class="${className}" data-employee="${n}">
-              <span class="employee-name">${n}</span> ${crown}${extraEmoji}
-                
-            </li>`;
               });
                   html += `
           
