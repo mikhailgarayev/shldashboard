@@ -1260,7 +1260,6 @@
         const RANGE = "list1!A1:BJ100";
         const RESPONSIBLES_RANGE = "list1!B5:C27";
         const BREAKS_RANGE = "prebreaks!A1:D40";
-        const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxU-4AAiow6Y0TV4ChSY";
         const SHIFT_QUINYX_RANGE = "shiftsquinyx!B3:C"; 
 
         let employeeData = {};
@@ -1356,19 +1355,19 @@
         }
 
         async function fetchSheetData(range) {
-          const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(
-            range
-          )}?key=${GOOGLE_API_KEY}`;
           try {
-            const res = await fetch(url);
-            if (!res.ok) {
-              logDebug("Ошибка получения данных: " + res.statusText);
-              return null;
-            }
+            const res = await fetch("https://sheets-proxy.mikhail-garayev.workers.dev", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                secret: "superWoltKey42",
+                range: range
+              })
+            });
             const data = await res.json();
             return data.values;
-          } catch (err) {
-            logDebug("Ошибка запроса: " + err);
+          } catch (e) {
+            console.error("Sheets proxy error:", e);
             return null;
           }
         }
