@@ -2060,9 +2060,7 @@ function renderShiftOvers() {
     return;
   }
   const arr = arrayToObjects(raw);
-
-  const now = new Date();
-  const next = new Date(now.getTime() + 3600*1000);
+  const now = new Date(), next = new Date(now.getTime() + 3600*1000);
   const upcoming = arr.filter(r => {
     const parts = (r.Shift||"").split("-");
     if (parts.length !== 2) return false;
@@ -2078,14 +2076,12 @@ function renderShiftOvers() {
     return;
   }
 
-  // считаем конфликты, если нужно
+  // считаем дубликаты, чтобы подсветка работала
   const counts = {};
-  upcoming.forEach(r => {
-    counts[r.Shift] = (counts[r.Shift]||0) + 1;
-  });
+  upcoming.forEach(r => counts[r.Shift] = (counts[r.Shift]||0) + 1);
 
   c.innerHTML = "<ul>" + upcoming.map(r => {
-    // разбиваем на название смены и диапазон времени
+    // "Morning - 06:00-15:00"
     const [shiftName, timeRange] = r.Shift.split(" - ").map(s=>s.trim());
     const [start, end] = timeRange.split("-").map(s=>s.trim());
     const conflictClass = counts[r.Shift] > 1 ? "break-conflict" : "";
@@ -2099,6 +2095,7 @@ function renderShiftOvers() {
     `;
   }).join("") + "</ul>";
 }
+
 
         
         async function fetchBreaksData() {
@@ -2271,7 +2268,7 @@ if (!list.length) {
 
           await fetchEmployeeList();
           await fetchShiftsQuinyxData();     
-          renderShiftOvers();
+          await fetchShiftOversData();
 
           // Заполнение данных для Aircall
           const aircallConfig = platforms.find((p) => p.name === "Aircall");
