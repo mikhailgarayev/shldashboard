@@ -2178,7 +2178,9 @@ async function fetchBreaksData() {
       <li class="${conflictClass}">
         <strong>${r.Name}</strong><br/>
         Break at <span class="break-time" data-name="${r.Name}" data-time="${r["Break Time"]}">${r["Break Time"]}</span>
-        <button class="edit-btn" data-name="${r.Name}" title="Edit time" style="border:none;background:none;cursor:pointer;">✏️</button><br/>
+        <button class="edit-btn" title="Edit time" style="border:none;background:none;cursor:pointer;">
+        <img src="https://www.svgrepo.com/show/502640/edit-1.svg" alt="edit" width="16" height="16">
+        </button><br/>
         Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
       </li>
     `;
