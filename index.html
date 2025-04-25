@@ -513,6 +513,7 @@
       }
       /* общий контейнер для карточек alerts */
       /* контейнер для двух карточек */
+      /* контейнер для двух alert-карточек */
       #alerts-section {
         display: flex;
         flex-wrap: wrap;
@@ -520,20 +521,38 @@
         justify-content: center;
         margin: 2rem 0;
       }
-      /* общий стиль для карточек Shift-Overs и Breaks */
+      /* единый стиль для карточек */
       .alert-card {
-        flex: 1 1 45%;
+        flex: 1 1 320px;
         max-width: 480px;
         background: var(--card-bg-color);
         color: var(--card-text-color);
         border-radius: 12px;
         box-shadow: var(--card-shadow);
         padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
       }
       .alert-card h2 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         margin-bottom: 1rem;
         text-align: center;
+      }
+      .alert-card > div {
+        flex: 1;           /* чтобы содержимое равномерно распределялось */
+        overflow-y: auto;
+      }
+      .alert-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .alert-card li {
+        margin-bottom: 0.75rem;
+        line-height: 1.3;
+      }
+      @media (max-width: 768px) {
+        .alert-card { max-width: 100%; }
       }
 
       /* контейнер списка внутри */
@@ -1008,24 +1027,19 @@
 </div>
 
       <div id="platforms-container" class="platforms-row"></div>
-      <!-- Секция с двумя карточками: Shift-Overs и Breaks -->
-<div id="alerts-section" class="d-flex flex-wrap gap-4 justify-content-center my-4 px-3">
-  <!-- Upcoming Shift-Overs -->
-  <div id="shift-overs-section" class="alert-card">
-    <h2>⏳ Upcoming Shift-Overs</h2>
-    <div id="shift-overs-app">
-      Loading…
+    <!-- Секция с двумя карточками: Shift-Overs и Breaks -->
+    <div id="alerts-section" class="d-flex flex-wrap gap-4 justify-content-center my-4 px-3">
+      <!-- Upcoming Shift-Overs -->
+      <div id="shift-overs-section" class="alert-card">
+        <h2>⏳ Upcoming Shift-Overs</h2>
+        <div id="shift-overs-app">Loading…</div>
+      </div>
+      <!-- Upcoming Breaks -->
+      <div id="breaks-section" class="alert-card">
+        <h2>⏰ Upcoming Breaks</h2>
+        <div id="breaks-app">Loading…</div>
+      </div>
     </div>
-  </div>
-
-  <!-- Upcoming Breaks -->
-  <div id="breaks-section" class="alert-card">
-    <h2>⏰ Upcoming Breaks</h2>
-    <div id="breaks-app">
-      Loading…
-    </div>
-  </div>
-</div>
 
     </div>
     <!-- Модальное окно сотрудника -->
@@ -2001,66 +2015,57 @@ function renderShiftOvers() {
   container.appendChild(ul);
 }
 
-        async function fetchBreaksData() {
-          window.allBreaksData = [];
-          const data = await fetchSheetData(BREAKS_RANGE);
-          if (!data) return;
-          const breaksObjects = arrayToObjects(data);
-          allBreaksData = breaksObjects;
-          const now = new Date();
-          const currMinutes = now.getHours() * 60 + now.getMinutes();
-          let filteredBreaks = breaksObjects;
-          if (currentBreakFilter === "upcoming") {
-            const horizon = currMinutes + 60;
-            filteredBreaks = breaksObjects.filter((item) => {
-              if (!item["Break Time"]) return false;
-              const timeStr = item["Break Time"].trim();
-              const minutes = parseTimeToMinutes(timeStr);
-              return minutes >= currMinutes && minutes <= horizon;
-            });
-            filteredBreaks.sort(
-              (a, b) =>
-                parseTimeToMinutes(a["Break Time"]) -
-                parseTimeToMinutes(b["Break Time"])
-            );
-          } else if (currentBreakFilter === "all") {
-            filteredBreaks.sort(
-              (a, b) =>
-                parseTimeToMinutes(a["Break Time"]) -
-                parseTimeToMinutes(b["Break Time"])
-            );
-          }
-          let html = `
-        
-        <div class="break-card">
-          <h5>${
-                          currentBreakFilter === "upcoming"
-                            ? "Upcoming breaks in the next hour"
-                            : "All Breaks"
-                        }</h5>
-          <ul>`;
-          filteredBreaks.forEach((item) => {
-            html += `
-              
-            
-            <li>
-              <strong>${item["Name"]}</strong>
-              <br/>
-                Break at: 
-              
-              <strong>${item["Break Time"]}</strong>
-              <br/>
-                Shift: ${item["Shift Start Time"]} | ${item["Working Space"]}
-              
-            
-            </li>`;
+                // 1) Shift-Overs из листа shiftsquinyx!B:C
+        async function fetchShiftOversData() {
+          const raw = await fetchSheetData("shiftsquinyx!B:C");
+          if (!raw) return document.getElementById("shift-overs-app").textContent = "Error";
+          const arr = arrayToObjects(raw);
+          const now = new Date(), next = new Date(now.getTime()+3600*1000);
+          const upcoming = arr.filter(r => {
+            const t = (r.Shift||"").split("-");
+            if (t.length!==2) return false;
+            const [h,m] = t[1].split(":").map(x=>+x);
+            const dt = new Date(now);
+            dt.setHours(h,m,0,0);
+            return dt>now && dt<=next;
           });
-          html += `
-          
-          </ul>
-        </div>`;
-          document.getElementById("breaks-app").innerHTML = html;
+          const c = document.getElementById("shift-overs-app");
+          if (!upcoming.length) {
+            c.innerHTML = "<p>No shift-overs in the next hour</p>";
+          } else {
+            c.innerHTML = "<ul>" + upcoming.map(r=>
+              `<li><strong>${r.Name}</strong><br/>Ends at ${r.Shift.split("-")[1].trim()}</li>`
+            ).join("")+"</ul>";
+          }
         }
+        
+        // 2) Breaks тоже только список в #breaks-app
+        async function fetchBreaksData() {
+          const raw = await fetchSheetData(BREAKS_RANGE);
+          if (!raw) return document.getElementById("breaks-app").textContent = "Error";
+          const arr = arrayToObjects(raw);
+          const now = new Date(), next = new Date(now.getTime()+3600*1000);
+          const upcoming = arr.filter(r => {
+            const t = (r["Break Time"]||"").split(":").map(x=>+x);
+            if (t.length<2) return false;
+            const dt = new Date(now);
+            dt.setHours(t[0],t[1],0,0);
+            return dt>now && dt<=next;
+          });
+          const c = document.getElementById("breaks-app");
+          if (!upcoming.length) {
+            c.innerHTML = "<p>No breaks in the next hour</p>";
+          } else {
+            c.innerHTML = "<ul>" + upcoming.map(r=>
+              `<li>
+                 <strong>${r.Name}</strong><br/>
+                 Break at ${r["Break Time"]}<br/>
+                 Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
+               </li>`
+            ).join("") + "</ul>";
+          }
+        }
+
 
         // кладём в глобальную window.shiftsQuinyxData
         async function fetchShiftsQuinyxData() {
@@ -2201,11 +2206,11 @@ function renderShiftOvers() {
           renderShiftSummary(data);
           const responsiblesData = await fetchSheetData(RESPONSIBLES_RANGE);
           renderResponsiblePeople(responsiblesData);
-          fetchBreaksData();
+          await fetchShiftOversData();
+          await fetchBreaksData();
           applyFilters();
           fetchAircallStatuses();
           fetchTransfers();
-          await fetchShiftOversData();
           
 
           document.getElementById("refresh-spinner").style.display = "none";
@@ -2252,47 +2257,6 @@ function renderShiftOvers() {
             if (themeCheckbox) themeCheckbox.checked = true;
           }
         }
-
-        // 1) Функция для загрузки и рендера shift-overs
-async function fetchShiftOversData() {
-  // 1.1) подтягиваем лист shiftsquinyx!B:C (Name, ShiftTime)
-  const raw = await fetchSheetData("shiftsquinyx!B:C");
-  if (!raw) {
-    document.getElementById("shift-overs-app").textContent = "Error loading";
-    return;
-  }
-  // превратить в объекты {Name, Shift}
-  const arr = arrayToObjects(raw);
-  // 1.2) отсечь тех, у кого конец смены в ближайший час
-  const now = new Date();
-  const nextHour = new Date(now.getTime() + 60*60*1000);
-  const upcoming = arr.filter(r => {
-    if (!r.Name || !r.Shift) return false;
-    // Shift формат "HH:MM-HH:MM"
-    const parts = r.Shift.split("-");
-    if (parts.length !== 2) return false;
-    const end = parts[1].trim();
-    const [h,m] = end.split(":").map(x=>parseInt(x,10));
-    const dt = new Date(now);
-    dt.setHours(h, m, 0, 0);
-    return dt > now && dt <= nextHour;
-  });
-
-  // 1.3) отрисовать
-  const container = document.getElementById("shift-overs-app");
-  if (upcoming.length === 0) {
-    container.innerHTML = "<p>No shift-overs in the next hour</p>";
-  } else {
-    container.innerHTML = "<ul style='list-style:none;padding:0;margin:0;'>"
-      + upcoming.map(r =>
-          `<li style="margin-bottom:.75rem;">
-             <strong>${r.Name}</strong><br/>
-             Shift ends at ${r.Shift.split("-")[1].trim()}
-           </li>`
-        ).join("")
-      + "</ul>";
-  }
-}
 
         
         function toggleTheme(e) {
