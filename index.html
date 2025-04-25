@@ -2182,20 +2182,30 @@ async function fetchBreaksData() {
       const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
       if (!newTime || newTime === oldTime) return;
 
-      fetch("https://script.google.com/macros/s/AKfycbygov5JlspaB8uuNUzNszXmTSDgVHAy8XeScx2WI4VMnhpntSfInZMAzZJ9yXJjOWRpyQ/exec", {
-        method: "POST",
-        body: JSON.stringify({ name, newBreakTime: newTime }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => res.text())
-      .then(text => {
-        alert("Server response:\n" + text); // покажет: Success, Not found или Error: ...
-      })
-      .catch(err => {
-        alert("Request failed:\n" + err.message);
-      });
-    });
-  });
+      fetch("https://breaks-proxy.mikhail-garayev.workers.dev/", {
+  method: "POST",
+  body: JSON.stringify({
+    name,              // имя сотрудника
+    newBreakTime: newTime // новое время
+  }),
+  headers: {
+    "Content-Type": "application/json"
+  }
+})
+.then(res => res.text())
+.then(response => {
+  if (response === "Success") {
+    timeSpan.textContent = newTime;
+    timeSpan.dataset.time = newTime;
+    alert("Break time updated successfully!");
+  } else {
+    alert("Server response:\n" + response);
+  }
+})
+.catch(err => {
+  alert("Request failed:\n" + err.message);
+});
+
 }
 
 
