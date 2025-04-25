@@ -2245,6 +2245,7 @@ if (!list.length) {
 
           await fetchEmployeeList();
           await fetchShiftsQuinyxData();     
+          renderShiftOvers();
 
           // Заполнение данных для Aircall
           const aircallConfig = platforms.find((p) => p.name === "Aircall");
@@ -2271,7 +2272,6 @@ if (!list.length) {
           renderShiftSummary(data);
           const responsiblesData = await fetchSheetData(RESPONSIBLES_RANGE);
           renderResponsiblePeople(responsiblesData);
-          await fetchShiftOversData();
           await fetchBreaksData();
           applyFilters();
           fetchAircallStatuses();
