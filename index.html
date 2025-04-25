@@ -2182,15 +2182,17 @@ async function fetchBreaksData() {
     if (!newTime || newTime === oldTime) return;
 
     fetch("https://breaks-proxy.mikhail-garayev.workers.dev/", {
-      method: "POST",
-      body: JSON.stringify({
-        name,
-        newBreakTime: newTime
-      }),
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name,
+    newBreakTime: newTime,
+    secret: "superWoltKey42" // тот же, что в Worker и Google Script
+  })
+})
+
     .then(res => res.text())
     .then(response => {
       if (response === "Success") {
