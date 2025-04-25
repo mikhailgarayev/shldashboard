@@ -2172,41 +2172,40 @@ async function fetchBreaksData() {
     `;
   }).join("") + "</ul>";
 
-  // Обработчик кнопок ✏️
   document.querySelectorAll(".edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const name = btn.dataset.name;
-      const timeSpan = btn.previousElementSibling;
-      const oldTime = timeSpan.dataset.time;
+  btn.addEventListener("click", () => {
+    const name = btn.dataset.name;
+    const timeSpan = btn.previousElementSibling;
+    const oldTime = timeSpan.dataset.time;
 
-      const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
-      if (!newTime || newTime === oldTime) return;
+    const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
+    if (!newTime || newTime === oldTime) return;
 
-      fetch("https://breaks-proxy.mikhail-garayev.workers.dev/", {
-  method: "POST",
-  body: JSON.stringify({
-    name,              // имя сотрудника
-    newBreakTime: newTime // новое время
-  }),
-  headers: {
-    "Content-Type": "application/json"
-  }
-})
-.then(res => res.text())
-.then(response => {
-  if (response === "Success") {
-    timeSpan.textContent = newTime;
-    timeSpan.dataset.time = newTime;
-    alert("Break time updated successfully!");
-  } else {
-    alert("Server response:\n" + response);
-  }
-})
-.catch(err => {
-  alert("Request failed:\n" + err.message);
-});
-
-}
+    fetch("https://breaks-proxy.mikhail-garayev.workers.dev/", {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        newBreakTime: newTime
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+    .then(res => res.text())
+    .then(response => {
+      if (response === "Success") {
+        timeSpan.textContent = newTime;
+        timeSpan.dataset.time = newTime;
+        alert("Break time updated successfully!");
+      } else {
+        alert("Server response:\n" + response);
+      }
+    })
+    .catch(err => {
+      alert("Request failed:\n" + err.message);
+    });
+  }); // ← закрываем addEventListener
+});   // ← закрываем forEach
 
 
         // кладём в глобальную window.shiftsQuinyxData
