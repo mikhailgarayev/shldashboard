@@ -2237,19 +2237,19 @@ async function fetchBreaksData() {
 
         // кладём в глобальную window.shiftsQuinyxData
         async function fetchShiftsQuinyxData() {
-          const raw = await fetchSheetData(SHIFT_QUINYX_RANGE);
+          const raw = await fetchSheetData("shiftsquinyx!A2:C");
           if (!raw || raw.length < 2) {
             window.shiftsQuinyxData = [];
             return;
           }
           // raw[0] — заголовки, raw[1..] — строки [name, "HH:mm-HH:mm"]
-          window.shiftsQuinyxData = raw.slice(1)
-            .filter(r => r[0] && r[1] && r[2])
-            .map(r => ({
-              platform: r[0].trim(), // столбец A
-              name: r[1].trim(),     // столбец B
-              shift: r[2].trim()     // столбец C
-            }));
+          window.shiftsQuinyxData = raw
+          .filter(r => r[0] && r[1] && r[2])
+          .map(r => ({
+            platform: r[0].trim(), // A: SHIFT TYPE
+            name: r[1].trim(),     // B: Name
+            shift: r[2].trim()     // C: Shift time
+          }));
         }
 
 
