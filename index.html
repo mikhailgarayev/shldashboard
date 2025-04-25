@@ -578,6 +578,10 @@
         .alert-card { max-width: 100%; }
       }
 
+      .break-conflict > strong {
+        color: #dc3545;
+      }
+
       /* контейнер списка внутри */
       #shift-overs-app ul,
       #breaks-app ul {
@@ -2100,18 +2104,31 @@ function renderShiftOvers() {
     });
   }
 
-  const c = document.getElementById("breaks-app");
-  if (!list.length) {
-    c.innerHTML = "<p>No breaks</p>";
-  } else {
-    c.innerHTML = "<ul>" + list.map(r=>`
-      <li>
+const c = document.getElementById("breaks-app");
+
+// после фильтрации list — сразу считаем частоту
+const counts = {};
+list.forEach(r => {
+  const key = `${r["Working Space"]}–${r["Break Time"]}`;
+  counts[key] = (counts[key] || 0) + 1;
+});
+
+if (!list.length) {
+  c.innerHTML = "<p>No breaks</p>";
+} else {
+  c.innerHTML = "<ul>" + list.map(r => {
+    const key = `${r["Working Space"]}–${r["Break Time"]}`;
+    // если больше одного — помечаем классом
+    const conflictClass = counts[key] > 1 ? "break-conflict" : "";
+    return `
+      <li class="${conflictClass}">
         <strong>${r.Name}</strong><br/>
         Break at ${r["Break Time"]}<br/>
         Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
       </li>
-    `).join("") + "</ul>";
-  }
+    `;
+  }).join("") + "</ul>";
+}
 }
 
 
