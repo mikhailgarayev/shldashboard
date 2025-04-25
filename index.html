@@ -2244,8 +2244,7 @@ if (!list.length) {
           window.allShiftData = shiftData;
 
           await fetchEmployeeList();
-          await fetchShiftsQuinyxData();
-          renderShiftOvers();        
+          await fetchShiftsQuinyxData();     
 
           // Заполнение данных для Aircall
           const aircallConfig = platforms.find((p) => p.name === "Aircall");
