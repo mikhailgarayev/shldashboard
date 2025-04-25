@@ -36,7 +36,7 @@
       }
       /* Тёмная тема */
       body.dark-theme {
-        --bg-color: linear-gradient(120deg, #2a2a2a 0%, #3c3a3c 100%);
+        --bg-color: linear-gradient(120deg, #252525 0%, #313131 100%);
         --text-color: #f0f0f0;
         --card-bg-color: #3a3a3a;
         --card-text-color: #e5e5e5;
@@ -445,6 +445,17 @@
       .platform-card ul li:last-child {
         border-bottom: none;
       }
+
+      /* Стили для бейджей смены перед именем */
+      .platform-card .badge {
+        font-size: 0.75rem;
+        vertical-align: middle;
+      }
+      .platform-card .badge-pill {
+        padding: 0.25em 0.6em;
+        margin-right: 0.4em;
+      }
+
       .shift-summary-card {
         background: none !important;
         color: var(--card-text-color);
@@ -1157,6 +1168,43 @@
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/js/bootstrap-select.min.js"></script>
       <script>
+        // -------------- begin shift‐badge config --------------
+
+        // map платформ → bootstrap‐класс бейджа
+
+        // вместо platformBadgeClasses
+        const shiftBadgeClasses = {
+        "CS":      "badge-primary",
+        "CS PO":   "badge-danger",
+        "PSR":     "badge-success",
+        "Simo":    "badge-info",
+        "Aircall": "badge-warning",
+        "Venue":   "badge-warning",
+        "Trainee": "badge-light text-dark",
+        "ST":      "badge-dark",
+        "SUMO":    "badge-secondary",
+      };
+
+      const shiftDisplayNames = {
+      "CS/Post order": "CS PO",
+      "CS/Post Order": "CS PO",
+      "CS / Post order": "CS PO",
+      "CS / Post Order": "CS PO",
+      "Special task": "ST",
+      "SiMo/Aircall": "SUMO",
+    };
+        // возвращает строку вида "06:00-15:00" для имени
+        // вместо "getEmployeeShift" — возвращаем название смены, а не время
+        function getEmployeeShiftName(empName) {
+          const rec = window.shiftsQuinyxData.find(r =>
+            r.name.toLowerCase() === empName.toLowerCase()
+          );
+          return rec?.platform || "";
+        }
+
+
+        // -------------- end shift‐badge config --------------
+
         // ===============================
         // WEATHER SECTION WITH CACHING & EMOJI
         const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d";
@@ -1425,22 +1473,15 @@
           }
 
           // Получаем смену
-          let shift = "—";
-          if (window.allShiftData && Array.isArray(window.allShiftData)) {
-            for (const row of window.allShiftData) {
-              for (const cell of row) {
-                if (typeof cell === "string" && cell.toLowerCase().includes(empName.toLowerCase())) {
-                  const dashIndex = cell.lastIndexOf(" - ");
-                  shift = dashIndex !== -1
-                    ? cell.substring(0, dashIndex).trim()
-                    : cell.trim();
-                  break;
-                }
-              }
-              if (shift !== "—") break;
-            }
-          }
-          document.getElementById("modal-emp-shift").textContent = shift;
+          const rec = window.shiftsQuinyxData
+          .find(r => r.name.toLowerCase() === empName.toLowerCase());
+
+        const shiftName = rec?.platform || "—";
+        const shiftTime = rec?.shift    || "—";
+
+        // например, выводим: "CS PO (06:00-15:00)"
+        document.getElementById("modal-emp-shift").textContent =
+          `${shiftName} (${shiftTime})`;
 
           // Break time
           let breakTime = "—";
@@ -1597,294 +1638,239 @@
         }
 
         function applyFilters() {
-          const container = document.getElementById("platforms-container");
-          container.innerHTML = "";
+  const container = document.getElementById("platforms-container");
+  container.innerHTML = "";
 
-          platforms.forEach((platform) => {
-            if (
-              !currentPlatformFilter.includes("all") &&
-              !currentPlatformFilter.includes(platform.name)
-            ) {
-              return;
-            }
+  platforms.forEach((platform) => {
+    // фильтрация по выбранным платформам
+    if (
+      !currentPlatformFilter.includes("all") &&
+      !currentPlatformFilter.includes(platform.name)
+    ) {
+      return;
+    }
 
-            if (platform.name !== "Aircall") {
-              let activeNames = [];
-              for (
-                let r = platform.rowActiveNamesStart;
-                r <= platform.rowActiveNamesEnd;
-                r++
-              ) {
-                const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
-                if (nm) activeNames.push(nm);
-              }
-              let awayData = [];
-              for (
-                let r = platform.rowAwayNamesStart;
-                r <= platform.rowAwayNamesEnd;
-                r++
-              ) {
-                const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
-                if (!nm) continue;
-                const rsn = fetchedData[r]?.[platform.colIndexData]?.trim() || "";
-                awayData.push({ name: nm, reason: rsn });
-              }
-              if (currentSearchTerm) {
-                activeNames = activeNames.filter((n) =>
-                  n.toLowerCase().includes(currentSearchTerm.toLowerCase())
-                );
-                awayData = awayData.filter((item) =>
-                  item.name.toLowerCase().includes(currentSearchTerm.toLowerCase())
-                );
-              }
-              activeNames = activeNames.filter((n) => passReallocAndLang(n));
-              awayData = awayData.filter((item) => passReallocAndLang(item.name));
+    if (platform.name !== "Aircall") {
+      // === обычные платформы ===
+      let activeNames = [];
+      for (
+        let r = platform.rowActiveNamesStart;
+        r <= platform.rowActiveNamesEnd;
+        r++
+      ) {
+        const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
+        if (nm) activeNames.push(nm);
+      }
+      let awayData = [];
+      for (
+        let r = platform.rowAwayNamesStart;
+        r <= platform.rowAwayNamesEnd;
+        r++
+      ) {
+        const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
+        if (!nm) continue;
+        const rsn = fetchedData[r]?.[platform.colIndexData]?.trim() || "";
+        awayData.push({ name: nm, reason: rsn });
+      }
 
-              let showActive = true,
-                showAway = true;
-              if (currentStatusFilter === "active") showAway = false;
-              else if (currentStatusFilter === "away") showActive = false;
+      // поиск
+      if (currentSearchTerm) {
+        activeNames = activeNames.filter((n) =>
+          n.toLowerCase().includes(currentSearchTerm.toLowerCase())
+        );
+        awayData = awayData.filter((item) =>
+          item.name.toLowerCase().includes(currentSearchTerm.toLowerCase())
+        );
+      }
 
-              let html = `
-        
-        <div class="platform-card">
-          <h5>
-            <a href="${platform.url}" target="_blank" rel="noopener" title="Click to navigate to ${platform.name}" style="vertical-align: middle;">
-                            ${platform.name}
-                          </a>
-            <span class="info-icon" data-toggle="tooltip" title="${
-                            platformInfo[platform.name] || ""
-                          }" style="display: inline-block; vertical-align: middle; margin-left: 6px;">
-              <img src="https://www.svgrepo.com/show/474873/info.svg" alt="Info" style="width:16px; height:16px; cursor:pointer; vertical-align:middle;" />
-            </span>
-          </h5>`;
-              if (showActive) {
-                if (activeNames.length === 0) {
-                  html += `
-          
-          <p>
-            <small style="color: red; font-weight: bold;">Active (0)</small>
-            <span data-toggle="tooltip" title="Нет активных сотрудников" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
-          </p>`;
-                } else {
-                  html += `
-          
-          <p>
-            <small>Active (${activeNames.length})</small>
-          </p>
-          <ul>`;
-            // Предположим, что у вас где-то объявлено ваше имя, например:
-          const myName = "Mikhail Garayev";
-          
-          // Предположим, что у вас уже определена переменная myName (если используется), либо просто используйте проверку для Naziya
+      // realloc/lang фильтры
+      activeNames = activeNames.filter((n) => passReallocAndLang(n));
+      awayData = awayData.filter((item) => passReallocAndLang(item.name));
 
-activeNames.forEach((n) => {
-  // Приводим имя к нижнему регистру для сравнения
-  const trimmedName = n.trim();
-  const lowerName = trimmedName.toLowerCase();
+      // статус-фильтры
+      let showActive = true,
+        showAway = true;
+      if (currentStatusFilter === "active") showAway = false;
+      else if (currentStatusFilter === "away") showActive = false;
 
-  // Если ваше имя есть (если нужно оставить эту проверку), например:
-  const myName = "Mikhail Garayev";  // Объявите эту переменную, если ещё не объявлена.
-  const isYou = lowerName === myName.toLowerCase();
+      // === собираем HTML ===
+      let html = `
+  <div class="platform-card">
+    <h5>
+      <a href="${platform.url}" target="_blank" rel="noopener">
+        ${platform.name}
+      </a>
+      <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name]||""}">
+        <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
+      </span>
+    </h5>`;
 
-  // Проверяем, что это Naziya Orujova
-  const isNaziya = lowerName === "naziya orujova";
+      // Active
+      if (showActive) {
+        html += `
+    <p><small>Active (${activeNames.length})</small></p>
+    <ul>`;
+        activeNames.forEach((n) => {
+          const name = n.trim();
+          const isYou = name.toLowerCase() === "mikhail garayev";
+          const isNaziya = name.toLowerCase() === "naziya orujova";
+          const extraEmoji = isNaziya ? " 🎀" : "";
+          const crown = isYou ? "👑" : "";
 
-  // Базовый класс
-  let className = "employee-item";
-  if (isYou) {
-    className += " king";
-  }
-  if (isNaziya) {
-    className += " pink-name";
-  }
+          const rawShift = getEmployeeShiftName(name);
+          const shiftName = shiftDisplayNames[rawShift] || rawShift;
+          const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
 
-  // Добавляем эмодзи, если это Naziya
-  const extraEmoji = isNaziya ? " 🎀" : "";
-  const crown = isYou ? "👑" : "";
-
-  // Формируем HTML для элемента:
-  const platformTag = getPrimaryPlatform(n); // n, не trimmedName
-html += `
-  <li class="${className}" data-employee="${trimmedName}">
-    <span class="employee-name">
-${platformTag ? `<span style="opacity:0.6; font-weight:normal;">[${platformTag}]</span> ` : ""}
-${trimmedName}${extraEmoji}
-</span> ${crown}
-  </li>`;
-});
-
-                  html += `
-          
-          </ul>`;
-                }
-              }
-              if (showAway) {
-                let brbCount = 0;
-                html += `
-          
-          <p>
-            <small>Away (${awayData.length})</small>
-          </p>
-          <ul>`;
-                  awayData.forEach((item) => {
-                    let reasonText = item.reason || "";
-                    let reasonClass = "";
-                  
-                    if (/(Break|BRB)/.test(reasonText)) {
-                      const match = reasonText.match(/-([0-9]+:[0-9]{2}(?::[0-9]{2})?)/);
-                      if (match) {
-                        reasonClass = "break-overdue";
-                      }
-                    }
-                  
-                    if (reasonText.includes("BRB")) {
-                      brbCount++;
-                    }
-                  
-                    const platformTag = getPrimaryPlatform(item.name);
-                    html += `<li class="employee-item ${reasonClass}" data-employee="${item.name}">
-                      <span class="employee-name">
-                        ${platformTag ? `<span style="opacity:0.6; font-weight:normal;">[${platformTag}]</span> ` : ""}
-                        ${item.name}
-                      </span>
-                      ${reasonText ? ` (${reasonText})` : ""}
-                    </li>`;
-                  });
-
-
-
-                html += `
-          
-          </ul>`;
-                if (brbCount >= 2) {
-                  html += `
-                    <p style="text-align: center; font-size: 0.95rem; margin-top: 8px; color: red;">
-                      <span style="font-size: 1.2rem; vertical-align: middle;" title="2 or more on BRB">&#9888;</span>
-                      <span style="margin-left: 6px;">2 or more on BRB</span>
-                    </p>`;
-                }
-
-              }
-              html += `
-        
-        </div>`;
-              container.innerHTML += html;
-            } else {
-              // Для Aircall используем отдельную функцию
-              let filteredActive = aircallActive.slice().filter(
-                (n) => n.toLowerCase() !== "away"
-              );
-              let filteredAway = aircallAway.slice().filter(
-                (item) => item.name.toLowerCase() !== "away"
-              );
-              if (currentSearchTerm) {
-                filteredActive = filteredActive.filter((n) =>
-                  n.toLowerCase().includes(currentSearchTerm.toLowerCase())
-                );
-                filteredAway = filteredAway.filter((item) =>
-                  item.name.toLowerCase().includes(currentSearchTerm.toLowerCase())
-                );
-              }
-              filteredActive = filteredActive.filter((n) => passReallocAndLang(n));
-              filteredAway = filteredAway.filter((item) =>
-                passReallocAndLang(item.name)
-              );
-
-              let showActive = true,
-                showAway = true;
-              if (currentStatusFilter === "active") showAway = false;
-              else if (currentStatusFilter === "away") showActive = false;
-              renderAircallCardWithStatuses(filteredActive, filteredAway, showActive, showAway);
-            }
-          });
-
-          const employeeItems = document.querySelectorAll(".employee-item");
-          employeeItems.forEach((item) => {
-            item.addEventListener("click", function () {
-              const empName = this.getAttribute("data-employee");
-              openEmployeeModal(empName);
-            });
-          });
-
-          $('[data-toggle="tooltip"]').tooltip();
-        }
-
-        function renderAircallCardWithStatuses(
-          activeList,
-          awayList,
-          showActive = true,
-          showAway = true
-        ) {
-          const aircallPlatform = platforms.find((p) => p.name === "Aircall");
-          let html = `
-        
-        <div class="platform-card">
-          <h5>
-            <a href="${aircallPlatform.url}" target="_blank" rel="noopener" title="Click to navigate to Snooze inbox" style="vertical-align: middle;">
-                        Aircall
-                      </a>
-            <span class="info-icon" data-toggle="tooltip" title="${
-                        platformInfo["Aircall"] || ""
-                      }" style="display: inline-block; vertical-align: middle; margin-left: 6px;">
-              <img src="https://www.svgrepo.com/show/474873/info.svg" alt="Info" style="width:16px; height:16px; cursor:pointer; vertical-align:middle;" />
-            </span>
-          </h5>`;
-          if (showActive) {
-            if (activeList.length === 0) {
-              html += `
-          
-          <p>
-            <small style="color: red; font-weight: bold;">Active (0)</small>
-            <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left: 5px; cursor: pointer; font-size: 1.5rem;">&#9888;</span>
-          </p>`;
-            } else {
-              html += `
-          
-          <p>
-            <small>Active (${activeList.length})</small>
-          </p>
-          <ul id="aircall-active-list">` +
-                activeList
-                  .map((n, index) => {
-                    const safeId = `aircall-active-${index}`;
-                    return `
-            
-            <li id="${safeId}" class="employee-item" data-employee="${n}">${n} - 
-              
-              <span style="color: green;">Checking status...</span>
-            </li>`;
-                  })
-                  .join("") +
-                `
-          
-          </ul>`;
-            }
-          }
-          if (showAway) {
-            html += `
-          
-          <p>
-            <small>Away (${awayList.length})</small>
-          </p>
-          <ul>` +
-              awayList
-                .map((a) => {
-                  const extra = a.reason ? " - " + a.reason : "";
-                  return `
-            
-            <li class="employee-item" data-employee="${a.name}">${a.name}${extra}</li>`;
-                })
-                .join("") +
-              `
-          
-          </ul>`;
-          }
           html += `
-        
-        </div>`;
-          document.getElementById("platforms-container").innerHTML += html;
+      <li class="employee-item" data-employee="${name}">
+        <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
+        <span class="employee-name">${name}${extraEmoji}</span>
+        ${crown}
+      </li>`;
+        });
+        html += `</ul>`;
+      }
+
+      // Away
+      if (showAway) {
+        let brbCount = 0;
+        html += `
+    <p><small>Away (${awayData.length})</small></p>
+    <ul>`;
+        awayData.forEach((item) => {
+          const name = item.name.trim();
+          let reasonText = item.reason || "";
+          let reasonClass = "";
+          if (/(Break|BRB)/.test(reasonText) && /-([0-9]{2}:[0-9]{2})/.test(reasonText)) {
+            reasonClass = "break-overdue";
+          }
+          if (reasonText.includes("BRB")) brbCount++;
+
+          const rawShift = getEmployeeShiftName(name);
+          const shiftName = shiftDisplayNames[rawShift] || rawShift;
+          const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
+
+          html += `
+      <li class="employee-item ${reasonClass}" data-employee="${name}">
+        <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
+        <span class="employee-name">${name}</span>
+        ${reasonText ? `<span class="text-muted">(${reasonText})</span>` : ""}
+      </li>`;
+        });
+        html += `</ul>`;
+
+        if (brbCount >= 2) {
+          html += `
+      <p style="text-align:center;color:red;font-size:0.95rem;">
+        <span title="2 or more on BRB">&#9888;</span>
+        <span style="margin-left:6px;">2 or more on BRB</span>
+      </p>`;
         }
+      }
+
+      html += `</div>`;
+      container.innerHTML += html;
+    } else {
+      // === Aircall ===
+      let filteredActive = aircallActive.filter((n) => n.toLowerCase() !== "away");
+      let filteredAway = aircallAway.filter((item) => item.name.toLowerCase() !== "away");
+
+      if (currentSearchTerm) {
+        filteredActive = filteredActive.filter((n) =>
+          n.toLowerCase().includes(currentSearchTerm.toLowerCase())
+        );
+        filteredAway = filteredAway.filter((item) =>
+          item.name.toLowerCase().includes(currentSearchTerm.toLowerCase())
+        );
+      }
+
+      filteredActive = filteredActive.filter((n) => passReallocAndLang(n));
+      filteredAway = filteredAway.filter((item) => passReallocAndLang(item.name));
+
+      const showActive = currentStatusFilter !== "away";
+      const showAway = currentStatusFilter !== "active";
+
+      renderAircallCardWithStatuses(filteredActive, filteredAway, showActive, showAway);
+    }
+  }); // end platforms.forEach
+
+  // ——— ВАЖНО: навешиваем клик по всем <li class="employee-item"> ———
+  container.querySelectorAll(".employee-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const empName = item.getAttribute("data-employee");
+      openEmployeeModal(empName);
+    });
+  });
+}
+
+
+
+function renderAircallCardWithStatuses(
+  activeList,
+  awayList,
+  showActive = true,
+  showAway = true
+) {
+  const aircallPlatform = platforms.find((p) => p.name === "Aircall");
+  let html = `
+  <div class="platform-card">
+    <h5>
+      <a href="${aircallPlatform.url}" target="_blank" rel="noopener">
+        Aircall
+      </a>
+      <span class="info-icon" data-toggle="tooltip" title="${
+        platformInfo["Aircall"] || ""
+      }">
+        <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
+      </span>
+    </h5>`;
+
+  if (showActive) {
+    if (activeList.length === 0) {
+      html += `
+    <p>
+      <small style="color: red; font-weight: bold;">Active (0)</small>
+      <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left:5px; font-size:1.5rem;">&#9888;</span>
+    </p>`;
+    } else {
+      html += `
+    <p><small>Active (${activeList.length})</small></p>
+    <ul id="aircall-active-list">` +
+        activeList
+          .map((n, i) => {
+            const safeId = `aircall-active-${i}`;
+            return `
+      <li id="${safeId}" class="employee-item" data-employee="${n}">
+        ${n} – <span style="color:green;">Checking status...</span>
+      </li>`;
+          })
+          .join("") +
+        `
+    </ul>`;
+    }
+  }
+
+  if (showAway) {
+    html += `
+    <p><small>Away (${awayList.length})</small></p>
+    <ul>` +
+      awayList
+        .map((a) => {
+          const extra = a.reason ? " – " + a.reason : "";
+          return `
+      <li class="employee-item" data-employee="${a.name}">
+        ${a.name}${extra}
+      </li>`;
+        })
+        .join("") +
+      `
+    </ul>`;
+  }
+
+  html += `</div>`;
+  document.getElementById("platforms-container").innerHTML += html;
+}
+
 
         function renderShiftSummary(data) {
   // контейнер, где рендерятся все stats-card
