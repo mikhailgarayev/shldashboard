@@ -2144,6 +2144,7 @@ async function fetchBreaksData() {
   const arr = arrayToObjects(raw);
   const now = new Date();
   const nextHour = new Date(now.getTime() + 3600 * 1000);
+  window.allBreaksData = arr;
 
   // Фильтрация по режиму
   let list;
