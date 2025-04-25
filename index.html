@@ -511,6 +511,47 @@
         font-size: 1.5rem;
         color: var(--text-color);
       }
+      /* общий контейнер для карточек alerts */
+      #alerts-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        justify-content: center;
+        margin: 2rem 0;
+      }
+
+      /* стиль как у ваших break-card, только общее имя */
+      .alert-card {
+        flex: 1 1 320px;
+        max-width: 480px;
+        background: var(--card-bg-color);
+        color: var(--card-text-color);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        position: relative;
+      }
+
+      /* заголовок */
+      .alert-card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      /* контейнер списка внутри */
+      #shift-overs-app ul,
+      #breaks-app ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #shift-overs-app li,
+      #breaks-app li {
+        margin-bottom: 0.75rem;
+      }
+
       .break-card {
         background: var(--card-bg-color);
         color: var(--card-text-color);
@@ -969,10 +1010,27 @@
 </div>
 
       <div id="platforms-container" class="platforms-row"></div>
-      <div id="breaks-section">
-        <h2>⏰ Breaks</h2>
-        <div id="breaks-app"></div>
-      </div>
+      <!-- Секция с двумя карточками: Shift-Overs и Breaks -->
+<div id="alerts-section" class="d-flex flex-wrap gap-4 justify-content-center my-4 px-3">
+  <!-- Upcoming Shift-Overs -->
+  <div id="shift-overs-section" class="alert-card">
+    <h2>⏳ Upcoming Shift-Overs</h2>
+    <div id="shift-overs-app">
+      <!-- сюда JS вставит список -->
+      Loading…
+    </div>
+  </div>
+
+  <!-- Upcoming Breaks -->
+  <div id="breaks-section" class="alert-card">
+    <h2>⏰ Breaks</h2>
+    <div id="breaks-app">
+      <!-- сюда ваш старый код вставляет breaks -->
+      Loading…
+    </div>
+  </div>
+</div>
+
     </div>
     <!-- Модальное окно сотрудника -->
     <div id="modal-overlay"></div>
@@ -1156,6 +1214,7 @@
         const RESPONSIBLES_RANGE = "list1!B5:C27";
         const BREAKS_RANGE = "prebreaks!A1:D40";
         const GOOGLE_API_KEY = "AIzaSyBVHrKvA61CAJBLxU-4AAiow6Y0TV4ChSY";
+        const SHIFT_QUINYX_RANGE = "shiftsquinyx!B3:C"; 
 
         let employeeData = {};
 
@@ -1910,7 +1969,41 @@ html += `
   container.insertAdjacentHTML("afterend", html);
 }
 
+function renderShiftOvers() {
+  const container = document.getElementById("shift-overs-app");
+  container.innerHTML = ""; 
+  if (!window.shiftsQuinyxData) {
+    container.textContent = "No data";
+    return;
+  }
 
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 60*60*1000);
+
+  // фильтрация сотрудников
+  const upcoming = window.shiftsQuinyxData.filter(({name, shift}) => {
+    const parts = shift.split("-");
+    if (parts.length < 2) return false;
+    const [ hh, mm ] = parts[1].split(":").map(Number);
+    const endDate = new Date(now);
+    endDate.setHours(hh, mm, 0, 0);
+    return endDate > now && endDate <= oneHourLater;
+  });
+
+  if (upcoming.length === 0) {
+    container.innerHTML = "<p style='text-align:center;color:#666;'>No shift-overs in the next hour</p>";
+    return;
+  }
+
+  // список
+  const ul = document.createElement("ul");
+  upcoming.forEach(({name, shift}) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${name}</strong> — ${shift}`;
+    ul.appendChild(li);
+  });
+  container.appendChild(ul);
+}
 
         async function fetchBreaksData() {
           window.allBreaksData = [];
@@ -1972,6 +2065,23 @@ html += `
         </div>`;
           document.getElementById("breaks-app").innerHTML = html;
         }
+
+        // кладём в глобальную window.shiftsQuinyxData
+        async function fetchShiftsQuinyxData() {
+          const raw = await fetchSheetData(SHIFT_QUINYX_RANGE);
+          if (!raw || raw.length < 2) {
+            window.shiftsQuinyxData = [];
+            return;
+          }
+          // raw[0] — заголовки, raw[1..] — строки [name, "HH:mm-HH:mm"]
+          window.shiftsQuinyxData = raw.slice(1)
+            .filter(r => r[0] && r[1])
+            .map(r => ({
+              name: r[0].trim(),
+              shift: r[1].trim()
+            }));
+        }
+
 
         function parseTimeToMinutes(timeStr) {
           timeStr = timeStr.trim();
@@ -2067,6 +2177,8 @@ html += `
           window.allShiftData = shiftData;
 
           await fetchEmployeeList();
+          await fetchShiftsQuinyxData();
+          renderShiftOvers();        
 
           // Заполнение данных для Aircall
           const aircallConfig = platforms.find((p) => p.name === "Aircall");
@@ -2113,6 +2225,27 @@ html += `
                 parts[1].toLowerCase() +
                 "@wolt.com";
         }
+
+        function getUpcomingShiftOvers() {
+        if (!window.shiftsQuinyxData) return [];
+        const now = new Date();
+        const oneHourLater = new Date(now.getTime() + 60*60*1000);
+
+        return window.shiftsQuinyxData
+          .filter(({name, shift}) => {
+            // из "06:00-15:00" берём вторую часть – время конца
+            const endStr = shift.split("-")[1];
+            if (!endStr) return false;
+            // составляем дату-объект: сегодня + endStr
+            const [hh, mm] = endStr.split(":").map(Number);
+            const endDate = new Date(now);
+            endDate.setHours(hh, mm, 0, 0);
+
+            return endDate > now && endDate <= oneHourLater;
+          })
+          .map(o => o.name);
+      }
+
 
         function loadThemePreference() {
           const saved = localStorage.getItem("darkThemeEnabled");
