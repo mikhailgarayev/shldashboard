@@ -1701,14 +1701,14 @@ activeNames.forEach((n) => {
   const crown = isYou ? "👑" : "";
 
   // Формируем HTML для элемента:
-  const platformTag = getPrimaryPlatform(trimmedName);
-  html += `
-    <li class="${className}" data-employee="${trimmedName}">
-      <span class="employee-name">
-  ${getPrimaryPlatform(trimmedName) ? `<span style="opacity:0.6; font-weight:normal;">[${getPrimaryPlatform(trimmedName)}]</span> ` : ""}
-  ${trimmedName}${extraEmoji}
+  const platformTag = getPrimaryPlatform(n); // n, не trimmedName
+html += `
+  <li class="${className}" data-employee="${trimmedName}">
+    <span class="employee-name">
+${platformTag ? `<span style="opacity:0.6; font-weight:normal;">[${platformTag}]</span> ` : ""}
+${trimmedName}${extraEmoji}
 </span> ${crown}
-    </li>`;
+  </li>`;
 });
 
                   html += `
@@ -1741,16 +1741,14 @@ activeNames.forEach((n) => {
                   
                     html += `<li class="employee-item ${reasonClass}" data-employee="${item.name}">`;
                   
-                    html += `<span class="employee-name">
-                      ${getPrimaryPlatform(item.name) ? `<span style="opacity:0.6; font-weight:normal;">[${getPrimaryPlatform(item.name)}]</span> ` : ""}
-                      ${item.name}
-                    </span>`;
-                  
-                    if (reasonText) {
-                      html += ` (${reasonText})`;
-                    }
-                  
-                    html += `</li>`;
+                    const platformTag = getPrimaryPlatform(item.name);
+                    html += `<li class="employee-item ${reasonClass}" data-employee="${item.name}">
+                      <span class="employee-name">
+                        ${platformTag ? `<span style="opacity:0.6; font-weight:normal;">[${platformTag}]</span> ` : ""}
+                        ${item.name}
+                      </span>
+                      ${reasonText ? ` (${reasonText})` : ""}
+                    </li>`;
                   });
 
 
