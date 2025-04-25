@@ -1497,33 +1497,39 @@
           document.getElementById("modal-overlay").classList.remove("show");
         }
 
-        const AIRCALL_API_KEY = "43bce092d80a09050211a837c0bbd705";
-        const AIRCALL_API_SECRET = "092d2eb157c47614788386920acd7413";
 
         async function getAircallUserId(email) {
-          const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
-          const url = `https://api.aircall.io/v1/users/${encodeURIComponent(
-            email
-          )}`;
           try {
-            logDebug(`Запрос Aircall ID для email: ${email}`);
-            const res = await fetch(url, {
-              headers: { Authorization: `Basic ${authString}` }
+            const res = await fetch("https://aircall-proxy.mikhail-garayev.workers.dev", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                secret: "superWoltKey42",
+                email: email
+              })
             });
+        
             if (!res.ok) {
-              logDebug(
-                `Ошибка получения ID Aircall: ${res.statusText} (Статус: ${res.status})`
-              );
+              logDebug(`Ошибка при проксированном запросе Aircall: ${res.statusText}`);
               return null;
             }
+        
             const data = await res.json();
-            logDebug(`Получен ID пользователя: ${data.user?.id}`);
-            return data.user?.id || null;
+        
+            if (!data?.user?.id) {
+              logDebug("Aircall API вернул пустой результат");
+              return null;
+            }
+        
+            logDebug(`Получен Aircall ID: ${data.user.id}`);
+            return data.user.id;
+        
           } catch (err) {
-            logDebug("Исключение при получении Aircall ID: " + err);
+            logDebug("Ошибка getAircallUserId через Worker: " + err.message);
             return null;
           }
         }
+
 
         async function getAircallAvailability(userId) {
           if (!userId) {
