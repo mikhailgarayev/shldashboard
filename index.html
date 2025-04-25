@@ -511,17 +511,17 @@
         font-size: 1.5rem;
         color: var(--text-color);
       }
-      /* общий контейнер для карточек alerts */
-      /* контейнер для двух карточек */
-      /* контейнер для двух alert-карточек */
+      /* Контейнер двух карточек */
       #alerts-section {
         display: flex;
         flex-wrap: wrap;
         gap: 1.5rem;
         justify-content: center;
+        align-items: stretch; /* вот это выравнивает их по высоте */
         margin: 2rem 0;
       }
-      /* единый стиль для карточек */
+      
+      /* Карточка внутри */
       .alert-card {
         flex: 1 1 320px;
         max-width: 480px;
@@ -533,15 +533,20 @@
         display: flex;
         flex-direction: column;
       }
+      
+      /* Заголовок */
       .alert-card h2 {
         font-size: 1.1rem;
         margin-bottom: 1rem;
         text-align: center;
       }
+      
+      /* Контент-область */
       .alert-card > div {
-        flex: 1;           /* чтобы содержимое равномерно распределялось */
+        flex: 1;
         overflow-y: auto;
       }
+
       .alert-card ul {
         list-style: none;
         padding: 0;
@@ -2039,32 +2044,49 @@ function renderShiftOvers() {
           }
         }
         
-        // 2) Breaks тоже только список в #breaks-app
         async function fetchBreaksData() {
-          const raw = await fetchSheetData(BREAKS_RANGE);
-          if (!raw) return document.getElementById("breaks-app").textContent = "Error";
-          const arr = arrayToObjects(raw);
-          const now = new Date(), next = new Date(now.getTime()+3600*1000);
-          const upcoming = arr.filter(r => {
-            const t = (r["Break Time"]||"").split(":").map(x=>+x);
-            if (t.length<2) return false;
-            const dt = new Date(now);
-            dt.setHours(t[0],t[1],0,0);
-            return dt>now && dt<=next;
-          });
-          const c = document.getElementById("breaks-app");
-          if (!upcoming.length) {
-            c.innerHTML = "<p>No breaks in the next hour</p>";
-          } else {
-            c.innerHTML = "<ul>" + upcoming.map(r=>
-              `<li>
-                 <strong>${r.Name}</strong><br/>
-                 Break at ${r["Break Time"]}<br/>
-                 Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
-               </li>`
-            ).join("") + "</ul>";
-          }
-        }
+  const raw = await fetchSheetData(BREAKS_RANGE);
+  if (!raw) {
+    document.getElementById("breaks-app").textContent = "Error";
+    return;
+  }
+  const arr = arrayToObjects(raw);
+
+  const now = new Date(),
+        nextHour = new Date(now.getTime() + 3600*1000);
+
+  // Фильтрация по режиму
+  let list;
+  if (currentBreakFilter === "upcoming") {
+    list = arr.filter(r => {
+      const [h, m] = (r["Break Time"]||"").split(":").map(Number);
+      if (isNaN(h)) return false;
+      const dt = new Date(now);
+      dt.setHours(h, m, 0, 0);
+      return dt > now && dt <= nextHour;
+    });
+  } else { // all
+    list = arr.slice().sort((a,b) => {
+      const pa = parseTimeToMinutes(a["Break Time"]),
+            pb = parseTimeToMinutes(b["Break Time"]);
+      return pa - pb;
+    });
+  }
+
+  const c = document.getElementById("breaks-app");
+  if (!list.length) {
+    c.innerHTML = "<p>No breaks</p>";
+  } else {
+    c.innerHTML = "<ul>" + list.map(r=>`
+      <li>
+        <strong>${r.Name}</strong><br/>
+        Break at ${r["Break Time"]}<br/>
+        Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
+      </li>
+    `).join("") + "</ul>";
+  }
+}
+
 
 
         // кладём в глобальную window.shiftsQuinyxData
@@ -2278,9 +2300,11 @@ function renderShiftOvers() {
           );
         });
 
-        document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
+  // Загрузка темы
   loadThemePreference();
 
+  // Сайдбар
   const sidebar = document.getElementById("sidebar");
   const hamburger = document.getElementById("hamburger-menu");
   const closeBtn = document.getElementById("sidebar-close");
@@ -2308,43 +2332,65 @@ function renderShiftOvers() {
     }
   });
 
-  // другие инициализации...
-  document.getElementById("employee-search").addEventListener("input", function (e) {
-    currentSearchTerm = e.target.value;
+  // Фильтры таблицы платформ
+  document
+    .getElementById("employee-search")
+    .addEventListener("input", (e) => {
+      currentSearchTerm = e.target.value;
+      applyFilters();
+    });
+
+  document
+    .getElementById("status-filter")
+    .addEventListener("change", (e) => {
+      currentStatusFilter = e.target.value;
+      applyFilters();
+    });
+
+  document
+    .getElementById("realloc-filter")
+    .addEventListener("change", (e) => {
+      currentReallocFilter = e.target.value;
+      applyFilters();
+    });
+
+  document
+    .getElementById("lang-filter")
+    .addEventListener("change", (e) => {
+      currentLangFilter = e.target.value;
+      applyFilters();
+    });
+
+  // Фильтр перерывов
+  document
+    .getElementById("break-filter")
+    .addEventListener("change", (e) => {
+      currentBreakFilter = e.target.value; // "upcoming" или "all"
+      fetchBreaksData();
+    });
+
+  // Селектор платформ (bootstrap-select)
+  $('#platform-dropdown').selectpicker();
+  $('#platform-dropdown').on('changed.bs.select', function () {
+    const selected = $(this).val();
+    currentPlatformFilter = selected && selected.length ? selected : ['all'];
     applyFilters();
   });
 
-  document.getElementById("status-filter").addEventListener("change", function (e) {
-    currentStatusFilter = e.target.value;
-    applyFilters();
-  });
-
-  document.getElementById("realloc-filter").addEventListener("change", function (e) {
-    currentReallocFilter = e.target.value;
-    applyFilters();
-  });
-
-  document.getElementById("lang-filter").addEventListener("change", function (e) {
-    currentLangFilter = e.target.value;
-    applyFilters();
-  });
-
-  document.getElementById("break-filter").addEventListener("change", function (e) {
-    currentBreakFilter = e.target.value;
-    fetchBreaksData();
-  });
-
+  // Модалка сотрудника
   const overlay = document.getElementById("modal-overlay");
   const modalClose = document.getElementById("modal-close");
   overlay.addEventListener("click", closeEmployeeModal);
   modalClose.addEventListener("click", closeEmployeeModal);
 
+  // Переключатель темы
   document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
 
+  // Первичная загрузка данных
   fetchData();
   fetchWeather();
 });
-      
+     
       
       </script>
     </div>
