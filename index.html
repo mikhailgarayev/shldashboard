@@ -2115,62 +2115,94 @@ function renderShiftOvers() {
 
 
         
-        async function fetchBreaksData() {
+async function fetchBreaksData() {
   const raw = await fetchSheetData(BREAKS_RANGE);
   if (!raw) {
     document.getElementById("breaks-app").textContent = "Error";
     return;
   }
-  const arr = arrayToObjects(raw);
 
-  const now = new Date(),
-        nextHour = new Date(now.getTime() + 3600*1000);
+  const arr = arrayToObjects(raw);
+  const now = new Date();
+  const nextHour = new Date(now.getTime() + 3600 * 1000);
 
   // Фильтрация по режиму
   let list;
   if (currentBreakFilter === "upcoming") {
     list = arr.filter(r => {
-      const [h, m] = (r["Break Time"]||"").split(":").map(Number);
+      const [h, m] = (r["Break Time"] || "").split(":").map(Number);
       if (isNaN(h)) return false;
       const dt = new Date(now);
       dt.setHours(h, m, 0, 0);
       return dt > now && dt <= nextHour;
     });
-  } else { // all
-    list = arr.slice().sort((a,b) => {
+  } else {
+    list = arr.slice().sort((a, b) => {
       const pa = parseTimeToMinutes(a["Break Time"]),
             pb = parseTimeToMinutes(b["Break Time"]);
       return pa - pb;
     });
   }
 
-const c = document.getElementById("breaks-app");
+  const c = document.getElementById("breaks-app");
 
-// после фильтрации list — сразу считаем частоту
-const counts = {};
-list.forEach(r => {
-  const key = `${r["Working Space"]}–${r["Break Time"]}`;
-  counts[key] = (counts[key] || 0) + 1;
-});
+  // Подсчёт совпадений
+  const counts = {};
+  list.forEach(r => {
+    const key = `${r["Working Space"]}–${r["Break Time"]}`;
+    counts[key] = (counts[key] || 0) + 1;
+  });
 
-if (!list.length) {
-  c.innerHTML = "<p>No breaks</p>";
-} else {
+  if (!list.length) {
+    c.innerHTML = "<p>No breaks</p>";
+    return;
+  }
+
+  // Генерация HTML
   c.innerHTML = "<ul>" + list.map(r => {
     const key = `${r["Working Space"]}–${r["Break Time"]}`;
-    // если больше одного — помечаем классом
     const conflictClass = counts[key] > 1 ? "break-conflict" : "";
     return `
       <li class="${conflictClass}">
         <strong>${r.Name}</strong><br/>
-        Break at ${r["Break Time"]}<br/>
+        Break at <span class="break-time" data-name="${r.Name}" data-time="${r["Break Time"]}">${r["Break Time"]}</span>
+        <button class="edit-btn" data-name="${r.Name}" title="Edit time" style="border:none;background:none;cursor:pointer;">✏️</button><br/>
         Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
       </li>
     `;
   }).join("") + "</ul>";
-}
-}
 
+  // Обработчик кнопок ✏️
+  document.querySelectorAll(".edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const name = btn.dataset.name;
+      const timeSpan = btn.previousElementSibling;
+      const oldTime = timeSpan.dataset.time;
+
+      const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
+      if (!newTime || newTime === oldTime) return;
+
+      fetch("https://script.google.com/macros/s/AKfycbw7WCoBCpRhA45TvyWJfEQ0GwzLdC5Evb0l25sHOFueucGCoGwZUu0G52zT6uxfcVlt_g/exec", {
+        method: "POST",
+        body: JSON.stringify({ name, newBreakTime: newTime }),
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(res => res.text())
+      .then(response => {
+        if (response === "Success") {
+          timeSpan.textContent = newTime;
+          timeSpan.dataset.time = newTime;
+          alert("Break time updated successfully!");
+        } else {
+          alert("Update failed. Please check name in the main sheet.");
+        }
+      })
+      .catch(() => {
+        alert("Something went wrong while saving.");
+      });
+    });
+  });
+}
 
 
         // кладём в глобальную window.shiftsQuinyxData
