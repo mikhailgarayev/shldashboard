@@ -1703,7 +1703,10 @@ activeNames.forEach((n) => {
   // Формируем HTML для элемента:
   html += `
     <li class="${className}" data-employee="${trimmedName}">
-      <span class="employee-name">${trimmedName}${extraEmoji}</span> ${crown}
+      <span class="employee-name">
+  ${getPrimaryPlatform(trimmedName) ? `<span style="opacity:0.6; font-weight:normal;">[${getPrimaryPlatform(trimmedName)}]</span> ` : ""}
+  ${trimmedName}${extraEmoji}
+</span> ${crown}
     </li>`;
 });
 
@@ -2241,10 +2244,11 @@ async function fetchBreaksData() {
           }
           // raw[0] — заголовки, raw[1..] — строки [name, "HH:mm-HH:mm"]
           window.shiftsQuinyxData = raw.slice(1)
-            .filter(r => r[0] && r[1])
+            .filter(r => r[0] && r[1] && r[2])
             .map(r => ({
-              name: r[0].trim(),
-              shift: r[1].trim()
+              platform: r[0].trim(), // столбец A
+              name: r[1].trim(),     // столбец B
+              shift: r[2].trim()     // столбец C
             }));
         }
 
@@ -2381,6 +2385,16 @@ async function fetchBreaksData() {
           if (autoRefreshEnabled) resetAutoRefresh();
         }
 
+        function getPrimaryPlatform(empName) {
+          if (!window.shiftsQuinyxData) return null;
+        
+          const found = window.shiftsQuinyxData.find(row =>
+            row.name.toLowerCase() === empName.toLowerCase()
+          );
+        
+          return found?.platform || null;
+        }
+        
         function generateWoltEmail(name) {
           if (!name) return "";
           const parts = name.split(" ");
