@@ -2054,34 +2054,52 @@ function renderShiftOvers() {
 
                 // 1) Shift-Overs из листа shiftsquinyx!B:C
         async function fetchShiftOversData() {
-          const raw = await fetchSheetData("shiftsquinyx!B:C");
-          if (!raw) {
-            document.getElementById("shift-overs-app").textContent = "Error";
-            return;
-          }
-          // вот эта строка обязательна
-          const arr = arrayToObjects(raw);
-        
-          const now = new Date(),
-                next = new Date(now.getTime() + 3600*1000);
-          const upcoming = arr.filter(r => {
-            const parts = (r.Shift||"").split("-");
-            if (parts.length !== 2) return false;
-            const [h,m] = parts[1].split(":").map(Number);
-            const dt = new Date(now);
-            dt.setHours(h,m,0,0);
-            return dt > now && dt <= next;
-          });
-        
-          const c = document.getElementById("shift-overs-app");
-          if (!upcoming.length) {
-            c.innerHTML = "<p>No shift-overs in the next hour</p>";
-          } else {
-            c.innerHTML = "<ul>" + upcoming.map(r =>
-              `<li><strong>${r.Name}</strong><br/>Ends at ${r.Shift.split("-")[1].trim()}</li>`
-            ).join("") + "</ul>";
-          }
-        }
+  const raw = await fetchSheetData("shiftsquinyx!B:C");
+  if (!raw) {
+    document.getElementById("shift-overs-app").textContent = "Error";
+    return;
+  }
+  const arr = arrayToObjects(raw);
+
+  const now = new Date();
+  const next = new Date(now.getTime() + 3600*1000);
+  const upcoming = arr.filter(r => {
+    const parts = (r.Shift||"").split("-");
+    if (parts.length !== 2) return false;
+    const [h,m] = parts[1].split(":").map(Number);
+    const dt = new Date(now);
+    dt.setHours(h, m, 0, 0);
+    return dt > now && dt <= next;
+  });
+
+  const c = document.getElementById("shift-overs-app");
+  if (!upcoming.length) {
+    c.innerHTML = "<p>No shift-overs in the next hour</p>";
+    return;
+  }
+
+  // считаем конфликты, если нужно
+  const counts = {};
+  upcoming.forEach(r => {
+    counts[r.Shift] = (counts[r.Shift]||0) + 1;
+  });
+
+  c.innerHTML = "<ul>" + upcoming.map(r => {
+    // разбиваем на название смены и диапазон времени
+    const [shiftName, timeRange] = r.Shift.split(" - ").map(s=>s.trim());
+    const [start, end] = timeRange.split("-").map(s=>s.trim());
+    const conflictClass = counts[r.Shift] > 1 ? "break-conflict" : "";
+
+    return `
+      <li class="${conflictClass}">
+        <strong>${r.Name}</strong><br/>
+        Ends at ${end}<br/>
+        Shift: ${start} | ${shiftName}
+      </li>
+    `;
+  }).join("") + "</ul>";
+}
+
         
         async function fetchBreaksData() {
   const raw = await fetchSheetData(BREAKS_RANGE);
