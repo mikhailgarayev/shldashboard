@@ -2182,23 +2182,17 @@ async function fetchBreaksData() {
       const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
       if (!newTime || newTime === oldTime) return;
 
-      fetch("https://script.google.com/macros/s/AKfycbzByQNT5W2tyiX-Fy5GzgteAcIhIir2d60B7FlqK-OxFt_aBULEbpRS--G8yBM96WTTEA/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbygov5JlspaB8uuNUzNszXmTSDgVHAy8XeScx2WI4VMnhpntSfInZMAzZJ9yXJjOWRpyQ/exec", {
         method: "POST",
         body: JSON.stringify({ name, newBreakTime: newTime }),
         headers: { "Content-Type": "application/json" }
       })
       .then(res => res.text())
-      .then(response => {
-        if (response === "Success") {
-          timeSpan.textContent = newTime;
-          timeSpan.dataset.time = newTime;
-          alert("Break time updated successfully!");
-        } else {
-          alert("Update failed. Please check name in the main sheet.");
-        }
+      .then(text => {
+        alert("Server response:\n" + text); // покажет: Success, Not found или Error: ...
       })
-      .catch(() => {
-        alert("Something went wrong while saving.");
+      .catch(err => {
+        alert("Request failed:\n" + err.message);
       });
     });
   });
