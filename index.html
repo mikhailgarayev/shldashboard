@@ -841,6 +841,7 @@
           opacity: 1;
           transform: scale(1);
         }
+      }
     </style>
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -2053,33 +2054,32 @@ function renderShiftOvers() {
 
                 // 1) Shift-Overs из листа shiftsquinyx!B:C
         async function fetchShiftOversData() {
-                    const raw = await fetchSheetData("shiftsquinyx!B:C");
-          // …
-          const upcoming = arr.filter(…);
+          const raw = await fetchSheetData("shiftsquinyx!B:C");
+          if (!raw) {
+            document.getElementById("shift-overs-app").textContent = "Error";
+            return;
+          }
+          // вот эта строка обязательна
+          const arr = arrayToObjects(raw);
+        
+          const now = new Date(),
+                next = new Date(now.getTime() + 3600*1000);
+          const upcoming = arr.filter(r => {
+            const parts = (r.Shift||"").split("-");
+            if (parts.length !== 2) return false;
+            const [h,m] = parts[1].split(":").map(Number);
+            const dt = new Date(now);
+            dt.setHours(h,m,0,0);
+            return dt > now && dt <= next;
+          });
+        
           const c = document.getElementById("shift-overs-app");
-          
           if (!upcoming.length) {
             c.innerHTML = "<p>No shift-overs in the next hour</p>";
           } else {
-            // Сперва считаем частоту (если нужно подсветка, как в брейках)
-            const counts = {};
-            upcoming.forEach(r => {
-              const key = r.Shift; // или r.Name+'|'+r.Shift, если хотим по имени+смене
-              counts[key] = (counts[key]||0) + 1;
-            });
-          
-            c.innerHTML = "<ul>" + upcoming.map(r => {
-              // разбиваем на название и диапазон
-              const [shiftName, timeRange] = r.Shift.split(" - ").map(s=>s.trim());
-              const conflictClass = counts[r.Shift] > 1 ? "break-conflict" : "";
-          
-              return `
-                <li class="${conflictClass}">
-                  <strong>${r.Name}</strong><br/>
-                  <em>${shiftName}</em><br/>
-                  Shift: ${timeRange}
-                </li>`;
-            }).join("") + "</ul>";
+            c.innerHTML = "<ul>" + upcoming.map(r =>
+              `<li><strong>${r.Name}</strong><br/>Ends at ${r.Shift.split("-")[1].trim()}</li>`
+            ).join("") + "</ul>";
           }
         }
         
