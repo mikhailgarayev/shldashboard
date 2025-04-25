@@ -151,13 +151,29 @@
       .filter-panel {
         background: var(--card-bg-color);
         border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 20px;
+        padding: 12px 24px;
+        margin: 0 auto 24px;
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 16px;
         box-shadow: var(--card-shadow);
+        nax-width: 1200px;
+      }
+      .filter-panel .filter-dropdown {
+        background: #f7f8fa;
+        border: 1px solid #e0e0e5;
+        border-radius: 6px;
+        padding: 8px 12px;
+        min-width: 140px;
+        transition: border-color .2s ease;
+      }
+      .filter-panel .filter-dropdown:hover,
+      .filter-panel .filter-dropdown:focus,
+      .filter-panel .search-input:hover,
+      .filter-panel .search-input:focus {
+        border-color: #007bff;                  /* подчеркнём цветом при взаимодействии */
+        outline: none;
       }
       #summary-grid {
         display: grid !important;
@@ -282,6 +298,16 @@
         border-radius: 4px;
         cursor: pointer;
       }
+      .refresh-btn, .refresh-section img {
+        transition: transform .2s ease;
+      }
+      .refresh-btn:hover, .refresh-section img:hover {
+        transform: scale(1.1);
+      }
+      .theme-switch .slider:before {
+        font-size: 14px;
+        line-height: 18px;
+      }
       .refresh-btn:hover {
         background-color: #218838;
       }
@@ -290,7 +316,15 @@
         height: 1rem;
         border-width: 0.1em;
       }
-
+      @media (max-width: 768px) {
+        .filter-panel {
+          justify-content: center;
+        }
+        .filter-panel .filter-dropdown,
+        .filter-panel .search-input {
+          min-width: 45%;
+        }
+      }
       /* Сброс стилей для текста */
       .theme-text {
         margin: 0;
@@ -1046,7 +1080,7 @@
         }
         function updateWeatherUI(data) {
           const temperature = data.main?.temp ?? null;
-          const windSpeed = data.wind?.speed ?? null;
+          const windSpeed = data.wind?.speed;
           // Определяем погодный смайлик
           let weatherEmoji = "";
           if (data.weather && data.weather.length > 0) {
@@ -1076,9 +1110,20 @@
 
           document.getElementById("baku-temp").textContent =
             temperature ? `${Math.round(temperature)} °C ${weatherEmoji}` : "-- °C";
-          document.getElementById("baku-wind").textContent =
-            windSpeed ? `${windSpeed} m/s` : "-- m/s";
-        }
+            // показываем 0 m/s если скорость равна нулю, и только при undefined/null рисуем "--"
+            const windEl = document.getElementById("baku-wind");
+            // получаем из data.wind.speed, если есть, иначе undefined
+            const rawSpeed = data.wind?.speed;
+            // если число или 0
+            const hasSpeed = typeof rawSpeed === 'number';
+            // округляем до одной цифры, если число, иначе оставляем плейсхолдер
+            const displaySpeed = hasSpeed
+              ? Math.round(rawSpeed * 10) / 10
+              : '--';
+
+            windEl.textContent = `${displaySpeed} m/s`;
+          }
+        
         // ===============================
 
         // Информация по платформам
@@ -1790,15 +1835,19 @@ activeNames.forEach((n) => {
   });
 
   // вставляем погоду как последнюю карточку
+  // новый код — в конце renderShiftSummary
   const weatherCard = document.createElement("div");
   weatherCard.className = "stats-card";
   weatherCard.id = "weather-card";
   weatherCard.innerHTML = `
     <div class="stats-title">Baku Weather</div>
     <div class="stats-value" id="baku-temp">-- °C</div>
-    <div class="small">Wind Speed -- m/s</div>
+
+    <div class="stats-title" style="margin-top:.5rem;">Wind Speed</div>
+    <div class="stats-value small" id="baku-wind">-- m/s</div>
   `;
   container.appendChild(weatherCard);
+
 
   // реинициализируем Bootstrap-Tooltip для всех [data-toggle="tooltip"]
   $('[data-toggle="tooltip"]').tooltip();
