@@ -1701,7 +1701,7 @@ activeNames.forEach((n) => {
   const crown = isYou ? "👑" : "";
 
   // Формируем HTML для элемента:
-  const platformTag = getPrimaryPlatform(item.name);
+  const platformTag = getPrimaryPlatform(trimmedName);
   html += `
     <li class="${className}" data-employee="${trimmedName}">
       <span class="employee-name">
