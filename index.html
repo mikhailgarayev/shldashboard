@@ -1701,6 +1701,7 @@ activeNames.forEach((n) => {
   const crown = isYou ? "👑" : "";
 
   // Формируем HTML для элемента:
+  const platformTag = getPrimaryPlatform(item.name);
   html += `
     <li class="${className}" data-employee="${trimmedName}">
       <span class="employee-name">
@@ -2377,6 +2378,7 @@ async function fetchBreaksData() {
           const responsiblesData = await fetchSheetData(RESPONSIBLES_RANGE);
           renderResponsiblePeople(responsiblesData);
           await fetchBreaksData();
+          await fetchShiftsQuinyxData();
           applyFilters();
           fetchAircallStatuses();
           fetchTransfers();
