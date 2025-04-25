@@ -1536,26 +1536,33 @@
             logDebug("getAircallAvailability: userId не передан");
             return "No ID";
           }
-          const authString = btoa(`${AIRCALL_API_KEY}:${AIRCALL_API_SECRET}`);
-          const url = `https://api.aircall.io/v1/users/${userId}/availability`;
+        
           try {
-            logDebug(`Запрос статуса Aircall для userId: ${userId}`);
-            const res = await fetch(url, {
-              headers: { Authorization: `Basic ${authString}` }
+            const res = await fetch("https://aircall-proxy.mikhail-garayev.workers.dev", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                secret: "superWoltKey42",
+                userId: userId,
+                action: "availability"
+              })
             });
+        
             if (!res.ok) {
-              logDebug(
-                `Ошибка получения статуса Aircall: ${res.statusText} (Статус: ${res.status})`
-              );
+              logDebug("Ошибка при получении статуса через Worker: " + res.statusText);
               return "Error";
             }
+        
             const data = await res.json();
-            let status =
+        
+            const status =
               data?.user_availability?.availability_status || data?.availability;
-            logDebug(`Получен статус для userId ${userId}: ${status}`);
+        
+            logDebug(`Статус через Worker: ${status}`);
             return status || "Unknown";
+        
           } catch (err) {
-            logDebug("Исключение в getAircallAvailability: " + err);
+            logDebug("Исключение в getAircallAvailability через Worker: " + err.message);
             return "Error";
           }
         }
