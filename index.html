@@ -2182,7 +2182,7 @@ async function fetchBreaksData() {
       const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
       if (!newTime || newTime === oldTime) return;
 
-      fetch("https://script.google.com/macros/s/AKfycbw7WCoBCpRhA45TvyWJfEQ0GwzLdC5Evb0l25sHOFueucGCoGwZUu0G52zT6uxfcVlt_g/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbxQJAKx_TmwFwMlhVH5mXFOt2PvQ9ZJWVwmNSaU46qA4ycJv5S5xCAcKd-UddpbDVuogQ/exec", {
         method: "POST",
         body: JSON.stringify({ name, newBreakTime: newTime }),
         headers: { "Content-Type": "application/json" }
