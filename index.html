@@ -1477,84 +1477,85 @@
           );
         }
 
-        async function openEmployeeModal(empName) {
-          const info = employeeData[empName];
-          if (!info) {
-            logDebug("Данные о сотруднике не найдены: " + empName);
-            return;
-          }
+async function openEmployeeModal(empName) {
+  const info = employeeData[empName];
+  if (!info) {
+    logDebug("Данные о сотруднике не найдены: " + empName);
+    return;
+  }
 
-          // Получаем смену
-          const rec = window.shiftsQuinyxData
-          .find(r => r.name.toLowerCase() === empName.toLowerCase());
+  // Получаем смену
+  const rec = window.shiftsQuinyxData
+    .find(r => r.name.toLowerCase() === empName.toLowerCase());
+  const shiftName = rec?.platform || "—";
+  const shiftTime = rec?.shift    || "—";
+  document.getElementById("modal-emp-shift").textContent =
+    `${shiftName} (${shiftTime})`;
 
-        const shiftName = rec?.platform || "—";
-        const shiftTime = rec?.shift    || "—";
+  // Break time
+  let breakTime = "—";
+  if (window.allBreaksData && Array.isArray(window.allBreaksData)) {
+    const foundBreak = allBreaksData
+      .find(b => b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase());
+    if (foundBreak) {
+      breakTime = foundBreak["Break Time"] || "—";
+    }
+  }
+  document.getElementById("modal-emp-break").textContent = breakTime;
 
-        // например, выводим: "CS PO (06:00-15:00)"
-        document.getElementById("modal-emp-shift").textContent =
-          `${shiftName} (${shiftTime})`;
+  // Основная информация
+  const parts = empName.trim().split(" ");
+  const email = parts.length >= 2
+    ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com`
+    : `${parts[0].toLowerCase()}@wolt.com`;
+  document.getElementById("modal-emp-name").textContent      = empName;
+  document.getElementById("modal-emp-email").textContent     = email;
+  document.getElementById("modal-emp-realloc").textContent   = info.canReallocate || "N/A";
+  document.getElementById("modal-emp-prime").textContent     = info.prime         || "N/A";
+  document.getElementById("modal-emp-pref").textContent      = info.pref          || "N/A";
+  document.getElementById("modal-emp-languages").textContent = info.languages     || "N/A";
+  document.getElementById("modal-emp-capacity").textContent  = info.capacity      || "N/A";
 
-          // Break time
-          let breakTime = "—";
-          if (window.allBreaksData && Array.isArray(window.allBreaksData)) {
-            const foundBreak = allBreaksData
-              .find(b => b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase());
-            if (foundBreak) {
-              breakTime = foundBreak["Break Time"] || "—";
-            }
-          }
-          document.getElementById("modal-emp-break").textContent = breakTime;
+  document.getElementById("modal-inbox-link").onclick = () => {
+    window.open(generateInboxLink(info.id), "_blank");
+  };
+  document.getElementById("modal-admin-link").onclick = () => {
+    window.open(generateAdminLink(info.id), "_blank");
+  };
 
-          // Основная информация
-          const parts = empName.trim().split(" ");
-          const email = parts.length >= 2
-            ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com`
-            : `${parts[0].toLowerCase()}@wolt.com`;
-          document.getElementById("modal-emp-name").textContent = empName;
-          document.getElementById("modal-emp-email").textContent = email;
-          document.getElementById("modal-emp-realloc").textContent = info.canReallocate || "N/A";
-          document.getElementById("modal-emp-prime").textContent   = info.prime         || "N/A";
-          document.getElementById("modal-emp-pref").textContent    = info.pref          || "N/A";
-          document.getElementById("modal-emp-languages").textContent = info.languages    || "N/A";
-          document.getElementById("modal-emp-capacity").textContent  = info.capacity     || "N/A";
+  // Новая часть: подсчёт и список изменений только за сегодня
+  const allTransfers = transfersData.filter(t =>
+    t.name.toLowerCase() === empName.toLowerCase()
+  );
+  const today = new Date().toISOString().split("T")[0];
+  const todaysTransfers = allTransfers.filter(t =>
+    t.time.startsWith(today)
+  );
 
-          document.getElementById("modal-inbox-link").onclick = () => {
-            window.open(generateInboxLink(info.id), "_blank");
-          };
-          document.getElementById("modal-admin-link").onclick = () => {
-            window.open(generateAdminLink(info.id), "_blank");
-          };
+  // Количество смен сегодня
+  document.getElementById("modal-platform-count").textContent =
+    todaysTransfers.length;
 
-          // Новая часть: подсчёт и список смен платформ
-          // transfersData — глобальный массив, полученный fetchTransfers()
-          const myTransfers = transfersData.filter(t =>
-            t.name.toLowerCase() === empName.toLowerCase()
-          );
+  // Список смен
+  const listEl = document.getElementById("modal-platform-list");
+  if (todaysTransfers.length > 0) {
+    listEl.innerHTML = todaysTransfers
+      .map(t => {
+        const parts = t.time.split("T");
+        const timeOnly = parts.length === 2
+          ? parts[1].split(".")[0]
+          : t.time;
+        return `<li>${timeOnly} → ${t.newPlatform}</li>`;
+      })
+      .join("");
+  } else {
+    listEl.innerHTML = "<li>No changes today</li>";
+  }
 
-          // Количество смен
-          document.getElementById("modal-platform-count").textContent = myTransfers.length;
-
-          // Список смен (время HH:MM:SS → Новая платформа)
-          const listEl = document.getElementById("modal-platform-list");
-          if (myTransfers.length > 0) {
-            listEl.innerHTML = myTransfers
-              .map(t => {
-                const parts = t.time.split("T");
-                const timeOnly = parts.length === 2
-                  ? parts[1].split(".")[0]
-                  : t.time;
-                return `<li>${timeOnly} → ${t.newPlatform}</li>`;
-              })
-              .join("");
-          } else {
-            listEl.innerHTML = "<li>No changes</li>";
-          }
-
-          // Открываем модалку
-          document.getElementById("modal-overlay").classList.add("show");
-          document.getElementById("employee-modal").classList.add("show");
-        }
+  // Открываем модалку
+  document.getElementById("modal-overlay").classList.add("show");
+  document.getElementById("employee-modal").classList.add("show");
+}
 
         function closeEmployeeModal() {
           document.getElementById("employee-modal").classList.remove("show");
