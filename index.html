@@ -1884,7 +1884,9 @@ function renderAircallCardWithStatuses(
       const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
 
       // Логика покраски в красный, если есть BRB или Break
-      const isOverdue = /(?:BRB|Break)/i.test(reason || "");
+      const isOverdue =
+      /(?:Break|BRB)/i.test(reason || "") &&
+      /-([0-9]{2}:[0-9]{2})/.test(reason || "");
       const liClass   = isOverdue ? "break-overdue" : "";
 
       const extra = reason ? ` (${reason})` : "";
