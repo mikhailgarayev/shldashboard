@@ -2002,6 +2002,8 @@ function renderResponsiblePeople(data) {
     const isNaziya = name.toLowerCase() === 'naziya orujova';
     const extraEmoji = isNaziya ? ' 🎀' : '';
     const nameClass = isNaziya ? 'pink-name' : '';
+    const isRafig  = lower === 'rafig huseynov';
+    else if (isRafig) extraEmoji = ' (˵ ͡° ͜ʖ ͡°˵)';
 
     html += `
       <tr>
