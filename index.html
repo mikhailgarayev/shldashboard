@@ -1809,76 +1809,62 @@
 
 
 
-function renderAircallCardWithStatuses(
-  activeList,
-  awayList,
-  showActive = true,
-  showAway = true
-) {
-  const aircallPlatform = platforms.find((p) => p.name === "Aircall");
+// ——— Функция рендера карточки Aircall с подготовленными span для статусов ———
+function renderAircallCardWithStatuses(activeList, awayList, showActive = true, showAway = true) {
+  const aircallPlatform = platforms.find(p => p.name === "Aircall");
   let html = `
-  <div class="platform-card">
-    <h5>
-      <a href="${aircallPlatform.url}" target="_blank" rel="noopener">
-        Aircall
-      </a>
-      <span class="info-icon" data-toggle="tooltip" title="${
-        platformInfo["Aircall"] || ""
-      }">
-        <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
-      </span>
-    </h5>`;
+    <div class="platform-card">
+      <h5>
+        <a href="${aircallPlatform.url}" target="_blank" rel="noopener">
+          Aircall
+        </a>
+        <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ""}">
+          <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
+        </span>
+      </h5>`;
 
-  // Active section
+  // Active
   if (showActive) {
     if (activeList.length === 0) {
       html += `
-    <p>
-      <small style="color: red; font-weight: bold;">Active (0)</small>
-      <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left:5px; font-size:1.5rem;">&#9888;</span>
-    </p>`;
+      <p>
+        <small style="color: red; font-weight: bold;">Active (0)</small>
+        <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left:5px; font-size:1.5rem;">&#9888;</span>
+      </p>`;
     } else {
-      html += `
-    <p><small>Active (${activeList.length})</small></p>
-    <ul id="aircall-active-list">`;
-
+      html += `<p><small>Active (${activeList.length})</small></p><ul id="aircall-active-list">`;
       activeList.forEach((name, i) => {
-        const liId = `aircall-active-${i}`;
+        // id для li и статус-спана
+        const liId     = `aircall-active-${i}`;
+        const spanId   = `${liId}-status`;
         html += `
-      <li id="${liId}" class="employee-item" data-employee="${name}">
-        ${name}
-        <!-- span для статуса обязательно с id="${liId}-status" -->
-        <span id="${liId}-status" class="badge badge-pill badge-light ml-2">Checking…</span>
-      </li>`;
+        <li id="${liId}" class="employee-item" data-employee="${name}">
+          ${name}
+          <span id="${spanId}" class="badge badge-pill badge-light ml-2">Checking…</span>
+        </li>`;
       });
-
-      html += `
-    </ul>`;
+      html += `</ul>`;
     }
   }
 
-  // Away section (если нужно)
+  // Away (если нужно)
   if (showAway) {
-    html += `
-    <p><small>Away (${awayList.length})</small></p>
-    <ul>`;
-    awayList.forEach((a) => {
-      const extra = a.reason ? " – " + a.reason : "";
+    html += `<p><small>Away (${awayList.length})</small></p><ul>`;
+    awayList.forEach(a => {
+      const extra = a.reason ? ` – ${a.reason}` : '';
       html += `
-      <li class="employee-item" data-employee="${a.name}">
-        ${a.name}${extra}
-      </li>`;
+        <li class="employee-item" data-employee="${a.name}">
+          ${a.name}${extra}
+        </li>`;
     });
-    html += `
-    </ul>`;
+    html += `</ul>`;
   }
 
   html += `</div>`;
   document.getElementById("platforms-container").innerHTML += html;
 }
 
-
-        function renderShiftSummary(data) {
+  function renderShiftSummary(data) {
   // контейнер, где рендерятся все stats-card
   const container = document.getElementById("summary-grid");
   container.innerHTML = "";
@@ -2267,40 +2253,43 @@ async function fetchBreaksData() {
           });
         }
 
+        // ——— Функция для запроса и отрисовки статусов Aircall ———
         async function fetchAircallStatuses() {
-          // выбираем все <li> элементов по их id-префиксу
+          // выбираем все li, у которых id начинается с 'aircall-active-'
           const activeElements = document.querySelectorAll("[id^='aircall-active-']");
           for (let elem of activeElements) {
-            const name = elem.dataset.employee;
+            const empName = elem.dataset.employee;
             const statusSpan = document.getElementById(`${elem.id}-status`);
-            // на всякий случай сбросим перед новым запросом
+            // сброс перед новым запросом
             statusSpan.textContent = 'Checking…';
             statusSpan.className = 'badge badge-pill badge-light ml-2';
         
-            const email = generateWoltEmail(name);
+            // получаем email и userId
+            const email  = generateWoltEmail(empName);
             const userId = await getAircallUserId(email);
-        
             if (!userId) {
               statusSpan.textContent = 'No ID';
               statusSpan.className = 'badge badge-pill badge-secondary ml-2';
               continue;
             }
         
+            // запрос статуса
             const status = await getAircallAvailability(userId);
             statusSpan.textContent = status;
         
-            // простая мапа статусов → Bootstrap-классы
-            const classes = {
+            // карта статус→класс
+            const map = {
               available: 'badge-success',
               busy:      'badge-warning',
               offline:   'badge-secondary',
               unknown:   'badge-dark',
               other:     'badge-info'
             };
-            const cls = classes[status.toLowerCase()] || 'badge-secondary';
+            const cls = map[status.toLowerCase()] || 'badge-secondary';
             statusSpan.className = `badge badge-pill ${cls} ml-2`;
           }
         }
+
 
 
         let autoRefreshEnabled = true;
