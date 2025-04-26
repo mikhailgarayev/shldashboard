@@ -1812,8 +1812,9 @@ function applyFilters() {
     });
   });
 
-  // после полной перерисовки карточки Aircall — обновляем статусы
-  fetchAircallStatuses().catch(console.error);
+setTimeout(() => {
+    fetchAircallStatuses().catch(console.error);
+  }, 100);
 }
 
 
@@ -1886,7 +1887,9 @@ function renderAircallCardWithStatuses(
 
   // Вставляем в DOM и пересобираем статусы
   document.getElementById("platforms-container").innerHTML += html;
-  fetchAircallStatuses().catch(console.error);
+    setTimeout(() => {
+    fetchAircallStatuses().catch(console.error);
+  }, 100);
 }
 
 
