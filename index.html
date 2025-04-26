@@ -2452,6 +2452,20 @@ async function fetchAircallStatuses() {
           await fetchShiftsQuinyxData();     
           await fetchShiftOversData();
 
+          // Переводим объект employeeData → массив для поиска кандидата
+          window.empList = Object.entries(employeeData).map(([name, info]) => ({
+            name,
+            canReallocate: info.canReallocate,
+            prime: info.prime,
+            pref: info.pref,
+            languages: info.languages,
+            // capacity у вас хранится в info.capacity
+            maxChats: parseInt(info.capacity, 10) || 0,
+            // И если у вас есть дата начала работы — добавьте её в fetchEmployeeList()
+            // и здесь возьмите её как info.startDate
+            startDate: info.startDate 
+          }));
+
           // Заполнение данных для Aircall
           const aircallConfig = platforms.find((p) => p.name === "Aircall");
           aircallActive = [];
@@ -2727,6 +2741,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Переключатель темы
   document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
+
+  document.getElementById('find-candidate')
+  .addEventListener('click', findCandidate);
 
   // Первичная загрузка данных
   fetchData();
