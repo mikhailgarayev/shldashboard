@@ -850,6 +850,9 @@
         cursor: pointer;
       }
 
+      .aircall-status {
+        color: orange !important;
+      }
 
       @keyframes pulse {
         0% {
@@ -2252,7 +2255,7 @@ async function fetchAircallStatuses() {
   // находим ВСЕ элементы статуса
   const statusSpans = document.querySelectorAll(".aircall-status");
   for (const span of statusSpans) {
-    // достаём имя из parent <li data-employee="...">
+    // достаём имя из parent <li data-employee="Loading...">
     const li   = span.closest("li[data-employee]");
     const name = li?.getAttribute("data-employee") || "";
 
