@@ -1804,9 +1804,7 @@ function renderAircallCardWithStatuses(
     <div class="platform-card">
       <h5>
         <a href="${aircallPlatform.url}" target="_blank" rel="noopener">Aircall</a>
-        <span class="info-icon" data-toggle="tooltip" title="${
-          platformInfo["Aircall"] || ""
-        }">
+        <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"]||""}">
           <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
         </span>
       </h5>`;
@@ -1835,17 +1833,25 @@ function renderAircallCardWithStatuses(
   if (showAway) {
     html += `<p><small>Away (${awayList.length})</small></p><ul>`;
     awayList.forEach(({ name, reason }) => {
+      // Берём смену и бейдж
       const rawShift   = getEmployeeShiftName(name);
       const shiftName  = shiftDisplayNames[rawShift] || rawShift;
       const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
-      const extra      = reason ? ` (${reason})` : "";
+
+      // Логика покраски в красный, если есть BRB или Break
+      const isOverdue = /(?:BRB|Break)/i.test(reason || "");
+      const liClass   = isOverdue ? "break-overdue" : "";
+
+      const extra = reason ? ` (${reason})` : "";
 
       html += `
-        <li class="employee-item d-flex align-items-center" data-employee="${name}">
+        <li class="employee-item d-flex align-items-center ${liClass}" data-employee="${name}">
           <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
             ${shiftName}
           </span>
-          <span class="employee-name">${name}</span>
+          <strong class="employee-name" style="margin-right:6px;">
+            ${name}
+          </strong>
           <span class="text-muted">${extra}</span>
         </li>`;
     });
@@ -1854,10 +1860,8 @@ function renderAircallCardWithStatuses(
 
   html += `</div>`;
 
-  // Вставляем в DOM
+  // Вставляем в DOM и пересобираем статусы
   document.getElementById("platforms-container").innerHTML += html;
-
-  // Перезапускаем загрузку статусов
   fetchAircallStatuses().catch(console.error);
 }
 
