@@ -1792,15 +1792,23 @@ function applyFilters() {
 
 
 // ——— Функция рендера карточки Aircall с подготовленными span для статусов ———
-function renderAircallCardWithStatuses(activeList, awayList, showActive = true, showAway = true) {
-  const aircallPlatform = platforms.find(p => p.name === "Aircall");
+// ------------------
+// Рендерим карточку Aircall
+// ------------------
+function renderAircallCardWithStatuses(
+  activeList,
+  awayList,
+  showActive = true,
+  showAway = true
+) {
+  const aircallPlatform = platforms.find((p) => p.name === "Aircall");
   let html = `
     <div class="platform-card">
       <h5>
-        <a href="${aircallPlatform.url}" target="_blank" rel="noopener">
-          Aircall
-        </a>
-        <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ""}">
+        <a href="${aircallPlatform.url}" target="_blank" rel="noopener">Aircall</a>
+        <span class="info-icon" data-toggle="tooltip" title="${
+          platformInfo["Aircall"] || ""
+        }">
           <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
         </span>
       </h5>`;
@@ -1810,40 +1818,41 @@ function renderAircallCardWithStatuses(activeList, awayList, showActive = true, 
     if (activeList.length === 0) {
       html += `
       <p>
-        <small style="color: red; font-weight: bold;">Active (0)</small>
-        <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left:5px; font-size:1.5rem;">&#9888;</span>
+        <small style="color:red;font-weight:bold;">Active (0)</small>
+        <span data-toggle="tooltip" title="No active employees" style="color:red;margin-left:5px;font-size:1.2rem;">&#9888;</span>
       </p>`;
     } else {
       html += `<p><small>Active (${activeList.length})</small></p><ul id="aircall-active-list">`;
       activeList.forEach((name, i) => {
-        // id для li и статус-спана
-        const liId     = `aircall-active-${i}`;
-        const spanId   = `${liId}-status`;
+        const safeId = `aircall-active-${i}`;
         html += `
-        <li id="${liId}" class="employee-item" data-employee="${name}">
-          ${name}
-          <span id="${spanId}" class="badge badge-pill badge-light ml-2">Checking…</span>
+        <li id="${safeId}" class="employee-item" data-employee="${name}">
+          ${name} – <span class="aircall-status">Checking...</span>
         </li>`;
       });
       html += `</ul>`;
     }
   }
 
-  // Away (если нужно)
+  // Away
   if (showAway) {
     html += `<p><small>Away (${awayList.length})</small></p><ul>`;
-    awayList.forEach(a => {
-      const extra = a.reason ? ` – ${a.reason}` : '';
+    awayList.forEach(({ name, reason }) => {
+      const extra = reason ? ` – ${reason}` : "";
       html += `
-        <li class="employee-item" data-employee="${a.name}">
-          ${a.name}${extra}
-        </li>`;
+      <li class="employee-item" data-employee="${name}">
+        ${name}${extra}
+      </li>`;
     });
     html += `</ul>`;
   }
 
   html += `</div>`;
+
   document.getElementById("platforms-container").innerHTML += html;
+
+  // сразу после отрисовки запускаем прогон статусов
+  fetchAircallStatuses().catch(console.error);
 }
 
   function renderShiftSummary(data) {
@@ -2236,41 +2245,38 @@ async function fetchBreaksData() {
         }
 
         // ——— Функция для запроса и отрисовки статусов Aircall ———
-        async function fetchAircallStatuses() {
-          // выбираем все li, у которых id начинается с 'aircall-active-'
-          const activeElements = document.querySelectorAll("[id^='aircall-active-']");
-          for (let elem of activeElements) {
-            const empName = elem.dataset.employee;
-            const statusSpan = document.getElementById(`${elem.id}-status`);
-            // сброс перед новым запросом
-            statusSpan.textContent = 'Checking…';
-            statusSpan.className = 'badge badge-pill badge-light ml-2';
-        
-            // получаем email и userId
-            const email  = generateWoltEmail(empName);
-            const userId = await getAircallUserId(email);
-            if (!userId) {
-              statusSpan.textContent = 'No ID';
-              statusSpan.className = 'badge badge-pill badge-secondary ml-2';
-              continue;
-            }
-        
-            // запрос статуса
-            const status = await getAircallAvailability(userId);
-            statusSpan.textContent = status;
-        
-            // карта статус→класс
-            const map = {
-              available: 'badge-success',
-              busy:      'badge-warning',
-              offline:   'badge-secondary',
-              unknown:   'badge-dark',
-              other:     'badge-info'
-            };
-            const cls = map[status.toLowerCase()] || 'badge-secondary';
-            statusSpan.className = `badge badge-pill ${cls} ml-2`;
-          }
-        }
+        // ------------------
+// Подтягиваем реальные статусы вместо Checking...
+// ------------------
+async function fetchAircallStatuses() {
+  // находим ВСЕ элементы статуса
+  const statusSpans = document.querySelectorAll(".aircall-status");
+  for (const span of statusSpans) {
+    // достаём имя из parent <li data-employee="...">
+    const li   = span.closest("li[data-employee]");
+    const name = li?.getAttribute("data-employee") || "";
+
+    // готовим плейсхолдер, пока ждём API
+    span.textContent = "…";
+
+    // формируем email и получаем userId
+    const email  = generateWoltEmail(name);
+    const userId = await getAircallUserId(email);
+    if (!userId) {
+      span.textContent = "No ID";
+      span.className = "aircall-status status-no-id";
+      continue;
+    }
+
+    // запрашиваем availability
+    const status = await getAircallAvailability(userId);
+    span.textContent = status;
+
+    // добавляем css-класс по статусу (можете в CSS прописать цвета для .status-available, .status-other и т.д.)
+    const safeClass = status.toLowerCase().replace(/\s+/g, "-");
+    span.className = `aircall-status status-${safeClass}`;
+  }
+}
 
 
 
