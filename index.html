@@ -851,7 +851,7 @@
       }
 
       .aircall-status {
-        color: orange !important;
+        color: green !important;
       }
 
       @keyframes pulse {
@@ -2260,7 +2260,7 @@ async function fetchAircallStatuses() {
     const name = li?.getAttribute("data-employee") || "";
 
     // готовим плейсхолдер, пока ждём API
-    span.textContent = "…";
+    span.textContent = "Loading…";
 
     // формируем email и получаем userId
     const email  = generateWoltEmail(name);
