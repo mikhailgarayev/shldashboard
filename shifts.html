@@ -62,7 +62,7 @@
       overflow-x: auto;
       padding-bottom: var(--gap);
       width: 100%;
-      align-items: flex-start; /* убираем растяжение карточек по высоте */
+      align-items: flex-start;
     }
     .shift-column {
       flex: 0 0 var(--col-width);
@@ -74,10 +74,9 @@
       display: flex;
       flex-direction: column;
       transition: transform 0.3s;
+      align-items: flex-start;
     }
-    .shift-column:hover {
-      transform: translateY(-5px);
-    }
+    .shift-column:hover { transform: translateY(-5px); }
     .shift-column h2 {
       font-family: 'Playfair Display', serif;
       font-size: 1.875rem;
@@ -88,33 +87,21 @@
       text-align: center;
       width: 100%;
     }
-    .shift-column ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
+    .shift-column ul { list-style: none; margin: 0; padding: 0; }
     .shift-column li {
       display: flex;
       justify-content: space-between;
       padding: 0.75rem 0;
       border-bottom: 1px solid var(--border);
-      transition: background 0.2s;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
     }
-    .shift-column li:last-child {
-      border-bottom: none;
-    }
-    .shift-column li:hover {
-      background: rgba(74, 144, 226, 0.05);
-    }
-    .shift-column li .time {
-      font-weight: 600;
-      color: var(--heading);
-    }
-    .shift-column li .name {
-      font-weight: 500;
-      color: var(--text);
-    }
-    /* Стили полосы прокрутки */
+    .shift-column li:last-child { border-bottom: none; }
+    .shift-column li:hover { background: rgba(74, 144, 226, 0.05); }
+    .shift-column li.past { color: #888888; opacity: 0.6; }
+    .shift-column li.present { background: rgba(76, 175, 80, 0.15); }
+    .shift-column li.future { background: rgba(255, 152, 0, 0.15); }
+    .shift-column li .time { font-weight: 600; color: var(--heading); }
+    .shift-column li .name { font-weight: 500; color: var(--text); }
     #shifts-container::-webkit-scrollbar { height: 8px; }
     #shifts-container::-webkit-scrollbar-track { background: transparent; }
     #shifts-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 4px; }
@@ -130,7 +117,6 @@
 <script>
   const SHEETS_PROXY_URL = "https://sheets-proxy.mikhail-garayev.workers.dev";
   let allShifts = [];
-
   async function fetchSheetData(range) {
     try {
       const res = await fetch(SHEETS_PROXY_URL, {
@@ -145,35 +131,36 @@
       return null;
     }
   }
-
   function filterAndRender() {
     const nameTerm = document.getElementById('search-name').value.trim().toLowerCase();
     const shiftTerm = document.getElementById('filter-shift').value.trim().toLowerCase();
-    const filtered = allShifts.filter(({ name, shift }) => {
-      return (!nameTerm || name.toLowerCase().includes(nameTerm)) &&
-             (!shiftTerm || shift.toLowerCase().includes(shiftTerm));
-    });
+    const filtered = allShifts.filter(({ name, shift }) =>
+      (!nameTerm || name.toLowerCase().includes(nameTerm)) &&
+      (!shiftTerm || shift.toLowerCase().includes(shiftTerm))
+    );
     renderGroups(filtered);
   }
-
   function renderGroups(rows) {
-    const groups = rows.reduce((acc, row) => {
-      (acc[row.platform] = acc[row.platform] || []).push(row);
-      return acc;
-    }, {});
+    const now = new Date();
+    const groups = rows.reduce((acc, row) => { (acc[row.platform] = acc[row.platform] || []).push(row); return acc; }, {});
     const container = document.getElementById('shifts-container');
     container.innerHTML = '';
     Object.keys(groups).sort().forEach(plat => {
-      const col = document.createElement('div');
-      col.className = 'shift-column';
-      col.innerHTML = `<h2>${plat}</h2><ul>` +
-        groups[plat].map(item =>
-          `<li><span class="time">${item.shift}</span><span class="name">${item.name}</span></li>`
-        ).join('') + `</ul>`;
+      const col = document.createElement('div'); col.className = 'shift-column';
+      const items = groups[plat].map(item => {
+        const [start, end] = item.shift.split(/\s*-\s*/);
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        const startDt = new Date(now); startDt.setHours(sh, sm, 0, 0);
+        let endDt = new Date(now); endDt.setHours(eh, em, 0, 0);
+        if (endDt <= startDt) endDt.setDate(endDt.getDate() + 1);
+        const cls = now < startDt ? 'future' : now > endDt ? 'past' : 'present';
+        return `<li class="${cls}"><span class="time">${item.shift}</span><span class="name">${item.name}</span></li>`;
+      }).join('');
+      col.innerHTML = `<h2>${plat}</h2><ul>${items}</ul>`;
       container.appendChild(col);
     });
   }
-
   async function init() {
     const raw = await fetchSheetData("shiftsquinyx!A2:C");
     if (!raw) {
@@ -191,7 +178,6 @@
     document.getElementById('filter-shift').addEventListener('input', filterAndRender);
     filterAndRender();
   }
-
   document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
