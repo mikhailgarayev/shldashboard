@@ -1809,66 +1809,68 @@
 
 
 
-function renderAircallCardWithStatuses(activeList, awayList, showActive = true, showAway = true) {
-  const aircallPlatform = platforms.find(p => p.name === "Aircall");
+function renderAircallCardWithStatuses(
+  activeList,
+  awayList,
+  showActive = true,
+  showAway = true
+) {
+  const aircallPlatform = platforms.find((p) => p.name === "Aircall");
   let html = `
-    <div class="platform-card">
-      <h5>
-        <a href="${aircallPlatform.url}" target="_blank" rel="noopener">Aircall</a>
-        <span class="info-icon" data-toggle="tooltip" title="${platformInfo["Aircall"] || ""}">
-          <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
-        </span>
-      </h5>`;
+  <div class="platform-card">
+    <h5>
+      <a href="${aircallPlatform.url}" target="_blank" rel="noopener">
+        Aircall
+      </a>
+      <span class="info-icon" data-toggle="tooltip" title="${
+        platformInfo["Aircall"] || ""
+      }">
+        <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
+      </span>
+    </h5>`;
 
-  // --- Active ---
+  // Active section
   if (showActive) {
     if (activeList.length === 0) {
       html += `
-        <p>
-          <small style="color: red; font-weight: bold;">Active (0)</small>
-          <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left:5px; font-size:1.5rem;">&#9888;</span>
-        </p>`;
+    <p>
+      <small style="color: red; font-weight: bold;">Active (0)</small>
+      <span data-toggle="tooltip" title="No active employees" style="color: red; margin-left:5px; font-size:1.5rem;">&#9888;</span>
+    </p>`;
     } else {
       html += `
-        <p><small>Active (${activeList.length})</small></p>
-        <ul id="aircall-active-list">`;
+    <p><small>Active (${activeList.length})</small></p>
+    <ul id="aircall-active-list">`;
 
       activeList.forEach((name, i) => {
-        const safeId = `aircall-active-${i}`;
-        // получаем смену
-        const rawShift = getEmployeeShiftName(name);
-        const shiftName = shiftDisplayNames[rawShift] || rawShift;
-        const badgeClass = shiftBadgeClasses[shiftName] || 'badge-secondary';
-
+        const liId = `aircall-active-${i}`;
         html += `
-          <li id="${safeId}" class="employee-item" data-employee="${name}">
-            <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
-            <span class="employee-name">${name}</span>
-            <span id="${safeId}-status" class="badge badge-pill badge-light ml-2">Checking…</span>
-          </li>`;
+      <li id="${liId}" class="employee-item" data-employee="${name}">
+        ${name}
+        <!-- span для статуса обязательно с id="${liId}-status" -->
+        <span id="${liId}-status" class="badge badge-pill badge-light ml-2">Checking…</span>
+      </li>`;
       });
 
       html += `
-        </ul>`;
+    </ul>`;
     }
   }
 
-  // --- Away ---
+  // Away section (если нужно)
   if (showAway) {
     html += `
-      <p><small>Away (${awayList.length})</small></p>
-      <ul>`;
-
-    awayList.forEach(({ name, reason }) => {
+    <p><small>Away (${awayList.length})</small></p>
+    <ul>`;
+    awayList.forEach((a) => {
+      const extra = a.reason ? " – " + a.reason : "";
       html += `
-        <li class="employee-item" data-employee="${name}">
-          <span class="employee-name">${name}</span>
-          ${reason ? `<small class="text-muted ml-2">(${reason})</small>` : ""}
-        </li>`;
+      <li class="employee-item" data-employee="${a.name}">
+        ${a.name}${extra}
+      </li>`;
     });
-
     html += `
-      </ul>`;
+    </ul>`;
   }
 
   html += `</div>`;
@@ -2266,44 +2268,39 @@ async function fetchBreaksData() {
         }
 
         async function fetchAircallStatuses() {
-        // найдем все элементы-листинги Aircall по префиксу id
-        const activeElements = document.querySelectorAll("[id^='aircall-active-']");
-        for (let elem of activeElements) {
-          const name = elem.dataset.employee;                    // читаем имя из data-attribute
-          const statusSpan = document.getElementById(`${elem.id}-status`); // целевой <span> для статуса
-      
-          // сбросим текст на «Checking…»
-          statusSpan.textContent = 'Checking…';
-          statusSpan.className = 'badge badge-pill badge-light ml-2';
-      
-          // соберем e-mail и найдем Aircall userId
-          const email  = generateWoltEmail(name);
-          const userId = await getAircallUserId(email);
-      
-          if (!userId) {
-            statusSpan.textContent = 'No ID';
-            statusSpan.className = 'badge badge-pill badge-secondary ml-2';
-            continue;
+          // выбираем все <li> элементов по их id-префиксу
+          const activeElements = document.querySelectorAll("[id^='aircall-active-']");
+          for (let elem of activeElements) {
+            const name = elem.dataset.employee;
+            const statusSpan = document.getElementById(`${elem.id}-status`);
+            // на всякий случай сбросим перед новым запросом
+            statusSpan.textContent = 'Checking…';
+            statusSpan.className = 'badge badge-pill badge-light ml-2';
+        
+            const email = generateWoltEmail(name);
+            const userId = await getAircallUserId(email);
+        
+            if (!userId) {
+              statusSpan.textContent = 'No ID';
+              statusSpan.className = 'badge badge-pill badge-secondary ml-2';
+              continue;
+            }
+        
+            const status = await getAircallAvailability(userId);
+            statusSpan.textContent = status;
+        
+            // простая мапа статусов → Bootstrap-классы
+            const classes = {
+              available: 'badge-success',
+              busy:      'badge-warning',
+              offline:   'badge-secondary',
+              unknown:   'badge-dark',
+              other:     'badge-info'
+            };
+            const cls = classes[status.toLowerCase()] || 'badge-secondary';
+            statusSpan.className = `badge badge-pill ${cls} ml-2`;
           }
-      
-          // получим реальный статус
-          const status = await getAircallAvailability(userId);
-      
-          // выведем текст и, при желании, дадим разный класс
-          statusSpan.textContent = status;
-      
-          // пример цветовой схемы: available → зелёный, busy → жёлтый, other/unknown → серый
-          const statusBadgeClasses = {
-            'available': 'badge-success',
-            'busy':      'badge-warning',
-            'offline':   'badge-secondary',
-            'unknown':   'badge-dark',
-            'other':     'badge-info'
-          };
-          const cls = statusBadgeClasses[status.toLowerCase()] || 'badge-secondary';
-          statusSpan.className = `badge badge-pill ${cls} ml-2`;
         }
-      }
 
 
         let autoRefreshEnabled = true;
