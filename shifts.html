@@ -14,9 +14,9 @@
       --text: #2c3e50;
       --heading: #1a252f;
       --border: rgba(44, 62, 80, 0.1);
-      --gap: 1.5rem;
-      --radius: 12px;
-      --col-width: 300px;
+      --gap: 1rem;
+      --radius: 8px;
+      --col-width: 260px;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -24,11 +24,11 @@
       background: var(--bg);
       color: var(--text);
       padding: var(--gap);
-      line-height: 1.6;
+      line-height: 1.4;
     }
     h1 {
       font-family: 'Playfair Display', serif;
-      font-size: 2.75rem;
+      font-size: 2rem;
       font-weight: 700;
       color: var(--heading);
       text-align: center;
@@ -42,19 +42,19 @@
       margin-bottom: var(--gap);
     }
     .controls input {
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
       border: none;
       border-radius: var(--radius);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      width: 250px;
-      backdrop-filter: blur(8px);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      width: 200px;
+      backdrop-filter: blur(6px);
       background: var(--card-bg);
-      transition: box-shadow 0.3s;
+      transition: box-shadow 0.2s;
     }
     .controls input:focus {
       outline: none;
-      box-shadow: 0 2px 12px var(--accent);
+      box-shadow: 0 1px 8px var(--accent);
     }
     #shifts-container {
       display: flex;
@@ -67,23 +67,23 @@
     .shift-column {
       flex: 0 0 var(--col-width);
       background: var(--card-bg);
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(6px);
       border-radius: var(--radius);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      padding: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 1rem;
       display: flex;
       flex-direction: column;
-      transition: transform 0.3s;
+      transition: transform 0.2s;
       align-items: flex-start;
     }
-    .shift-column:hover { transform: translateY(-5px); }
+    .shift-column:hover { transform: translateY(-3px); }
     .shift-column h2 {
       font-family: 'Playfair Display', serif;
-      font-size: 1.875rem;
+      font-size: 1.25rem;
       color: var(--accent);
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       border-bottom: 2px solid var(--accent);
-      padding-bottom: 0.5rem;
+      padding-bottom: 0.25rem;
       text-align: center;
       width: 100%;
     }
@@ -91,27 +91,27 @@
     .shift-column li {
       display: flex;
       justify-content: space-between;
-      padding: 0.75rem 0;
+      padding: 0.5rem 0;
       border-bottom: 1px solid var(--border);
       transition: background 0.2s, color 0.2s, opacity 0.2s;
     }
     .shift-column li:last-child { border-bottom: none; }
-    .shift-column li:hover { background: rgba(74, 144, 226, 0.05); }
+    .shift-column li:hover { background: rgba(74,144,226,0.05); }
     .shift-column li.past { color: #888888; opacity: 0.6; }
-    .shift-column li.present { background: rgba(76, 175, 80, 0.15); }
-    .shift-column li.future { background: rgba(255, 152, 0, 0.15); }
-    .shift-column li .time { font-weight: 600; color: var(--heading); }
-    .shift-column li .name { font-weight: 500; color: var(--text); }
-    #shifts-container::-webkit-scrollbar { height: 8px; }
+    .shift-column li.present { background: rgba(76,175,80,0.15); }
+    .shift-column li.future { background: rgba(255,152,0,0.15); }
+    .shift-column li .time { font-weight: 600; color: var(--heading); font-size: 0.9rem; }
+    .shift-column li .name { font-weight: 500; color: var(--text); font-size: 0.9rem; }
+    #shifts-container::-webkit-scrollbar { height: 6px; }
     #shifts-container::-webkit-scrollbar-track { background: transparent; }
-    #shifts-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 4px; }
+    #shifts-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 3px; }
   </style>
 </head>
 <body>
   <h1>📅 Today's Shifts by Platform</h1>
   <div class="controls">
-    <input type="text" id="search-name" placeholder="🔍 Поиск по имени сотрудника" />
-    <input type="text" id="filter-shift" placeholder="⏰ Фильтр по сменам (например 08:00)" />
+    <input type="text" id="search-name" placeholder="🔍 Имя сотрудника" />
+    <input type="text" id="filter-shift" placeholder="⏰ Фильтр по смене" />
   </div>
   <div id="shifts-container">Loading...</div>
 <script>
@@ -148,37 +148,29 @@
     Object.keys(groups).sort().forEach(plat => {
       const col = document.createElement('div'); col.className = 'shift-column';
       const items = groups[plat].map(item => {
-        const [start, end] = item.shift.split(/\s*-\s*/);
-        const [sh, sm] = start.split(':').map(Number);
-        const [eh, em] = end.split(':').map(Number);
-        const startDt = new Date(now); startDt.setHours(sh, sm, 0, 0);
-        let endDt = new Date(now); endDt.setHours(eh, em, 0, 0);
-        if (endDt <= startDt) endDt.setDate(endDt.getDate() + 1);
-        const cls = now < startDt ? 'future' : now > endDt ? 'past' : 'present';
+        const [start,end] = item.shift.split(/\s*-\s*/);
+        const [sh,sm] = start.split(':').map(Number);
+        const [eh,em] = end.split(':').map(Number);
+        const startDt=new Date(now); startDt.setHours(sh,sm,0,0);
+        let endDt=new Date(now); endDt.setHours(eh,em,0,0);
+        if(endDt<=startDt) endDt.setDate(endDt.getDate()+1);
+        const cls = now<startDt?'future': now> endDt?'past':'present';
         return `<li class="${cls}"><span class="time">${item.shift}</span><span class="name">${item.name}</span></li>`;
       }).join('');
-      col.innerHTML = `<h2>${plat}</h2><ul>${items}</ul>`;
+      col.innerHTML=`<h2>${plat}</h2><ul>${items}</ul>`;
       container.appendChild(col);
     });
   }
   async function init() {
     const raw = await fetchSheetData("shiftsquinyx!A2:C");
-    if (!raw) {
-      document.getElementById('shifts-container').innerHTML = '<p>Ошибка загрузки данных</p>';
-      return;
-    }
-    allShifts = raw
-      .filter(r => r[0] && r[1] && r[2])
-      .map(r => ({ platform: r[0].trim(), name: r[1].trim(), shift: r[2].trim() }));
-    if (allShifts.length === 0) {
-      document.getElementById('shifts-container').innerHTML = '<p>На сегодня смен нет</p>';
-      return;
-    }
-    document.getElementById('search-name').addEventListener('input', filterAndRender);
-    document.getElementById('filter-shift').addEventListener('input', filterAndRender);
+    if (!raw) { document.getElementById('shifts-container').innerHTML='<p>Ошибка загрузки данных</p>'; return; }
+    allShifts = raw.filter(r=>r[0]&&r[1]&&r[2]).map(r=>({platform:r[0].trim(),name:r[1].trim(),shift:r[2].trim()}));
+    if(allShifts.length===0){document.getElementById('shifts-container').innerHTML='<p>На сегодня смен нет</p>';return;}
+    document.getElementById('search-name').addEventListener('input',filterAndRender);
+    document.getElementById('filter-shift').addEventListener('input',filterAndRender);
     filterAndRender();
   }
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
 </html>
