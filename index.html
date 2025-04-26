@@ -1957,56 +1957,66 @@ function renderAircallCardWithStatuses(
   fetchWeather();
 }
 
-        function renderResponsiblePeople(data) {
+function renderResponsiblePeople(data) {
   if (!data || data.length === 0) return;
 
-  // Удаляем старую, если уже существует
+  // Удаляем старую карточку, если уже существует
   const existing = document.getElementById("responsible-card");
   if (existing) existing.remove();
 
+  // Оставляем только те строки, где в роли есть "Lead" или "In charge"
+  const responsibleRows = data.filter(([name, role]) => {
+    if (!name || !role) return false;
+    const rl = role.toLowerCase();
+    return rl.includes("lead") || rl.includes("in charge");
+  });
+
+  // Если после фильтрации ничего не осталось — выходим
+  if (responsibleRows.length === 0) return;
+
+  // Начало разметки
   let html = `
-    
-        
-        <div class="shift-summary-card" id="responsible-card">
-          <div class="shift-summary-title">👥 Responsible People</div>
-          <table class="shift-summary-grid" style="max-width: 500px; margin: 0 auto;">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Position</th>
-              </tr>
-            </thead>
-            <tbody>`;
+    <div class="shift-summary-card" id="responsible-card">
+      <div class="shift-summary-title">👥 Responsible People</div>
+      <table class="shift-summary-grid" style="max-width: 500px; margin: 0 auto;">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Position</th>
+          </tr>
+        </thead>
+        <tbody>`;
 
-  data.forEach(row => {
-  const name = row[0]?.trim() || "";
-  const role = row[1]?.trim() || "";
+  // Собираем строки
+  responsibleRows.forEach(([rawName, rawRole]) => {
+    const name = rawName.trim();
+    const role = rawRole.trim();
 
-  // Приводим имя к нижнему регистру для сравнения
-  const lowerName = name.toLowerCase();
-  const isNaziya = (lowerName === "naziya orujova");
-  const extraEmoji = isNaziya ? " 🎀" : "";
-  const nameClass = isNaziya ? "pink-name" : "";
+    const lowerName = name.toLowerCase();
+    const isNaziya = lowerName === "naziya orujova";
+    const extraEmoji = isNaziya ? " 🎀" : "";
+    const nameClass = isNaziya ? "pink-name" : "";
 
-  if (name && role) {
     html += `
       <tr>
         <td>
           <span class="${nameClass}" style="font-weight: bold;">${name}${extraEmoji}</span>
         </td>
         <td>
-          <span style="background:#e7f1ff; color:#0056b3; padding: 2px 6px; border-radius: 6px; font-size: 0.85rem;">${role}</span>
+          <span style="background:#e7f1ff; color:#0056b3; padding: 2px 6px; border-radius: 6px; font-size: 0.85rem;">
+            ${role}
+          </span>
         </td>
       </tr>`;
-  }
-});
+  });
 
-html += `
-      </tbody>
-    </table>
-  </div>`;
+  // Закрываем разметку
+  html += `
+        </tbody>
+      </table>
+    </div>`;
 
-
+  // Вставляем после блока с метриками
   const container = document.getElementById("shift-summary");
   container.insertAdjacentHTML("afterend", html);
 }
