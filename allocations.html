@@ -1,92 +1,276 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Today's Shifts</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Platform Transfers</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
   <style>
-    /* Горизонтальный скролл для контейнера смен */
-    #shifts-container {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      gap: 1rem;
-    }
-    /* Минимальная ширина колонки */
-    .shift-column {
-      min-width: 250px;
-    }
-    .shift-column h2 {
-      font-size: 1.25rem;
-      margin-bottom: 0.75rem;
-    }
-    .shift-column ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .shift-column li {
-      padding: 0.25rem 0;
-      border-bottom: 1px solid #dee2e6;
-    }
-    .shift-column li:last-child {
-      border-bottom: none;
-    }
+    body { background: #f8f9fa; }
+    th.sortable { cursor: pointer; }
+    th.sorted-asc::after { content: ' ▲'; }
+    th.sorted-desc::after { content: ' ▼'; }
+    .filter-card { border-radius: .5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .table-responsive { border-radius: .5rem; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   </style>
 </head>
 <body>
-  <div class="container my-4">
-    <h1 class="mb-4">📅 Today's Shifts by Platform</h1>
-    <div id="shifts-container">Loading...</div>
+  <nav class="navbar navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="#">Platform Transfers</a>
+      <div class="d-flex">
+        <a href="https://mikhailgarayev.github.io/shldashboard/index.html" class="btn btn-outline-light">
+          Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card filter-card mb-4">
+      <div class="card-body">
+        <form class="row g-3 align-items-center">
+          <div class="col-auto">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by name" />
+          </div>
+          <div class="col-auto">
+            <input type="date" id="startDate" class="form-control" />
+          </div>
+          <div class="col-auto">
+            <input type="date" id="endDate" class="form-control" />
+          </div>
+          <div class="col-auto">
+            <select id="platformFilter" class="form-select">
+              <option value="">All Platforms</option>
+              <option>CS</option>
+              <option>CS / Post Order</option>
+              <option>PSR</option>
+              <option>Aircall</option>
+              <option>Venue</option>
+              <option>Simo</option>
+              <option>ST</option>
+            </select>
   </div>
+          <div class="col-auto">
+            <select id="pageSizeSelect" class="form-select">
+              <option value="10">10 rows</option>
+              <option value="20">20 rows</option>
+              <option value="50">50 rows</option>
+              <option value="100">100 rows</option>
+            </select>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="table-responsive mb-3">
+      <table
+        class="table table-hover table-striped mb-0 align-middle bg-white"
+        id="transfersTable"
+      >
+        <thead class="table-light">
+          <tr>
+            <th class="sortable" data-key="name">Employee</th>
+            <th class="sortable" data-key="primary">Primary Platform</th>
+            <th class="sortable" data-key="newPlatform">New Platform</th>
+            <th class="sortable" data-key="time">Start Time</th>
+            <th class="sortable" data-key="endEvent">End Time</th>
+            <th class="sortable" data-key="duration">Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6" class="text-center py-4">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <nav>
+      <ul class="pagination justify-content-center" id="pagination"></ul>
+    </nav>
+  </div>
+
+  <!-- Bootstrap JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  const SHEETS_PROXY_URL = "https://sheets-proxy.mikhail-garayev.workers.dev";
-  
-  async function fetchSheetData(range) {
-    try {
-      const res = await fetch(SHEETS_PROXY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ secret: "superWoltKey42", range })
-      });
-      const data = await res.json();
-      return data.values;
-    } catch (e) {
-      console.error("Ошибка загрузки данных:", e);
-      return null;
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyY_xErtLxL88XkH8n9-TM71DWOsKcxq6AT5F6sGw80Mi6UhesgtoVhNCKOjJSyeFYK/exec=true';
+
+    let transfersData = [], filteredData = [];
+    let currentSort = { key: 'time', asc: true };
+    let currentPage = 1, pageSize = 10;
+
+    const parseDate = str => new Date(str.replace(' ', 'T'));
+    const compareItems = (a, b) => {
+      let diff = ['time','endEvent'].includes(currentSort.key)
+        ? parseDate(a[currentSort.key]) - parseDate(b[currentSort.key])
+        : a[currentSort.key].localeCompare(b[currentSort.key]);
+      return currentSort.asc ? diff : -diff;
+    };
+
+    function applyFilters() {
+      pageSize = parseInt(document.getElementById('pageSizeSelect').value, 10);
+      currentPage = 1;
+      let data = transfersData.slice();
+
+      const nameQ = document.getElementById('searchInput').value.toLowerCase();
+      if (nameQ) data = data.filter(i => i.name.toLowerCase().includes(nameQ));
+
+      const sd = document.getElementById('startDate').value;
+      if (sd) {
+        const d0 = new Date(sd);
+        data = data.filter(i => parseDate(i.time) >= d0);
     }
+
+      const ed = document.getElementById('endDate').value;
+      if (ed) {
+        const d1 = new Date(ed);
+        d1.setHours(23, 59, 59, 999);
+        data = data.filter(i => parseDate(i.time) <= d1);
   }
-  
-  async function renderShifts() {
-    const raw = await fetchSheetData("shiftsquinyx!A2:C");
-    const container = document.getElementById("shifts-container");
-    if (!raw) {
-      container.textContent = "Ошибка загрузки данных";
-      return;
+
+      const pf = document.getElementById('platformFilter').value;
+      if (pf) data = data.filter(i => i.newPlatform === pf);
+
+      filteredData = data.sort(compareItems);
+      updateTable();
+
     }
-    const rows = raw
-      .filter(r => r[0] && r[1] && r[2])
-      .map(r => ({ platform: r[0].trim(), name: r[1].trim(), shift: r[2].trim() }));
-    if (rows.length === 0) {
-      container.textContent = "На сегодня смен нет";
-      return;
+
+    function updateTable() {
+      const tbody = document.querySelector('#transfersTable tbody');
+      const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
+
+      if (!pageItems.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No records</td></tr>';
+      } else {
+        tbody.innerHTML = '';
+        pageItems.forEach(item => {
+          const tr = document.createElement('tr');
+          ['name','primary','newPlatform','time','endEvent','duration'].forEach(k => {
+            const td = document.createElement('td');
+            if ((k === 'time' || k === 'endEvent') && item[k]) {
+              const parts = item[k].split('T');
+              td.textContent = parts.length === 2
+                ? parts[1].split('.')[0]
+                : item[k];
+            } else {
+              td.textContent = item[k] || '';
     }
-    const groups = rows.reduce((acc, row) => {
-      (acc[row.platform] = acc[row.platform] || []).push(row);
-      return acc;
-    }, {});
-    container.innerHTML = '';
-    Object.keys(groups).sort().forEach(plat => {
-      let section = `<div class=\"shift-column\"><h2>${plat}</h2><ul>`;
-      groups[plat].forEach(({ name, shift }) => {
-        section += `<li>${shift} — ${name}</li>`;
+            tr.appendChild(td);
+
+
+
+
+
+
+
+
       });
-      section += `</ul></div>`;
-      container.innerHTML += section;
+          tbody.appendChild(tr);
+
     });
   }
-  
-  document.addEventListener("DOMContentLoaded", renderShifts);
+
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      const createPageItem = (text, page, disabled=false, active=false) => {
+        const li = document.createElement('li');
+        li.className = 'page-item' + (disabled ? ' disabled' : '') + (active ? ' active' : '');
+        const a = document.createElement('a');
+        a.className = 'page-link';
+        a.href = '#';
+        a.textContent = text;
+        if (!disabled && !active) {
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            currentPage = page;
+            updateTable();
+          });
+        }
+        li.appendChild(a);
+        return li;
+      };
+
+      pagination.appendChild(createPageItem('Prev', currentPage-1, currentPage===1));
+      for (let i = 1; i <= totalPages; i++) {
+        pagination.appendChild(createPageItem(i, i, false, i===currentPage));
+      }
+      pagination.appendChild(createPageItem('Next', currentPage+1, currentPage===totalPages));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Проставляем дату начала/конца по умолчанию на последние 7 дней
+      const now = new Date();
+      const endISO = now.toISOString().split('T')[0];
+      const start = new Date(now.getTime() - 6*24*60*60*1000);
+      const startISO = start.toISOString().split('T')[0];
+      document.getElementById('startDate').value = startISO;
+      document.getElementById('endDate').value   = endISO;
+
+      ['searchInput','startDate','endDate','platformFilter','pageSizeSelect']
+        .forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
+
+      // Запросим архив за последние 7 дней
+      fetch(`${API_URL}&startDate=${startISO}&endDate=${endISO}`)
+        .then(res => res.json())
+        .then(data => {
+          transfersData = data;
+          applyFilters();
+        })
+        .catch(err => console.error("Ошибка загрузки данных:", err));
+
+      document.querySelectorAll('#transfersTable th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.key;
+          if (currentSort.key === key) {
+            currentSort.asc = !currentSort.asc;
+          } else {
+            document.querySelectorAll('th.sorted-asc, th.sorted-desc')
+              .forEach(h => h.classList.remove('sorted-asc','sorted-desc'));
+            currentSort.key = key;
+            currentSort.asc = true;
+          }
+          th.classList.toggle('sorted-asc', currentSort.asc);
+          th.classList.toggle('sorted-desc', !currentSort.asc);
+          applyFilters();
+        });
+      });
+    });
 </script>
 </body>
 </html>
