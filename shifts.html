@@ -3,16 +3,126 @@
 <head>
   <meta charset="UTF-8" />
   <title>Today's Shifts</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef2f5;
+      --accent: #4a90e2;
+      --card-bg: rgba(255, 255, 255, 0.8);
+      --text: #2c3e50;
+      --heading: #1a252f;
+      --border: rgba(44, 62, 80, 0.1);
+      --gap: 1.5rem;
+      --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: var(--gap);
+      line-height: 1.6;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: var(--heading);
+      text-align: center;
+      margin-bottom: var(--gap);
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--gap);
+      margin-bottom: var(--gap);
+    }
+    .controls input {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 250px;
+      backdrop-filter: blur(8px);
+      background: var(--card-bg);
+      transition: box-shadow 0.3s;
+    }
+    .controls input:focus {
+      outline: none;
+      box-shadow: 0 2px 12px var(--accent);
+    }
+    #shifts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--gap);
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .shift-column {
+      background: var(--card-bg);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s;
+    }
+    .shift-column:hover {
+      transform: translateY(-5px);
+    }
+    .shift-column h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.875rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.5rem;
+    }
+    .shift-column ul {
+      list-style: none;
+      flex: 1;
+      overflow: hidden;
+    }
+    .shift-column li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .shift-column li:last-child {
+      border-bottom: none;
+    }
+    .shift-column li:hover {
+      background: rgba(74, 144, 226, 0.05);
+    }
+    .shift-column li .time {
+      font-weight: 600;
+      color: var(--heading);
+    }
+    .shift-column li .name {
+      font-weight: 500;
+      color: var(--text);
+    }
+  </style>
 </head>
 <body>
-  <div class="container my-4">
-    <h1 class="mb-4">📅 Today's Shifts</h1>
-    <div id="shifts-container">Loading...</div>
+  <h1>📅 Today's Shifts by Platform</h1>
+  <div class="controls">
+    <input type="text" id="search-name" placeholder="🔍 Поиск по имени сотрудника" />
+    <input type="text" id="filter-shift" placeholder="⏰ Фильтр по сменам (например 08:00)" />
   </div>
+  <div id="shifts-container">Loading...</div>
 <script>
   const SHEETS_PROXY_URL = "https://sheets-proxy.mikhail-garayev.workers.dev";
-  
+  let allShifts = [];
+
   async function fetchSheetData(range) {
     try {
       const res = await fetch(SHEETS_PROXY_URL, {
@@ -27,32 +137,54 @@
       return null;
     }
   }
-  
-  async function renderShifts() {
+
+  function filterAndRender() {
+    const nameTerm = document.getElementById('search-name').value.trim().toLowerCase();
+    const shiftTerm = document.getElementById('filter-shift').value.trim().toLowerCase();
+    const filtered = allShifts.filter(({ name, shift }) => {
+      return (!nameTerm || name.toLowerCase().includes(nameTerm)) &&
+             (!shiftTerm || shift.toLowerCase().includes(shiftTerm));
+    });
+    renderGroups(filtered);
+  }
+
+  function renderGroups(rows) {
+    const groups = rows.reduce((acc, row) => {
+      (acc[row.platform] = acc[row.platform] || []).push(row);
+      return acc;
+    }, {});
+    const container = document.getElementById('shifts-container');
+    container.innerHTML = '';
+    Object.keys(groups).sort().forEach(plat => {
+      const col = document.createElement('div');
+      col.className = 'shift-column';
+      col.innerHTML = `<h2>${plat}</h2><ul>` +
+        groups[plat].map(item =>
+          `<li><span class="time">${item.shift}</span><span class="name">${item.name}</span></li>`
+        ).join('') + `</ul>`;
+      container.appendChild(col);
+    });
+  }
+
+  async function init() {
     const raw = await fetchSheetData("shiftsquinyx!A2:C");
-    const container = document.getElementById("shifts-container");
     if (!raw) {
-      container.textContent = "Ошибка загрузки данных";
+      document.getElementById('shifts-container').innerHTML = '<p>Ошибка загрузки данных</p>';
       return;
     }
-    // Преобразуем строки в объекты
-    const rows = raw
+    allShifts = raw
       .filter(r => r[0] && r[1] && r[2])
       .map(r => ({ platform: r[0].trim(), name: r[1].trim(), shift: r[2].trim() }));
-    if (rows.length === 0) {
-      container.textContent = "На сегодня смен нет";
+    if (allShifts.length === 0) {
+      document.getElementById('shifts-container').innerHTML = '<p>На сегодня смен нет</p>';
       return;
     }
-    // Генерируем таблицу
-    let html = `<table class="table table-striped"><thead><tr><th>Сотрудник</th><th>Смена</th><th>Платформа</th></tr></thead><tbody>`;
-    rows.forEach(({ name, shift, platform }) => {
-      html += `<tr><td>${name}</td><td>${shift}</td><td>${platform}</td></tr>`;
-    });
-    html += `</tbody></table>`;
-    container.innerHTML = html;
+    document.getElementById('search-name').addEventListener('input', filterAndRender);
+    document.getElementById('filter-shift').addEventListener('input', filterAndRender);
+    filterAndRender();
   }
-  
-  document.addEventListener("DOMContentLoaded", renderShifts);
+
+  document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
