@@ -2419,11 +2419,10 @@ async function fetchAircallStatuses() {
           renderResponsiblePeople(responsiblesData);
           await fetchBreaksData();
           await fetchShiftsQuinyxData();
+          await fetchTransfers();
           applyFilters();
           fetchAircallStatuses();
-          fetchTransfers();
           
-
           document.getElementById("refresh-spinner").style.display = "none";
           if (autoRefreshEnabled) resetAutoRefresh();
         }
