@@ -2318,7 +2318,7 @@ async function fetchAircallStatuses() {
 
   let results = [];
   try {
-    const res = await fetch("https://<YOUR_WORKER_URL>", {
+    const res = await fetch("https://aircall-proxy.mikhail-garayev.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
