@@ -1484,29 +1484,34 @@ async function openEmployeeModal(empName) {
     return;
   }
 
-  // Получаем смену
-  const rec = window.shiftsQuinyxData
-    .find(r => r.name.toLowerCase() === empName.toLowerCase());
-  const shiftName = rec?.platform || "—";
-  const shiftTime = rec?.shift    || "—";
+  // ——————————————————————————————————————————
+  // 1) Смена
+  const rec = window.shiftsQuinyxData.find(
+    r => r.name.toLowerCase() === empName.toLowerCase()
+  ) || {};
+  const shiftName = rec.platform || "—";
+  const shiftTime = rec.shift    || "—";
   document.getElementById("modal-emp-shift").textContent =
     `${shiftName} (${shiftTime})`;
 
-  // Break time
+  // ——————————————————————————————————————————
+  // 2) Перерыв
   let breakTime = "—";
   if (Array.isArray(window.allBreaksData)) {
-    const found = allBreaksData.find(b =>
+    const br = allBreaksData.find(b =>
       b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase()
     );
-    if (found) breakTime = found["Break Time"] || "—";
+    if (br) breakTime = br["Break Time"] || "—";
   }
   document.getElementById("modal-emp-break").textContent = breakTime;
 
-  // Основная информация
+  // ——————————————————————————————————————————
+  // 3) Общая инфа
   const parts = empName.trim().split(" ");
   const email = parts.length >= 2
     ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com`
     : `${parts[0].toLowerCase()}@wolt.com`;
+
   document.getElementById("modal-emp-name").textContent      = empName;
   document.getElementById("modal-emp-email").textContent     = email;
   document.getElementById("modal-emp-realloc").textContent   = info.canReallocate || "N/A";
@@ -1522,33 +1527,36 @@ async function openEmployeeModal(empName) {
     window.open(generateAdminLink(info.id), "_blank");
   };
 
-  // --- Подсчёт и список изменений за сегодня ---
-  // отбираем все переходы по этому сотруднику
-  const allTransfers = transfersData.filter(t =>
-    t.name.toLowerCase() === empName.toLowerCase()
+  // ——————————————————————————————————————————
+  // 4) Переходы ПО ПЛАТФОРМАМ за сегодня
+  // фильтруем все записи для этого сотрудника
+  const allTransfers = (Array.isArray(transfersData) ? transfersData : []).filter(
+    t => t.name && t.name.toLowerCase() === empName.toLowerCase()
   );
 
-  // определяем сегодняшнюю дату в формате YYYY-MM-DD (локально)
+  // определяем сегодняшнюю локальную дату в формате YYYY-MM-DD
   const now   = new Date();
-  const year  = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day   = String(now.getDate()).padStart(2, "0");
-  const today = `${year}-${month}-${day}`;
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")
+  ].join("-");
 
-  // фильтруем только те записи, где время начинается с YYYY-MM-DD
+  // оставляем только записи, где время начинается с этой даты
   const todaysTransfers = allTransfers.filter(t =>
-    t.time.slice(0, 10) === today
+    typeof t.time === "string" && t.time.slice(0, 10) === today
   );
 
-  // отображаем количество
+  // вставляем количество
   document.getElementById("modal-platform-count").textContent =
     todaysTransfers.length;
 
-  // и сам список
+  // и список
   const listEl = document.getElementById("modal-platform-list");
   if (todaysTransfers.length > 0) {
     listEl.innerHTML = todaysTransfers
       .map(t => {
+        // t.time = "YYYY-MM-DD HH:mm:ss"
         const timeOnly = t.time.split(" ")[1] || t.time;
         return `<li>${timeOnly} → ${t.newPlatform}</li>`;
       })
@@ -1557,7 +1565,8 @@ async function openEmployeeModal(empName) {
     listEl.innerHTML = "<li>No changes today</li>";
   }
 
-  // Открываем модалку
+  // ——————————————————————————————————————————
+  // 5) Показываем модалку
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 }
