@@ -1026,6 +1026,14 @@
           placeholder="Search..."
           class="search-input"
         />
+          <!-- ← вставить сюда -->
+  <select id="target-platform" class="filter-dropdown">
+    <option value=\"\">→ Перекомплектовать на…</option>
+  </select>
+  <button id="find-candidate" class="btn btn-outline-primary">Найти кандидата</button>
+</div>
+<div id="candidate-result" style="margin: 1rem 0;"></div>
+
       </div>
       <!-- Правая часть: тема + refresh + имя + logout -->
       <div class="d-flex align-items-center flex-wrap header-gap">
@@ -2466,6 +2474,13 @@ async function fetchAircallStatuses() {
           await fetchTransfers();
           fetchAircallStatuses();
           applyFilters();
+
+          const sel = document.getElementById('target-platform');
+platforms.forEach(p => sel.add(new Option(p.name, p.name)));
+
+// подключаем кнопку
+document.getElementById('find-candidate')
+        .addEventListener('click', findCandidate);
           
           document.getElementById("refresh-spinner").style.display = "none";
           if (autoRefreshEnabled) resetAutoRefresh();
@@ -2528,6 +2543,83 @@ async function fetchAircallStatuses() {
           document.body.classList.toggle("dark-theme", isDark);
           localStorage.setItem("darkThemeEnabled", isDark.toString());
         }
+
+        function findCandidate() {
+  const target = document.getElementById('target-platform').value;
+  if (!target) {
+    return alert('Сначала выберите целевую платформу');
+  }
+  const now = new Date();
+
+  // 1) отбираем тех, кто может перекомплектоваться
+  const pool = empList.filter(e => e.canReallocate === 'Yes');
+
+  // 2) для каждого считаем параметры и итоговый score
+  const candidates = pool.map(e => {
+    // a) tenure (месяцев)
+    const start = new Date(e.startDate);
+    const tenureMonths = Math.floor((now - start) / (1000*60*60*24*30));
+
+    // b) текущая смена + перерыв
+    const shiftRec = window.shiftsQuinyxData.find(r => r.name === e.name) || {};
+    const onShift = (()=> {
+      const [sh, sm] = (shiftRec.shift||'').split('-')[0].split(':').map(Number);
+      const [eh, em] = (shiftRec.shift||'').split('-')[1].split(':').map(Number);
+      const sd = new Date(now); sd.setHours(sh,sm,0,0);
+      const ed = new Date(now); ed.setHours(eh,em,0,0);
+      return now >= sd && now <= ed;
+    })();
+    const br = (window.allBreaksData||[]).find(b => b.Name === e.name);
+    const onBreak = !!br && (()=> {
+      const [bh, bm] = (br['Break Time']||'').split(':').map(Number);
+      const bd = new Date(now); bd.setHours(bh,bm,0,0);
+      return now >= bd && now < new Date(bd.getTime()+15*60*1000);
+    })();
+    if (!onShift || onBreak) return null;
+
+    // c) prime / pref совпадение
+    const primeMatch = e.prime === target ? 1 : 0;
+    const prefMatch  = e.pref  === target ? 1 : 0;
+
+    // d) языковой навык (кол-во языков, макс 3)
+    const langCount = (e.languages||[]).length;
+
+    // e) capacity как число
+    const capacity = e.maxChats || 0;
+
+    // нормализуем и взвешиваем
+    const w = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
+    const score =
+      w.t * Math.min(tenureMonths/24,1) +
+      w.pr * primeMatch +
+      w.pf * prefMatch +
+      w.lg * (langCount/3) +
+      w.cp * (capacity/Math.max(...pool.map(x=>x.maxChats),1));
+
+    return { ...e, tenureMonths, primeMatch, prefMatch, langCount, capacity, score };
+  })
+  .filter(x => x); // убираем null
+
+  if (!candidates.length) {
+    return document.getElementById('candidate-result')
+                 .innerHTML = '<div class="alert alert-warning">Нет доступных кандидатов</div>';
+  }
+
+  // 3) выбираем лучшего
+  const best = candidates.sort((a,b)=>b.score - a.score)[0];
+
+  // 4) показываем результат
+  document.getElementById('candidate-result').innerHTML = `
+    <div class="alert alert-info">
+      <strong>Рекомендуемый кандидат:</strong><br/>
+      ${best.name} (скор ${best.score.toFixed(2)})<br/>
+      Опыт: ${best.tenureMonths} мес, Prime: ${best.primeMatch? 'да':'нет'}, 
+      Pref: ${best.prefMatch? 'да':'нет'}, Языков: ${best.langCount}, 
+      Capacity: ${best.capacity}
+    </div>
+  `;
+}
+
 
         // Инициализация Bootstrap-Select и обработка изменения выбора платформ
         $(document).ready(function () {
