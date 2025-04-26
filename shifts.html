@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Today's Shifts</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+</head>
+<body>
+  <div class="container my-4">
+    <h1 class="mb-4">📅 Today's Shifts</h1>
+    <div id="shifts-container">Loading...</div>
+  </div>
+<script>
+  const SHEETS_PROXY_URL = "https://sheets-proxy.mikhail-garayev.workers.dev";
+  
+  async function fetchSheetData(range) {
+    try {
+      const res = await fetch(SHEETS_PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret: "superWoltKey42", range })
+      });
+      const data = await res.json();
+      return data.values;
+    } catch (e) {
+      console.error("Ошибка загрузки данных:", e);
+      return null;
+    }
+  }
+  
+  async function renderShifts() {
+    const raw = await fetchSheetData("shiftsquinyx!A2:C");
+    const container = document.getElementById("shifts-container");
+    if (!raw) {
+      container.textContent = "Ошибка загрузки данных";
+      return;
+    }
+    // Преобразуем строки в объекты
+    const rows = raw
+      .filter(r => r[0] && r[1] && r[2])
+      .map(r => ({ platform: r[0].trim(), name: r[1].trim(), shift: r[2].trim() }));
+    if (rows.length === 0) {
+      container.textContent = "На сегодня смен нет";
+      return;
+    }
+    // Генерируем таблицу
+    let html = `<table class="table table-striped"><thead><tr><th>Сотрудник</th><th>Смена</th><th>Платформа</th></tr></thead><tbody>`;
+    rows.forEach(({ name, shift, platform }) => {
+      html += `<tr><td>${name}</td><td>${shift}</td><td>${platform}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+  }
+  
+  document.addEventListener("DOMContentLoaded", renderShifts);
+</script>
+</body>
+</html>
