@@ -1820,43 +1820,56 @@ function renderAircallCardWithStatuses(
   if (showActive) {
     if (activeList.length === 0) {
       html += `
-      <p>
-        <small style="color:red;font-weight:bold;">Active (0)</small>
-        <span data-toggle="tooltip" title="No active employees" style="color:red;margin-left:5px;font-size:1.2rem;">&#9888;</span>
-      </p>`;
+        <p>
+          <small style="color:red;font-weight:bold;">Active (0)</small>
+          <span data-toggle="tooltip" title="No active employees" style="color:red;margin-left:5px;font-size:1.2rem;">&#9888;</span>
+        </p>`;
     } else {
       html += `<p><small>Active (${activeList.length})</small></p><ul id="aircall-active-list">`;
+
       activeList.forEach((name, i) => {
+        // берем смену из Quinyx и отображаем названием + бейдж
+        const rawShift = getEmployeeShiftName(name);
+        const shiftName = shiftDisplayNames[rawShift] || rawShift;
+        const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
+
         const safeId = `aircall-active-${i}`;
         html += `
-        <li id="${safeId}" class="employee-item" data-employee="${name}">
-          ${name} – <span class="aircall-status">Checking...</span>
-        </li>`;
+          <li id="${safeId}" class="employee-item d-flex align-items-center" data-employee="${name}">
+            <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
+              ${shiftName}
+            </span>
+            <span class="employee-name" style="margin-right:6px;">${name}</span>
+            – <span class="aircall-status">Checking...</span>
+          </li>`;
       });
+
       html += `</ul>`;
     }
   }
 
-  // Away
+  // Away (оставляем без изменений)
   if (showAway) {
     html += `<p><small>Away (${awayList.length})</small></p><ul>`;
     awayList.forEach(({ name, reason }) => {
       const extra = reason ? ` – ${reason}` : "";
       html += `
-      <li class="employee-item" data-employee="${name}">
-        ${name}${extra}
-      </li>`;
+        <li class="employee-item" data-employee="${name}">
+          ${name}${extra}
+        </li>`;
     });
     html += `</ul>`;
   }
 
   html += `</div>`;
 
+  // Вставляем в DOM
   document.getElementById("platforms-container").innerHTML += html;
 
-  // сразу после отрисовки запускаем прогон статусов
+  // После отрисовки снова дергаем статусы
   fetchAircallStatuses().catch(console.error);
 }
+
 
   function renderShiftSummary(data) {
   // контейнер, где рендерятся все stats-card
