@@ -1494,12 +1494,11 @@ async function openEmployeeModal(empName) {
 
   // Break time
   let breakTime = "—";
-  if (window.allBreaksData && Array.isArray(window.allBreaksData)) {
-    const foundBreak = allBreaksData
-      .find(b => b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase());
-    if (foundBreak) {
-      breakTime = foundBreak["Break Time"] || "—";
-    }
+  if (Array.isArray(window.allBreaksData)) {
+    const found = allBreaksData.find(b =>
+      b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase()
+    );
+    if (found) breakTime = found["Break Time"] || "—";
   }
   document.getElementById("modal-emp-break").textContent = breakTime;
 
@@ -1523,28 +1522,34 @@ async function openEmployeeModal(empName) {
     window.open(generateAdminLink(info.id), "_blank");
   };
 
-  // Новая часть: подсчёт и список изменений только за сегодня
+  // --- Подсчёт и список изменений за сегодня ---
+  // отбираем все переходы по этому сотруднику
   const allTransfers = transfersData.filter(t =>
     t.name.toLowerCase() === empName.toLowerCase()
   );
-  const today = new Date().toISOString().split("T")[0];
+
+  // определяем сегодняшнюю дату в формате YYYY-MM-DD (локально)
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day   = String(now.getDate()).padStart(2, "0");
+  const today = `${year}-${month}-${day}`;
+
+  // фильтруем только те записи, где время начинается с YYYY-MM-DD
   const todaysTransfers = allTransfers.filter(t =>
-    t.time.startsWith(today)
+    t.time.slice(0, 10) === today
   );
 
-  // Количество смен сегодня
+  // отображаем количество
   document.getElementById("modal-platform-count").textContent =
     todaysTransfers.length;
 
-  // Список смен
+  // и сам список
   const listEl = document.getElementById("modal-platform-list");
   if (todaysTransfers.length > 0) {
     listEl.innerHTML = todaysTransfers
       .map(t => {
-        const parts = t.time.split("T");
-        const timeOnly = parts.length === 2
-          ? parts[1].split(".")[0]
-          : t.time;
+        const timeOnly = t.time.split(" ")[1] || t.time;
         return `<li>${timeOnly} → ${t.newPlatform}</li>`;
       })
       .join("");
@@ -1556,6 +1561,7 @@ async function openEmployeeModal(empName) {
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 }
+
 
         function closeEmployeeModal() {
           document.getElementById("employee-modal").classList.remove("show");
