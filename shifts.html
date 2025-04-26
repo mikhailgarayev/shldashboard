@@ -41,9 +41,7 @@
       transition: background 0.3s;
       z-index: 1000;
     }
-    .back-btn:hover {
-      background: darken(var(--accent), 10%);
-    }
+    .back-btn:hover { background: #357ab7; }
     h1 {
       font-family: 'Playfair Display', serif;
       font-size: 2rem;
@@ -70,20 +68,23 @@
       background: var(--card-bg);
       transition: box-shadow 0.2s;
     }
-    .controls input:focus {
-      outline: none;
-      box-shadow: 0 1px 8px var(--accent);
-    }
+    .controls input:focus { outline: none; box-shadow: 0 1px 8px var(--accent); }
     #shifts-container {
       display: flex;
       gap: var(--gap);
-      overflow-x: auto;
       padding-bottom: var(--gap);
       width: 100%;
-      align-items: flex-start;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .shift-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      width: var(--col-width);
+      flex-shrink: 0;
     }
     .shift-column {
-      flex: 0 0 var(--col-width);
       background: var(--card-bg);
       backdrop-filter: blur(6px);
       border-radius: var(--radius);
@@ -105,7 +106,7 @@
       text-align: center;
       width: 100%;
     }
-    .shift-column ul { list-style: none; margin: 0; padding: 0; }
+    .shift-column ul { list-style: none; margin: 0; padding: 0; width: 100%; }
     .shift-column li {
       display: flex;
       justify-content: space-between;
@@ -120,9 +121,6 @@
     .shift-column li.future { background: rgba(255,152,0,0.15); }
     .shift-column li .time { font-weight: 600; color: var(--heading); font-size: 0.9rem; }
     .shift-column li .name { font-weight: 500; color: var(--text); font-size: 0.9rem; }
-    #shifts-container::-webkit-scrollbar { height: 6px; }
-    #shifts-container::-webkit-scrollbar-track { background: transparent; }
-    #shifts-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -133,63 +131,120 @@
     <input type="text" id="filter-shift" placeholder="⏰ Фильтр по смене" />
   </div>
   <div id="shifts-container">Loading...</div>
+
 <script>
-  const SHEETS_PROXY_URL = "https://sheets-proxy.mikhail-garayev.workers.dev";
-  let allShifts = [];
-  async function fetchSheetData(range) {
-    try {
-      const res = await fetch(SHEETS_PROXY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ secret: "superWoltKey42", range })
-      });
-      const data = await res.json();
-      return data.values;
-    } catch (e) {
-      console.error("Ошибка загрузки данных:", e);
-      return null;
-    }
-  }
-  function filterAndRender() {
-    const nameTerm = document.getElementById('search-name').value.trim().toLowerCase();
-    const shiftTerm = document.getElementById('filter-shift').value.trim().toLowerCase();
-    const filtered = allShifts.filter(({ name, shift }) =>
-      (!nameTerm || name.toLowerCase().includes(nameTerm)) &&
-      (!shiftTerm || shift.toLowerCase().includes(shiftTerm))
-    );
-    renderGroups(filtered);
-  }
-  function renderGroups(rows) {
-    const now = new Date();
-    const groups = rows.reduce((acc, row) => { (acc[row.platform] = acc[row.platform] || []).push(row); return acc; }, {});
-    const container = document.getElementById('shifts-container');
-    container.innerHTML = '';
-    Object.keys(groups).sort().forEach(plat => {
-      const col = document.createElement('div'); col.className = 'shift-column';
-      const items = groups[plat].map(item => {
-        const [start,end] = item.shift.split(/\s*-\s*/);
-        const [sh,sm] = start.split(':').map(Number);
-        const [eh,em] = end.split(':').map(Number);
-        const startDt=new Date(now); startDt.setHours(sh,sm,0,0);
-        let endDt=new Date(now); endDt.setHours(eh,em,0,0);
-        if(endDt<=startDt) endDt.setDate(endDt.getDate()+1);
-        const cls = now<startDt?'future': now> endDt?'past':'present';
-        return `<li class="${cls}"><span class="time">${item.shift}</span><span class="name">${item.name}</span></li>`;
-      }).join('');
-      col.innerHTML=`<h2>${plat}</h2><ul>${items}</ul>`;
-      container.appendChild(col);
+const SHEETS_PROXY_URL = "https://sheets-proxy.mikhail-garayev.workers.dev";
+let allShifts = [];
+
+async function fetchSheetData(range) {
+  try {
+    const res = await fetch(SHEETS_PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret: "superWoltKey42", range })
     });
+    const data = await res.json();
+    return data.values;
+  } catch (e) {
+    console.error("Ошибка загрузки данных:", e);
+    return null;
   }
-  async function init() {
-    const raw = await fetchSheetData("shiftsquinyx!A2:C");
-    if (!raw) { document.getElementById('shifts-container').innerHTML='<p>Ошибка загрузки данных</p>'; return; }
-    allShifts = raw.filter(r=>r[0]&&r[1]&&r[2]).map(r=>({platform:r[0].trim(),name:r[1].trim(),shift:r[2].trim()}));
-    if(allShifts.length===0){document.getElementById('shifts-container').innerHTML='<p>На сегодня смен нет</p>';return;}
-    document.getElementById('search-name').addEventListener('input',filterAndRender);
-    document.getElementById('filter-shift').addEventListener('input',filterAndRender);
-    filterAndRender();
+}
+
+function filterAndRender() {
+  const nameTerm = document.getElementById('search-name').value.trim().toLowerCase();
+  const shiftTerm = document.getElementById('filter-shift').value.trim().toLowerCase();
+  const filtered = allShifts.filter(({ name, shift }) =>
+    (!nameTerm || name.toLowerCase().includes(nameTerm)) &&
+    (!shiftTerm || shift.toLowerCase().includes(shiftTerm))
+  );
+  renderGroups(filtered);
+}
+
+function createCard(title, items) {
+  const card = document.createElement('div');
+  card.className = 'shift-column';
+  const list = items.map(item => `<li class="${getClass(item.shift)}"><span class="time">${item.shift}</span><span class="name">${item.name}</span></li>`).join('');
+  card.innerHTML = `<h2>${title}</h2><ul>${list}</ul>`;
+  return card;
+}
+
+function getClass(shift) {
+  const now = new Date();
+  const [start, end] = shift.split(/\s*-\s*/);
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  const startDt = new Date(now); startDt.setHours(sh, sm, 0, 0);
+  const endDt = new Date(now); endDt.setHours(eh, em, 0, 0);
+  if (endDt <= startDt) endDt.setDate(endDt.getDate() + 1);
+  if (now < startDt) return 'future';
+  if (now > endDt) return 'past';
+  return 'present';
+}
+
+function renderGroups(rows) {
+  const container = document.getElementById('shifts-container');
+  container.innerHTML = '';
+
+  const shiftLeads = rows.filter(r => r.platform === 'Shift Lead');
+  const inCharge = rows.filter(r => r.shift === '23:00-08:00');
+
+  const groups = {
+    'CS': [],
+    'CS / Post Order': [],
+    'PSR': [],
+    'Simo': [],
+    'SiMo/Aircall': [],
+    'Aircall': [],
+    'Venue': [],
+    'Trainee': [],
+    'Special Task': [],
+    'CS/Reviews': []
+  };
+
+  rows.forEach(r => {
+    if (groups[r.platform]) groups[r.platform].push(r);
+  });
+
+  function createGroup(cards) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'shift-group';
+    cards.forEach(card => wrapper.appendChild(card));
+    container.appendChild(wrapper);
   }
-  document.addEventListener('DOMContentLoaded',init);
+
+  if (shiftLeads.length || inCharge.length) createGroup([createCard('Shift Leads', shiftLeads), createCard('In-charge', inCharge)]);
+  if (groups['CS'].length) createGroup([createCard('CS', groups['CS'])]);
+  if (groups['CS / Post Order'].length) createGroup([createCard('CS / Post Order', groups['CS / Post Order'])]);
+  if (groups['PSR'].length) createGroup([createCard('PSR', groups['PSR'])]);
+  if (groups['Simo'].length || groups['SiMo/Aircall'].length) createGroup([createCard('Simo', groups['Simo']), createCard('SiMo/Aircall', groups['SiMo/Aircall'])]);
+  if (groups['Aircall'].length) createGroup([createCard('Aircall', groups['Aircall'])]);
+  if (groups['Venue'].length) createGroup([createCard('Venue', groups['Venue'])]);
+  if (groups['Trainee'].length) createGroup([createCard('Trainee', groups['Trainee'])]);
+  if (groups['Special Task'].length || groups['CS/Reviews'].length) createGroup([createCard('Special Task', groups['Special Task']), createCard('CS/Reviews', groups['CS/Reviews'])]);
+}
+
+(async function init() {
+  const raw = await fetchSheetData("shiftsquinyx!A2:C");
+  if (!raw) {
+    document.getElementById('shifts-container').innerHTML = '<p>Ошибка загрузки данных</p>';
+    return;
+  }
+  allShifts = raw.filter(r => r[0] && r[1] && r[2]).map(r => {
+    let platform = r[0].trim();
+    if (platform.toLowerCase() === 'special task') platform = 'Special Task';
+    if (platform.toLowerCase() === 'cs/reviews') platform = 'CS/Reviews';
+    return { platform, name: r[1].trim(), shift: r[2].trim() };
+  });
+
+  if (allShifts.length === 0) {
+    document.getElementById('shifts-container').innerHTML = '<p>На сегодня смен нет</p>';
+    return;
+  }
+  document.getElementById('search-name').addEventListener('input', filterAndRender);
+  document.getElementById('filter-shift').addEventListener('input', filterAndRender);
+  filterAndRender();
+})();
 </script>
 </body>
 </html>
