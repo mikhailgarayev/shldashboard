@@ -132,30 +132,41 @@
     }
 
     function updateTable() {
-      const tbody = document.querySelector('#transfersTable tbody');
-      const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
-      if (currentPage > totalPages) currentPage = totalPages;
+  const tbody = document.querySelector('#transfersTable tbody');
+  const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
 
-      const startIdx = (currentPage - 1) * pageSize;
-      const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
+  const startIdx = (currentPage - 1) * pageSize;
+  const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
 
-      if (!pageItems.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No records</td></tr>';
-      } else {
-        tbody.innerHTML = '';
-        pageItems.forEach(item => {
-          const tr = document.createElement('tr');
-          ['name','primary','newPlatform','time','endEvent','duration'].forEach(k => {
-            const td = document.createElement('td');
-            td.textContent = item[k] || '';
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
-      }
+  if (!pageItems.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No records</td></tr>';
+  } else {
+    tbody.innerHTML = '';
+    pageItems.forEach(item => {
+      const tr = document.createElement('tr');
+      ['name','primary','newPlatform','time','endEvent','duration'].forEach(k => {
+        const td = document.createElement('td');
 
-      renderPagination(totalPages);
-    }
+        // Если колонка time или endEvent — форматируем ISO-время
+        if ((k === 'time' || k === 'endEvent') && item[k]) {
+          const parts = item[k].split('T');
+          // берём "HH:MM:SS" из "YYYY-MM-DDTHH:MM:SS.xxxZ"
+          td.textContent = parts.length === 2
+            ? parts[1].split('.')[0]
+            : item[k];
+        } else {
+          td.textContent = item[k] || '';
+        }
+
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderPagination(totalPages);
+}
 
     function renderPagination(totalPages) {
       const pagination = document.getElementById('pagination');
