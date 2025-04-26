@@ -1973,16 +1973,15 @@ function renderAircallCardWithStatuses(
 function renderResponsiblePeople(data) {
   if (!Array.isArray(data) || data.length === 0) return;
 
-  // Удаляем старую карточку, если есть
   const existing = document.getElementById("responsible-card");
   if (existing) existing.remove();
 
-  // Оставляем только ровно "Shift Lead" или роли, начинающиеся с "In charge"
+  // отбираем только "Shift Lead…" и "In charge…"
   const responsibleRows = data.filter(([name, role]) => {
     if (!name || !role) return false;
     const r = role.trim();
-    return /^Shift\s+Lead$/i.test(r)    // ровно "Shift Lead"
-        || /^In\s+charge\b/i.test(r);  // или начинается с "In charge"
+    return /^Shift\s+Lead\b/i.test(r)
+        || /^In\s+charge\b/i.test(r);
   });
 
   if (responsibleRows.length === 0) return;
