@@ -1540,7 +1540,10 @@
           if (myTransfers.length > 0) {
             listEl.innerHTML = myTransfers
               .map(t => {
-                const timeOnly = t.time.split(" ")[1] || t.time;
+                const parts = t.time.split("T");
+                const timeOnly = parts.length === 2
+                  ? parts[1].split(".")[0]
+                  : t.time;
                 return `<li>${timeOnly} → ${t.newPlatform}</li>`;
               })
               .join("");
