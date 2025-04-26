@@ -979,62 +979,70 @@
         </h1>
       </div>
       <!-- Центр: фильтры -->
-      <div
-        class="filters-wrapper d-flex flex-wrap align-items-center flex-grow-1 justify-content-center header-gap"
+      <div class="filters-wrapper d-flex flex-wrap align-items-center flex-grow-1 justify-content-center header-gap">
+      <!-- Статус -->
+      <select id="status-filter" class="filter-dropdown">
+        <option value="both">Status</option>
+        <option value="active">Active</option>
+        <option value="away">Away</option>
+      </select>
+    
+      <!-- Платформы (bootstrap-select) -->
+      <select
+        id="platform-dropdown"
+        class="selectpicker filter-dropdown"
+        multiple
+        data-live-search="true"
+        title="Platform"
+        data-width="140px"
       >
-        <select id="status-filter" class="filter-dropdown">
-          <option value="both">Status</option>
-          <option value="active">Active</option>
-          <option value="away">Away</option>
-        </select>
-        <!-- Новый современный dropdown с помощью Bootstrap-Select для выбора платформ -->
-        <select
-          id="platform-dropdown"
-          class="selectpicker filter-dropdown"
-          multiple
-          data-live-search="true"
-          title="Platform"
-          data-width="140px"
-        >
-          <option value="all" selected>All platforms</option>
-          <option value="CS">CS</option>
-          <option value="CS/Post order">CS/Post order</option>
-          <option value="PSR">PSR</option>
-          <option value="SiMo">SiMo</option>
-          <option value="Aircall">Aircall</option>
-          <option value="Venue">Venue</option>
-          <option value="Trainee">Trainee</option>
-          <option value="ST">ST</option>
-        </select>
-        <select id="realloc-filter" class="filter-dropdown">
-          <option value="all">Reallocate: All</option>
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-        </select>
-        <select id="lang-filter" class="filter-dropdown">
-          <option value="all">Language: All</option>
-          <option value="two">Bilingual</option>
-          <option value="three">Trilingual</option>
-        </select>
-        <select id="break-filter" class="filter-dropdown">
-          <option value="upcoming">Breaks: Upcoming</option>
-          <option value="all">Breaks: All</option>
-        </select>
-        <input
-          type="text"
-          id="employee-search"
-          placeholder="Search..."
-          class="search-input"
-        />
-          <!-- ← вставить сюда -->
-  <select id="target-platform" class="filter-dropdown">
-    <option value=\"\">→ Перекомплектовать на…</option>
-  </select>
-  <button id="find-candidate" class="btn btn-outline-primary">Найти кандидата</button>
-</div>
-<div id="candidate-result" style="margin: 1rem 0;"></div>
+        <option value="all" selected>All platforms</option>
+        <option value="CS">CS</option>
+        <option value="CS/Post order">CS/Post order</option>
+        <option value="PSR">PSR</option>
+        <option value="SiMo">SiMo</option>
+        <option value="Aircall">Aircall</option>
+        <option value="Venue">Venue</option>
+        <option value="Trainee">Trainee</option>
+        <option value="ST">ST</option>
+      </select>
+    
+      <!-- Reallocate фильтр -->
+      <select id="realloc-filter" class="filter-dropdown">
+        <option value="all">Reallocate: All</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    
+      <!-- Language фильтр -->
+      <select id="lang-filter" class="filter-dropdown">
+        <option value="all">Language: All</option>
+        <option value="two">Bilingual</option>
+        <option value="three">Trilingual</option>
+      </select>
+    
+      <!-- Breaks фильтр -->
+      <select id="break-filter" class="filter-dropdown">
+        <option value="upcoming">Breaks: Upcoming</option>
+        <option value="all">Breaks: All</option>
+      </select>
+    
+      <!-- Поиск по имени -->
+      <input
+        type="text"
+        id="employee-search"
+        placeholder="Search..."
+        class="search-input"
+      />
+    
+      <!-- Новый селект для Find Candidate -->
+      <select id="target-platform" class="filter-dropdown">
+        <option value="">→ Перекомплектовать на…</option>
+      </select>
+      <button id="find-candidate" class="btn btn-outline-primary">Найти кандидата</button>
+      <div id="candidate-result" style="margin:1rem 0;"></div>
+    </div>
 
-      </div>
       <!-- Правая часть: тема + refresh + имя + logout -->
       <div class="d-flex align-items-center flex-wrap header-gap">
         <!-- Переключатель темы -->
