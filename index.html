@@ -1973,37 +1973,41 @@ function renderAircallCardWithStatuses(
 function renderResponsiblePeople(data) {
   if (!Array.isArray(data) || data.length === 0) return;
 
+  // Удаляем старую карточку, если она есть
   const existing = document.getElementById("responsible-card");
   if (existing) existing.remove();
 
-  // отбираем только "Shift Lead…" и "In charge…"
+  // Оставляем только роли "Shift Lead…" и "In charge…"
   const responsibleRows = data.filter(([name, role]) => {
     if (!name || !role) return false;
     const r = role.trim();
     return /^Shift\s+Lead\b/i.test(r)
         || /^In\s+charge\b/i.test(r);
   });
-
   if (responsibleRows.length === 0) return;
 
-  // Строим HTML
+  // Начало HTML
   let html = `
     <div class="shift-summary-card" id="responsible-card">
       <div class="shift-summary-title">👥 Responsible People</div>
       <table class="shift-summary-grid" style="max-width:500px; margin:0 auto;">
-        <thead>
-          <tr><th>Name</th><th>Position</th></tr>
-        </thead>
+        <thead><tr><th>Name</th><th>Position</th></tr></thead>
         <tbody>`;
 
+  // Заполняем строки
   responsibleRows.forEach(([rawName, rawRole]) => {
     const name = rawName.trim();
     const role = rawRole.trim();
-    const isNaziya = name.toLowerCase() === 'naziya orujova';
-    const extraEmoji = isNaziya ? ' 🎀' : '';
+    const lowerName = name.toLowerCase();
+
+    // Специальные эмодзи для пользователей
+    const isNaziya = lowerName === 'naziya orujova';
+    const isRafig  = lowerName === 'rafig huseynov';
+    let extraEmoji = '';
+    if (isNaziya) extraEmoji = ' 🎀';
+    else if (isRafig)  extraEmoji = ' (˵ ͡° ͜ʖ ͡°˵)';
+
     const nameClass = isNaziya ? 'pink-name' : '';
-    const isRafig  = lower === 'rafig huseynov';
-    else if (isRafig) extraEmoji = ' (˵ ͡° ͜ʖ ͡°˵)';
 
     html += `
       <tr>
@@ -2026,14 +2030,15 @@ function renderResponsiblePeople(data) {
       </tr>`;
   });
 
+  // Закрываем таблицу и вставляем в DOM
   html += `
         </tbody>
       </table>
     </div>`;
 
-  // Вставляем сразу после блока с метриками
-  const container = document.getElementById('shift-summary');
-  container.insertAdjacentHTML('afterend', html);
+  document
+    .getElementById('shift-summary')
+    .insertAdjacentHTML('afterend', html);
 }
 
 
