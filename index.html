@@ -2573,43 +2573,46 @@ function findCandidate() {
   }
   const now = new Date();
 
-  // 1) отбираем тех, кто может перекомплектоваться
-  const pool = empList.filter(e => e.canReallocate === 'Yes');
+  // 1) только те, кто может перекомплектоваться
+  const pool = window.empList.filter(e => e.canReallocate === 'Yes');
+  if (!pool.length) {
+    document.getElementById('candidate-result').innerHTML =
+      '<div class="alert alert-warning">Нет сотрудников для перекомплектовки</div>';
+    return;
+  }
 
-  const badStatuses = ['Will not attend the shift', 'Not attended the shift'];
+  // список “плохих” статусов в lowercase
+  const bad = ['will not attend the shift', 'not attended the shift'];
 
   const candidates = pool.map(e => {
-    // **Новый блок: проверяем, есть ли в листе list1 статус “Will not…” или “Not attended…”**
-    const sheet = window.allShiftData || [];
-    // находим строку в полном диапазоне A1:BJ100, где встречается имя
+    // ——— 1. Находим её слот в основной табличке list1!A1:BJ100
     const rowIdx = fetchedData.findIndex(row =>
-      row.some(cell => cell && cell.trim() === e.name)
+      row.some(cell =>
+        typeof cell === 'string' &&
+        cell.trim().toLowerCase() === e.name.toLowerCase()
+      )
     );
-    if (rowIdx !== -1) {
-      // shiftData[0] — строка 5, поэтому для строки (idx+1) используем idx – 4
-      const shiftIdx = rowIdx - 4;
-      if (shiftIdx >= 1 && shiftIdx < sheet.length) {
-        const statusRow = sheet[shiftIdx];
-        if (statusRow.some(s =>
-          badStatuses.includes((s||'').trim())
-        )) {
-          // нашли “Will not…” или “Not attended…”
-          return null;
-        }
+    if (rowIdx < 0) return null;
+
+    // смещение относительно строки 5 (первый в allShiftData)
+    const shiftIdx = rowIdx - 4;
+    const shifts = window.allShiftData || [];
+    if (shiftIdx >= 1 && shiftIdx < shifts.length) {
+      const statusRow = shifts[shiftIdx];
+      // если в любой ячейке строки встречается “will not…” или “not attended…”
+      if (statusRow.some(cell =>
+        typeof cell === 'string' &&
+        bad.some(bs => cell.trim().toLowerCase().includes(bs))
+      )) {
+        return null; // отсекаем сразу
       }
     }
-    // **Конец нового блока**
 
-    // 2) tenure (месяцев)
-    const start = e.startDate ? new Date(e.startDate) : new Date(0);
-    const tenureMonths = Math.floor((now - start) / (1000*60*60*24*30));
-
-    // 3) проверяем, на смене ли и не на брейке
-    const shiftRec = window.shiftsQuinyxData.find(r =>
+    // ——— 2. Проверяем, действительно ли сейчас на смене
+    const rec = window.shiftsQuinyxData.find(r =>
       r.name.toLowerCase() === e.name.toLowerCase()
     ) || {};
-    const shiftStr = shiftRec.shift || '';
-    const parts = shiftStr.split('-');
+    const parts = (rec.shift || '').split('-');
     if (parts.length < 2) return null;
     const [startStr, endStr] = parts;
     const [sh, sm] = startStr.split(':').map(Number);
@@ -2617,36 +2620,44 @@ function findCandidate() {
     const sd = new Date(now); sd.setHours(sh, sm, 0, 0);
     const ed = new Date(now); ed.setHours(eh, em, 0, 0);
     if (now < sd || now > ed) return null;
-    const br = (window.allBreaksData||[]).find(b => b.Name === e.name);
+
+    // ——— 3. Не на брейке
+    const br = (window.allBreaksData || []).find(b =>
+      b.Name.trim().toLowerCase() === e.name.trim().toLowerCase()
+    );
     if (br) {
-      const [bh, bm] = (br['Break Time']||'').split(':').map(Number);
+      const [bh, bm] = (br['Break Time'] || '').split(':').map(Number);
       const bd = new Date(now); bd.setHours(bh, bm, 0, 0);
       if (now >= bd && now < new Date(bd.getTime() + 15*60*1000)) {
         return null;
       }
     }
 
-    // 4) prime/pref, languages, capacity и расчёт score
+    // ——— 4. Считаем score
+    const tenure = e.startDate
+      ? Math.floor((now - new Date(e.startDate)) / (1000*60*60*24*30))
+      : 0;
     const primeMatch = e.prime === target ? 1 : 0;
     const prefMatch  = e.pref  === target ? 1 : 0;
     const langCount  = (e.languages || '').split(' ').length;
-    const capacity   = e.maxChats || 0;
-    const weights    = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
-    const maxCap     = Math.max(...pool.map(x => x.maxChats), 1);
+    const cap        = e.maxChats  || 0;
+    const w = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
+    const maxCap = Math.max(...pool.map(x=>x.maxChats), 1);
     const score =
-      weights.t  * Math.min(tenureMonths / 24, 1) +
-      weights.pr * primeMatch +
-      weights.pf * prefMatch +
-      weights.lg * (langCount / 3) +
-      weights.cp * (capacity / maxCap);
+      w.t  * Math.min(tenure/24, 1) +
+      w.pr * primeMatch +
+      w.pf * prefMatch +
+      w.lg * (langCount/3) +
+      w.cp * (cap/maxCap);
 
-    return { ...e, tenureMonths, primeMatch, prefMatch, langCount, capacity, score };
+    return { ...e, tenure, primeMatch, prefMatch, langCount, cap, score };
   })
-  .filter(x => x); // отбрасываем null
+  .filter(x => x); // убираем null
 
   if (!candidates.length) {
-    return document.getElementById('candidate-result')
-      .innerHTML = '<div class="alert alert-warning">Нет доступных кандидатов</div>';
+    document.getElementById('candidate-result').innerHTML =
+      '<div class="alert alert-warning">Нет доступных кандидатов</div>';
+    return;
   }
 
   const best = candidates.sort((a,b) => b.score - a.score)[0];
@@ -2654,12 +2665,11 @@ function findCandidate() {
     <div class="alert alert-info">
       <strong>Рекомендуемый кандидат:</strong><br/>
       ${best.name} (скор ${best.score.toFixed(2)})<br/>
-      Опыт: ${best.tenureMonths} мес, Prime: ${best.primeMatch? 'да':'нет'}, 
+      Опыт: ${best.tenure} мес, Prime: ${best.primeMatch? 'да':'нет'}, 
       Pref: ${best.prefMatch? 'да':'нет'}, Языков: ${best.langCount}, 
-      Capacity: ${best.capacity}
+      Capacity: ${best.cap}
     </div>`;
 }
-
 
 
         // Инициализация Bootstrap-Select и обработка изменения выбора платформ
