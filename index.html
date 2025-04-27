@@ -154,30 +154,34 @@
 
       /* Панель фильтров */
       .filter-panel {
-        background: var(--card-bg-color);
-        border-radius: 12px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 16px;
         padding: 12px 24px;
         margin: 0 auto 24px;
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 16px;
-        box-shadow: var(--card-shadow);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.3);
         nax-width: 1200px;
       }
       .filter-panel .filter-dropdown {
-        background: #f7f8fa;
-        border: 1px solid #e0e0e5;
-        border-radius: 6px;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.4);
+        border-radius: 8px;
         padding: 8px 12px;
         min-width: 140px;
-        transition: border-color .2s ease;
+        transition: background 0.2s ease, border-color 0.2s ease;
       }
       .filter-panel .filter-dropdown:hover,
       .filter-panel .filter-dropdown:focus,
       .filter-panel .search-input:hover,
       .filter-panel .search-input:focus {
-        border-color: #007bff;                  /* подчеркнём цветом при взаимодействии */
+        background: rgba(255,255,255,0.3);      
+        border-color: rgba(255,255,255,0.6); /* подчеркнём цветом при взаимодействии */
         outline: none;
       }
       #summary-grid {
