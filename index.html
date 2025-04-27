@@ -2577,6 +2577,12 @@ function findCandidate() {
   }
   const now = new Date();
 
+  // вспомогательная функция — приводим строку к единому ключу
+  const canonical = str =>
+    str.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const targetKey = canonical(target);
+
   // 1) только те, кто может перекомплектоваться
   const pool = window.empList.filter(e => e.canReallocate === 'Yes');
   if (!pool.length) {
@@ -2585,11 +2591,10 @@ function findCandidate() {
     return;
   }
 
-  // список “плохих” статусов в lowercase
   const badStatuses = ['will not attend the shift', 'not attended the shift'];
 
   const candidates = pool.map(e => {
-    // ——— 1. Проверка статуса из листа list1!AT6:BH35 ———
+    // ——— 1. Проверка «не будет/не пришёл» ———
     const rowIdx = fetchedData.findIndex(row =>
       row.some(cell =>
         typeof cell === 'string' &&
@@ -2597,19 +2602,18 @@ function findCandidate() {
       )
     );
     if (rowIdx < 0) return null;
-    const shiftIdx = rowIdx - 4;               // смещение для allShiftData
+    const shiftIdx = rowIdx - 4;
     const shifts   = window.allShiftData || [];
     if (shiftIdx >= 1 && shiftIdx < shifts.length) {
-      const statusRow = shifts[shiftIdx];
-      if (statusRow.some(cell =>
+      if (shifts[shiftIdx].some(cell =>
         typeof cell === 'string' &&
         badStatuses.some(bs => cell.trim().toLowerCase().includes(bs))
       )) {
-        return null; // отсекаем сразу
+        return null;
       }
     }
 
-    // ——— 2. Проверяем, действительно ли сейчас на смене ———
+    // ——— 2. На смене? ———
     const rec = window.shiftsQuinyxData.find(r =>
       r.name.toLowerCase() === e.name.toLowerCase()
     ) || {};
@@ -2622,7 +2626,7 @@ function findCandidate() {
     const ed = new Date(now); ed.setHours(eh, em, 0, 0);
     if (now < sd || now > ed) return null;
 
-    // ——— 3. Не на брейке ———
+    // ——— 3. Не на брейке? ———
     const br = (window.allBreaksData || []).find(b =>
       b.Name.trim().toLowerCase() === e.name.trim().toLowerCase()
     );
@@ -2634,31 +2638,38 @@ function findCandidate() {
       }
     }
 
-    // ——— 4. Считаем опыт (tenure) и итоговый score ———
-    // Парсим дату старта из e.startDate в разных форматах
+    // ——— 4. Расчёт опыта и скоринга ———
+    // tenure
     let startDateObj = new Date(e.startDate);
     if (isNaN(startDateObj)) {
-      // пробуем форматы DD.MM.YYYY или DD/MM/YYYY
-      const parts = e.startDate.split(/[./]/);
-      if (parts.length === 3) {
-        const [d, m, y] = parts;
+      const pd = e.startDate.split(/[./]/);
+      if (pd.length === 3) {
+        const [d, m, y] = pd;
         startDateObj = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`);
       }
     }
-    // рассчитываем tenure в месяцах
-    let tenure = 0;
-    if (!isNaN(startDateObj)) {
-      tenure = Math.floor((now - startDateObj) / (1000*60*60*24*30));
-    }
+    const tenure = isNaN(startDateObj)
+      ? 0
+      : Math.floor((now - startDateObj) / (1000*60*60*24*30));
 
+    // prime match
     const primeMatch = e.prime === target ? 1 : 0;
-    const prefMatch  = e.pref  === target ? 1 : 0;
-    const langCount  = (e.languages || '').trim()
+
+    // pref match — разбиваем на массив и сравниваем через canonical
+    const prefList = (e.pref || '')
+      .split(',')
+      .map(s => canonical(s));
+    const prefMatch = prefList.some(pk =>
+      pk === targetKey || targetKey.includes(pk) || pk.includes(targetKey)
+    ) ? 1 : 0;
+
+    // остальное
+    const langCount = (e.languages || '').trim()
       ? e.languages.trim().split(/\s+/).length
       : 0;
-    const cap        = e.maxChats  || 0;
+    const cap = e.maxChats || 0;
     const w = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
-    const maxCap = Math.max(...pool.map(x=>x.maxChats), 1);
+    const maxCap = Math.max(...pool.map(x => x.maxChats), 1);
     const score =
       w.t  * Math.min(tenure/24, 1) +
       w.pr * primeMatch +
@@ -2668,7 +2679,7 @@ function findCandidate() {
 
     return { ...e, tenure, primeMatch, prefMatch, langCount, cap, score };
   })
-  .filter(x => x); // убираем null
+  .filter(x => x);
 
   if (!candidates.length) {
     document.getElementById('candidate-result').innerHTML =
@@ -2676,7 +2687,6 @@ function findCandidate() {
     return;
   }
 
-  // выбираем лучшего
   const best = candidates.sort((a,b) => b.score - a.score)[0];
   document.getElementById('candidate-result').innerHTML = `
     <div class="alert alert-info">
@@ -2687,6 +2697,7 @@ function findCandidate() {
       Capacity: ${best.cap}
     </div>`;
 }
+
 
 
         // Инициализация Bootstrap-Select и обработка изменения выбора платформ
