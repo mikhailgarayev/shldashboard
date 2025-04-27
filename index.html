@@ -1977,18 +1977,18 @@ function renderAircallCardWithStatuses(
       const extra = reason ? ` (${reason})` : "";
 
       html += `
-        <li class="employee-item d-flex align-items-center ${liClass}" data-employee="${name}">
-          <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
-            ${shiftName}
-          </span>
-          <strong class="employee-name" style="margin-right:6px;">
-            ${name}
-          </strong>
-          <span class="text-muted">${extra}</span>
-        </li>`;
-    });
-    html += `</ul>`;
-  }
+      <li class="employee-item d-flex align-items-center ${liClass}" data-employee="${name}">
+        <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
+          ${shiftName}
+        </span>
+        <span class="employee-name" style="margin-right:6px;">
+          ${name}
+        </span>
+        <span class="text-muted">${extra}</span>
+      </li>`;
+  });
+  html += `</ul>`;
+}
 
   html += `</div>`;
 
