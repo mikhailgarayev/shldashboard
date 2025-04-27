@@ -136,11 +136,24 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const allowedEmails = [
-      "mikhail.garayev@wolt.com",
-      "elshan.tahmazov@wolt.com",
-      // ... остальной whitelist ...
-    ];
+      const allowedEmails = [
+        "mikhail.garayev@wolt.com",
+        "elshan.tahmazov@wolt.com",
+        "inara.mammadzada@wolt.com",
+        "mayya.mirzayeva@wolt.com",
+        "mikayil.alizada@wolt.com",
+        "pasha.chiragov@wolt.com",
+        "rahim.mammadov@wolt.com",
+        "toghrul.mirzali@wolt.com",
+        "amaliya.rizvanova@wolt.com",
+        "anar.mikayilov@wolt.com",
+        "arif.guliyev@wolt.com",
+        "farid.hajiyev@wolt.com",
+        "naziya.orujova@wolt.com",
+        "rafig.huseynov@wolt.com",
+        "sama.akbarzadegan@wolt.com",
+        "mursal.askarov@wolt.com"
+      ];
     const googleBtn = document.getElementById("google-signin-btn");
     const errorDiv = document.getElementById("login-error");
     const errorText = document.getElementById("error-text");
