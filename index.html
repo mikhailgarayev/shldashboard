@@ -2496,13 +2496,10 @@ async function fetchAircallStatuses() {
           await fetchTransfers();
           fetchAircallStatuses();
           applyFilters();
-
-          const sel = document.getElementById('target-platform');
-platforms.forEach(p => sel.add(new Option(p.name, p.name)));
-
-// подключаем кнопку
-document.getElementById('find-candidate')
-        .addEventListener('click', findCandidate);
+          
+          // подключаем кнопку
+          document.getElementById('find-candidate')
+          .addEventListener('click', findCandidate);
           
           document.getElementById("refresh-spinner").style.display = "none";
           if (autoRefreshEnabled) resetAutoRefresh();
@@ -2767,6 +2764,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalClose = document.getElementById("modal-close");
   overlay.addEventListener("click", closeEmployeeModal);
   modalClose.addEventListener("click", closeEmployeeModal);
+
+    // 1) Один раз заполняем dropdown платформ
+  const sel = document.getElementById('target-platform');
+  // очищаем (оставляем только заглушку)
+  sel.innerHTML = '<option value="">→ Перекомплектовать на…</option>';
+  platforms.forEach(p => sel.add(new Option(p.name, p.name)));
 
   // Переключатель темы
   document.getElementById("theme-checkbox").addEventListener("change", toggleTheme);
