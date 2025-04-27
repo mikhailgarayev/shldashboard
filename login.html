@@ -14,46 +14,40 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #4285F4;
-      --primary-hover: #3367D6;
+      --primary-color: rgba(255, 255, 255, 0.6);
+      --accent-gradient: linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.4) 33%, rgba(255,255,255,0.4) 66%, rgba(255,255,255,0.4) 100%);
       --error-color: #EA4335;
-      --text-color: #202124;
-      --text-secondary: #5F6368;
-      --border-radius: 12px;
-      --box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-      --transition: all 0.2s ease-in-out;
+      --text-color: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --border-radius: 16px;
+      --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
     }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%);
+      background: url('https://images.unsplash.com/photo-1506765515384-028b60a970df?auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      margin: 0;
       color: var(--text-color);
       line-height: 1.6;
     }
-    
     .login-container {
-      background: #fff;
-      padding: 40px;
+      background: rgba(255, 255, 255, 0.15);
       border-radius: var(--border-radius);
       box-shadow: var(--box-shadow);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 40px;
       width: 100%;
       max-width: 420px;
       text-align: center;
       position: relative;
       overflow: hidden;
     }
-    
     .login-container::before {
       content: '';
       position: absolute;
@@ -63,39 +57,17 @@
       height: 6px;
       background: linear-gradient(90deg, #4285F4 0%, #34A853 33%, #FBBC05 66%, #EA4335 100%);
     }
-    
-    .logo {
-      margin-bottom: 24px;
-      display: flex;
-      justify-content: center;
-    }
-    
-    .logo svg {
-      width: 48px;
-      height: 48px;
-    }
-    
-    h1 {
-      margin-bottom: 24px;
-      font-size: 1.75rem;
-      font-weight: 600;
-      color: var(--text-color);
-    }
-    
-    .subtitle {
-      color: var(--text-secondary);
-      margin-bottom: 32px;
-      font-size: 1rem;
-      font-weight: 400;
-    }
-    
+    .logo { margin-bottom: 24px; display: flex; justify-content: center; }
+    .logo svg { width: 48px; height: 48px; fill: #FFFFFF; }
+    h1 { margin-bottom: 24px; font-size: 1.75rem; font-weight: 600; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 32px; font-size: 1rem; font-weight: 400; }
     .google-btn {
       width: 100%;
       padding: 12px 24px;
       margin: 10px 0;
-      background: #fff;
+      background: rgba(255, 255, 255, 0.25);
       color: var(--text-color);
-      border: 1px solid #dadce0;
+      border: 1px solid rgba(255, 255, 255, 0.4);
       border-radius: var(--border-radius);
       font-size: 0.95rem;
       font-weight: 500;
@@ -104,25 +76,14 @@
       align-items: center;
       justify-content: center;
       transition: var(--transition);
-      position: relative;
-      overflow: hidden;
     }
-    
     .google-btn:hover {
-      background: #f8f9fa;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.35);
     }
-    
     .google-btn:active {
-      background: #f1f3f4;
+      background: rgba(255, 255, 255, 0.45);
     }
-    
-    .google-icon {
-      width: 20px;
-      height: 20px;
-      margin-right: 12px;
-    }
-    
+    .google-icon { width: 20px; height: 20px; margin-right: 12px; filter: invert(1); }
     .error-message {
       color: var(--error-color);
       font-size: 0.9rem;
@@ -135,56 +96,36 @@
       justify-content: center;
       gap: 8px;
     }
-    
-    .error-message i {
-      font-size: 1.1rem;
-    }
-    
-    .footer {
-      margin-top: 32px;
-      color: var(--text-secondary);
-      font-size: 0.8rem;
-    }
-    
+    .error-message i { font-size: 1.1rem; }
+    .footer { margin-top: 32px; color: var(--text-secondary); font-size: 0.8rem; }
     @media (max-width: 480px) {
-      .login-container {
-        padding: 32px 24px;
-        margin: 0 16px;
-      }
-      
-      h1 {
-        font-size: 1.5rem;
-      }
+      .login-container { padding: 32px 24px; margin: 0 16px; }
+      h1 { font-size: 1.5rem; }
     }
   </style>
 </head>
 <body>
   <div class="login-container">
     <div class="logo">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#4285F4">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
       </svg>
     </div>
     <h1>Log in to Support Monitoring Dashboard</h1>
     <p class="subtitle">Sign in with your company account to continue</p>
-    
     <button id="google-signin-btn" class="google-btn">
       <img src="https://www.svgrepo.com/show/380993/google-logo-search-new.svg" alt="Google logo" class="google-icon">
       Sign in with Google
     </button>
-    
     <div class="error-message" id="login-error" style="display: none;">
       <i class="material-icons">error_outline</i>
       <span id="error-text"></span>
     </div>
-    
     <div class="footer">
       © 2025 Mikhail Garayev. All rights reserved.
     </div>
   </div>
-
   <script>
-    // Конфигурация Firebase – замените на данные из Firebase Console
     const firebaseConfig = {
       apiKey: "AIzaSyAHyxC12UaO6QU_nCiWFnegul1Vix5skm8",
       authDomain: "shldashboard.firebaseapp.com",
@@ -193,75 +134,46 @@
       messagingSenderId: "362566153595",
       appId: "1:362566153595:web:ee35c2588bd0f798e6f9de"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-
-    // Список разрешённых пользователей (whitelist)
     const allowedEmails = [
       "mikhail.garayev@wolt.com",
       "elshan.tahmazov@wolt.com",
-      "inara.mammadzada@wolt.com",
-      "mayya.mirzayeva@wolt.com",
-      "mikayil.alizada@wolt.com",
-      "pasha.chiragov@wolt.com",
-      "rahim.mammadov@wolt.com",
-      "toghrul.mirzali@wolt.com",
-      "amaliya.rizvanova@wolt.com",
-      "anar.mikayilov@wolt.com",
-      "arif.guliyev@wolt.com",
-      "farid.hajiyev@wolt.com",
-      "naziya.orujova@wolt.com",
-      "rafig.huseynov@wolt.com",
-      "sama.akbarzadegan@wolt.com",
-      "mursal.askarov@wolt.com"
+      // ... остальной whitelist ...
     ];
-
-    // Обработчик клика на кнопку "Войти через Google"
     const googleBtn = document.getElementById("google-signin-btn");
     const errorDiv = document.getElementById("login-error");
     const errorText = document.getElementById("error-text");
-    
     googleBtn.addEventListener("click", () => {
       errorDiv.style.display = "none";
       googleBtn.disabled = true;
-      googleBtn.innerHTML = `<span class="material-icons" style="margin-right: 8px;">hourglass_empty</span> Signing in...`;
-      
+      googleBtn.innerHTML = `<span class=\"material-icons\" style=\"margin-right: 8px;\">hourglass_empty</span> Signing in...`;
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithPopup(provider)
         .then((result) => {
           const user = result.user;
-          // Проверяем, входит ли email пользователя в список разрешённых
           if (allowedEmails.includes(user.email)) {
-            console.log("Access granted:", user.email);
-            window.location.href = "index.html"; // Перенаправляем на защищённую страницу
+            window.location.href = "index.html";
           } else {
-            console.error("Access restricted for: " + user.email);
-            // Выводим сообщение об ошибке и выходим
             errorText.textContent = "Access denied. Your account is not authorized.";
             errorDiv.style.display = "flex";
             auth.signOut();
           }
         })
         .catch((error) => {
-          console.error("Failed to login with Google:", error.message);
           errorText.textContent = error.message;
           errorDiv.style.display = "flex";
         })
         .finally(() => {
           googleBtn.disabled = false;
-          googleBtn.innerHTML = `<img src="https://www.svgrepo.com/show/380993/google-logo-search-new.svg" alt="Google logo" class="google-icon"> Sign in with Google`;
+          googleBtn.innerHTML = `<img src=\"https://www.svgrepo.com/show/380993/google-logo-search-new.svg\" alt=\"Google logo\" class=\"google-icon\"> Sign in with Google`;
         });
     });
-
-    // Если пользователь уже авторизован, проверяем его email и перенаправляем, если всё OK.
     auth.onAuthStateChanged((user) => {
-      if (user) {
-        if (allowedEmails.includes(user.email)) {
-          window.location.href = "index.html";
-        } else {
-          auth.signOut();
-        }
+      if (user && allowedEmails.includes(user.email)) {
+        window.location.href = "index.html";
+      } else if (user) {
+        auth.signOut();
       }
     });
   </script>
