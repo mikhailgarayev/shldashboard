@@ -1476,28 +1476,35 @@
           }
         }
 
-        async function fetchEmployeeList() {
-          const data = await fetchSheetData("emplist!A1:G");
-          if (!data || data.length < 2) return;
-          for (let i = 1; i < data.length; i++) {
-            const row = data[i];
-            if (!row[0]) continue;
-            const empName = row[0].trim();
-            const empId = row[1]?.trim() || "";
-            const canRealloc = row[2]?.trim() || "";
-            const primePlatform = row[3]?.trim() || "";
-            const preferredPlatform = row[4]?.trim() || "";
-            const languages = row[5]?.trim() || "";
-            employeeData[empName] = {
-              id: empId,
-              canReallocate: canRealloc,
-              prime: primePlatform,
-              pref: preferredPlatform,
-              languages: languages,
-              capacity: row[6]?.trim() || "N/A"
-            };
-          }
+       async function fetchEmployeeList() {
+        // подтягиваем теперь столбцы A–H (включая H с датой старта)
+        const data = await fetchSheetData("emplist!A1:H");
+        if (!data || data.length < 2) return;
+      
+        for (let i = 1; i < data.length; i++) {
+          const row = data[i];
+          if (!row[0]) continue;  // если нет имени — пропускаем
+      
+          const empName         = row[0].trim();
+          const empId           = row[1]?.trim()   || "";
+          const canRealloc      = row[2]?.trim()   || "";
+          const primePlatform   = row[3]?.trim()   || "";
+          const preferredPlatform = row[4]?.trim() || "";
+          const languages       = row[5]?.trim()   || "";
+          const capacity        = row[6]?.trim()   || "N/A";
+          const startDateRaw    = row[7]?.trim()   || "";   // колонка H
+      
+          employeeData[empName] = {
+            id:           empId,
+            canReallocate: canRealloc,
+            prime:        primePlatform,
+            pref:         preferredPlatform,
+            languages:    languages,
+            capacity:     capacity,
+            startDate:    startDateRaw      // ← сохраняем дату старта
+          };
         }
+      }
 
         function generateInboxLink(empId) {
           return (
