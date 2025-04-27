@@ -2719,20 +2719,37 @@ function findCandidate() {
   // выбираем лучшего
   const best = candidates.sort((a,b) => b.score - a.score)[0];
 
+  // внутри findCandidate(), после const best = …
+const rec = window.shiftsQuinyxData
+  .find(r => r.name.toLowerCase() === best.name.toLowerCase()) || {};
+
+const shiftInfo = `${rec.platform || '–'} (${rec.shift || '–'})`;
+
+let breakTime = '–';
+if (Array.isArray(window.allBreaksData)) {
+  const br = window.allBreaksData.find(b =>
+    b.Name?.trim().toLowerCase() === best.name.trim().toLowerCase()
+  );
+  if (br) breakTime = br['Break Time'] || '–';
+}
+
+
   // собираем HTML для модалки
   const html = `
-    <div class="text-center">
-      <h4>${best.name}</h4>
-      <p>скор <strong>${best.score.toFixed(2)}</strong></p>
-      <ul class="list-unstyled text-left mx-auto" style="max-width:200px;">
-        <li>Опыт: <strong>${best.tenure}</strong> мес</li>
-        <li>Prime: <strong>${best.primeMatch ? 'да' : 'нет'}</strong></li>
-        <li>Pref: <strong>${best.prefMatch ? 'да' : 'нет'}</strong></li>
-        <li>Языков: <strong>${best.langCount}</strong></li>
-        <li>Capacity: <strong>${best.cap}</strong></li>
-      </ul>
-    </div>
-  `;
+  <div class="text-center">
+    <h4>${best.name}</h4>
+    <p>Score <strong>${best.score.toFixed(2)}</strong></p>
+    <ul class="list-unstyled text-left mx-auto" style="max-width:200px;">
+      <li>Current Shift: <strong>${shiftInfo}</strong></li>
+      <li>Break: <strong>${breakTime}</strong></li>
+      <li>Total working time: <strong>${best.tenure}</strong> months</li>
+      <li>Is this his prime platform: <strong>${best.primeMatch ? 'Yes' : 'No'}</strong></li>
+      <li>Is this his preferrable platform: <strong>${best.prefMatch ? 'Yes' : 'No'}</strong></li>
+      <li>Languages: <strong>${best.langCount}</strong></li>
+      <li>Chat capacity: <strong>${best.cap}</strong></li>
+    </ul>
+  </div>
+`;
 
   $('#candidateModalBody').html(html);
   $('#candidateModal').modal('show');
