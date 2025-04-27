@@ -2569,68 +2569,87 @@ document.getElementById('find-candidate')
 function findCandidate() {
   const target = document.getElementById('target-platform').value;
   if (!target) {
-    alert('Сначала выберите целевую платформу');
-    return;
+    return alert('Сначала выберите целевую платформу');
   }
   const now = new Date();
 
+  // 1) отбираем тех, кто может перекомплектоваться
   const pool = empList.filter(e => e.canReallocate === 'Yes');
+
+  const badStatuses = ['Will not attend the shift', 'Not attended the shift'];
+
   const candidates = pool.map(e => {
-    // 1) tenure
+    // **Новый блок: проверяем, есть ли в листе list1 статус “Will not…” или “Not attended…”**
+    const sheet = window.allShiftData || [];
+    // находим строку в полном диапазоне A1:BJ100, где встречается имя
+    const rowIdx = fetchedData.findIndex(row =>
+      row.some(cell => cell && cell.trim() === e.name)
+    );
+    if (rowIdx !== -1) {
+      // shiftData[0] — строка 5, поэтому для строки (idx+1) используем idx – 4
+      const shiftIdx = rowIdx - 4;
+      if (shiftIdx >= 1 && shiftIdx < sheet.length) {
+        const statusRow = sheet[shiftIdx];
+        if (statusRow.some(s =>
+          badStatuses.includes((s||'').trim())
+        )) {
+          // нашли “Will not…” или “Not attended…”
+          return null;
+        }
+      }
+    }
+    // **Конец нового блока**
+
+    // 2) tenure (месяцев)
     const start = e.startDate ? new Date(e.startDate) : new Date(0);
     const tenureMonths = Math.floor((now - start) / (1000*60*60*24*30));
 
-    // 2) проверяем смену
+    // 3) проверяем, на смене ли и не на брейке
     const shiftRec = window.shiftsQuinyxData.find(r =>
       r.name.toLowerCase() === e.name.toLowerCase()
     ) || {};
     const shiftStr = shiftRec.shift || '';
     const parts = shiftStr.split('-');
-    if (parts.length < 2) {
-      // если нет валидной смены — пропускаем
-      return null;
-    }
+    if (parts.length < 2) return null;
     const [startStr, endStr] = parts;
     const [sh, sm] = startStr.split(':').map(Number);
     const [eh, em] = endStr.split(':').map(Number);
     const sd = new Date(now); sd.setHours(sh, sm, 0, 0);
     const ed = new Date(now); ed.setHours(eh, em, 0, 0);
-    const onShift = now >= sd && now <= ed;
-    if (!onShift) return null;
-
-    // 3) короткий break-check (пример)
+    if (now < sd || now > ed) return null;
     const br = (window.allBreaksData||[]).find(b => b.Name === e.name);
-    const onBreak = br && (() => {
+    if (br) {
       const [bh, bm] = (br['Break Time']||'').split(':').map(Number);
       const bd = new Date(now); bd.setHours(bh, bm, 0, 0);
-      return now >= bd && now < new Date(bd.getTime() + 15*60*1000);
-    })();
-    if (onBreak) return null;
+      if (now >= bd && now < new Date(bd.getTime() + 15*60*1000)) {
+        return null;
+      }
+    }
 
-    // 4) рассчитываем score
+    // 4) prime/pref, languages, capacity и расчёт score
     const primeMatch = e.prime === target ? 1 : 0;
-    const prefMatch  = e.pref === target ? 1 : 0;
+    const prefMatch  = e.pref  === target ? 1 : 0;
     const langCount  = (e.languages || '').split(' ').length;
     const capacity   = e.maxChats || 0;
-    const weights = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
-    const maxCap = Math.max(...pool.map(x => x.maxChats),1);
+    const weights    = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
+    const maxCap     = Math.max(...pool.map(x => x.maxChats), 1);
     const score =
-      weights.t * Math.min(tenureMonths/24,1) +
+      weights.t  * Math.min(tenureMonths / 24, 1) +
       weights.pr * primeMatch +
       weights.pf * prefMatch +
-      weights.lg * (langCount/3) +
-      weights.cp * (capacity/maxCap);
+      weights.lg * (langCount / 3) +
+      weights.cp * (capacity / maxCap);
 
     return { ...e, tenureMonths, primeMatch, prefMatch, langCount, capacity, score };
-  }).filter(x => x); // убираем null
+  })
+  .filter(x => x); // отбрасываем null
 
   if (!candidates.length) {
-    document.getElementById('candidate-result').innerHTML =
-      '<div class="alert alert-warning">Нет доступных кандидатов</div>';
-    return;
+    return document.getElementById('candidate-result')
+      .innerHTML = '<div class="alert alert-warning">Нет доступных кандидатов</div>';
   }
-  const best = candidates.sort((a,b) => b.score - a.score)[0];
 
+  const best = candidates.sort((a,b) => b.score - a.score)[0];
   document.getElementById('candidate-result').innerHTML = `
     <div class="alert alert-info">
       <strong>Рекомендуемый кандидат:</strong><br/>
@@ -2638,8 +2657,7 @@ function findCandidate() {
       Опыт: ${best.tenureMonths} мес, Prime: ${best.primeMatch? 'да':'нет'}, 
       Pref: ${best.prefMatch? 'да':'нет'}, Языков: ${best.langCount}, 
       Capacity: ${best.capacity}
-    </div>
-  `;
+    </div>`;
 }
 
 
