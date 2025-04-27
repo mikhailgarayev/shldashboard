@@ -2586,10 +2586,10 @@ function findCandidate() {
   }
 
   // список “плохих” статусов в lowercase
-  const bad = ['will not attend the shift', 'not attended the shift'];
+  const badStatuses = ['will not attend the shift', 'not attended the shift'];
 
   const candidates = pool.map(e => {
-    // ——— 1. Находим её слот в основной табличке list1!A1:BJ100
+    // ——— 1. Проверка статуса из листа list1!AT6:BH35 ———
     const rowIdx = fetchedData.findIndex(row =>
       row.some(cell =>
         typeof cell === 'string' &&
@@ -2597,22 +2597,19 @@ function findCandidate() {
       )
     );
     if (rowIdx < 0) return null;
-
-    // смещение относительно строки 5 (первый в allShiftData)
-    const shiftIdx = rowIdx - 4;
-    const shifts = window.allShiftData || [];
+    const shiftIdx = rowIdx - 4;               // смещение для allShiftData
+    const shifts   = window.allShiftData || [];
     if (shiftIdx >= 1 && shiftIdx < shifts.length) {
       const statusRow = shifts[shiftIdx];
-      // если в любой ячейке строки встречается “will not…” или “not attended…”
       if (statusRow.some(cell =>
         typeof cell === 'string' &&
-        bad.some(bs => cell.trim().toLowerCase().includes(bs))
+        badStatuses.some(bs => cell.trim().toLowerCase().includes(bs))
       )) {
         return null; // отсекаем сразу
       }
     }
 
-    // ——— 2. Проверяем, действительно ли сейчас на смене
+    // ——— 2. Проверяем, действительно ли сейчас на смене ———
     const rec = window.shiftsQuinyxData.find(r =>
       r.name.toLowerCase() === e.name.toLowerCase()
     ) || {};
@@ -2625,7 +2622,7 @@ function findCandidate() {
     const ed = new Date(now); ed.setHours(eh, em, 0, 0);
     if (now < sd || now > ed) return null;
 
-    // ——— 3. Не на брейке
+    // ——— 3. Не на брейке ———
     const br = (window.allBreaksData || []).find(b =>
       b.Name.trim().toLowerCase() === e.name.trim().toLowerCase()
     );
@@ -2637,13 +2634,28 @@ function findCandidate() {
       }
     }
 
-    // ——— 4. Считаем score
-    const tenure = e.startDate
-      ? Math.floor((now - new Date(e.startDate)) / (1000*60*60*24*30))
-      : 0;
+    // ——— 4. Считаем опыт (tenure) и итоговый score ———
+    // Парсим дату старта из e.startDate в разных форматах
+    let startDateObj = new Date(e.startDate);
+    if (isNaN(startDateObj)) {
+      // пробуем форматы DD.MM.YYYY или DD/MM/YYYY
+      const parts = e.startDate.split(/[./]/);
+      if (parts.length === 3) {
+        const [d, m, y] = parts;
+        startDateObj = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`);
+      }
+    }
+    // рассчитываем tenure в месяцах
+    let tenure = 0;
+    if (!isNaN(startDateObj)) {
+      tenure = Math.floor((now - startDateObj) / (1000*60*60*24*30));
+    }
+
     const primeMatch = e.prime === target ? 1 : 0;
     const prefMatch  = e.pref  === target ? 1 : 0;
-    const langCount  = (e.languages || '').split(' ').length;
+    const langCount  = (e.languages || '').trim()
+      ? e.languages.trim().split(/\s+/).length
+      : 0;
     const cap        = e.maxChats  || 0;
     const w = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
     const maxCap = Math.max(...pool.map(x=>x.maxChats), 1);
@@ -2664,13 +2676,14 @@ function findCandidate() {
     return;
   }
 
+  // выбираем лучшего
   const best = candidates.sort((a,b) => b.score - a.score)[0];
   document.getElementById('candidate-result').innerHTML = `
     <div class="alert alert-info">
       <strong>Рекомендуемый кандидат:</strong><br/>
       ${best.name} (скор ${best.score.toFixed(2)})<br/>
-      Опыт: ${best.tenure} мес, Prime: ${best.primeMatch? 'да':'нет'}, 
-      Pref: ${best.prefMatch? 'да':'нет'}, Языков: ${best.langCount}, 
+      Опыт: ${best.tenure} мес, Prime: ${best.primeMatch ? 'да' : 'нет'}, 
+      Pref: ${best.prefMatch ? 'да' : 'нет'}, Языков: ${best.langCount}, 
       Capacity: ${best.cap}
     </div>`;
 }
