@@ -2601,7 +2601,7 @@ async function fetchAircallStatuses() {
 function findCandidate() {
   const target = document.getElementById('target-platform').value;
   if (!target) {
-    return alert('Сначала выберите целевую платформу');
+    return alert('Select the platform first');
   }
   const now = new Date();
 
@@ -2615,7 +2615,7 @@ function findCandidate() {
   const pool = window.empList.filter(e => e.canReallocate === 'Yes');
   if (!pool.length) {
     $('#candidateModalBody').html(
-      '<div class="alert alert-warning">Нет сотрудников для перекомплектовки</div>'
+      '<div class="alert alert-warning">No employees to reallocate</div>'
     );
     return $('#candidateModal').modal('show');
   }
@@ -2855,7 +2855,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1) Один раз заполняем dropdown платформ
   const sel = document.getElementById('target-platform');
   // очищаем (оставляем только заглушку)
-  sel.innerHTML = '<option value="">→ Перекомплектовать на…</option>';
+  sel.innerHTML = '<option value="">→ Reallocate to..</option>';
   platforms.forEach(p => sel.add(new Option(p.name, p.name)));
 
   // Переключатель темы
