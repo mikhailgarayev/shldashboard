@@ -89,13 +89,11 @@
         left: -250px;
         width: 250px;
         height: 100%;
-        background: rgba(255, 255, 255, 0.2); /* Transparent background */
-        backdrop-filter: blur(10px); /* Blurring effect */
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25); /* Subtle shadow */
+        background: var(--menu-bg-color);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
         transition: left 0.3s ease;
         z-index: 1099;
         padding: 30px 20px;
-        border-radius: 8px;
       }
 
       #sidebar.active {
@@ -129,8 +127,7 @@
       }
 
       body.dark-theme #sidebar {
-        background: rgba(43, 43, 43, 0.2); /* Darker transparent background for dark theme */
-        backdrop-filter: blur(10px);
+        background: #2b2b2b;
       }
 
       body.dark-theme #sidebar a {
@@ -157,17 +154,17 @@
 
       /* Панель фильтров */
       .filter-panel {
-          background: rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(15px);
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-          border-radius: 12px;
-          padding: 12px 24px;
-          margin: 0 auto 24px;
-          display: flex;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
+        background: var(--card-bg-color);
+        border-radius: 12px;
+        padding: 12px 24px;
+        margin: 0 auto 24px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: var(--card-shadow);
+        nax-width: 1200px;
+      }
       .filter-panel .filter-dropdown {
         background: #f7f8fa;
         border: 1px solid #e0e0e5;
@@ -194,19 +191,25 @@
         padding-bottom: 0;
       }
       .stats-card {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: 8px;
+        padding: 0.8rem 0.6rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        background: var(--card-bg-color);
         border-radius: 8px;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
         overflow: hidden;
+        border: 1px solid var(--card-border-color);
+        min-width: 180px;
       }
       .stats-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
       }
-
       .stats-card .stats-title {
         font-size: 0.75rem;
         color: #6c757d;
@@ -396,19 +399,20 @@
         gap: 10px;
       }
       .platform-card {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        flex: 1 1 220px;
+        min-width: 220px;
+        background: var(--card-bg-color);
+        color: var(--card-text-color);
         border-radius: 16px;
         padding: 20px;
+        box-shadow: var(--card-shadow);
         transition: transform 0.2s, box-shadow 0.2s;
+        overflow-wrap: break-word;
       }
       .platform-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        box-shadow: var(--card-hover-shadow);
       }
-
       .platform-card h5 {
         text-align: center;
         font-weight: 600;
@@ -659,12 +663,21 @@
         z-index: 1000;
       }
       #employee-modal {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        border-radius: 12px;
+        opacity: 0;
+        transform: translateX(-50%) scale(0.95);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        background: var(--card-bg-color);
+        color: var(--card-text-color);
+        border: 1px solid var(--card-border-color);
+        box-shadow: var(--card-shadow);
+        border-radius: 8px;
         padding: 20px;
+        z-index: 1001;
+        width: 330px;
+        pointer-events: none;
       }
 
       #employee-modal.show {
