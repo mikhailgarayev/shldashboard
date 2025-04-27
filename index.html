@@ -1921,18 +1921,6 @@ function applyFilters() {
 }
 
 
-  // навешиваем клик для открытия модалки
-  container.querySelectorAll(".employee-item").forEach(item => {
-    item.addEventListener("click", () =>
-      openEmployeeModal(item.getAttribute("data-employee"))
-    );
-  });
-
-  // обновляем статусы Aircall
-  setTimeout(() => fetchAircallStatuses().catch(console.error), 100);
-}
-
-
 
 function renderAircallCardWithStatuses(
   activeList,
