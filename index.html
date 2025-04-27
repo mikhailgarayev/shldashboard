@@ -1754,43 +1754,63 @@ function applyFilters() {
 
     // === обычные платформы ===
     if (platform.name !== "Aircall") {
+      // собираем активных
       let activeNames = [];
       for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
         const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
         if (nm) activeNames.push(nm);
       }
+      // собираем ушедших
       let awayData = [];
       for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
         const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
         if (!nm) continue;
-        const rsn = fetchedData[r]?.[platform.colIndexData]?.trim() || "";
-        awayData.push({ name: nm, reason: rsn });
+        awayData.push({
+          name: nm,
+          reason: fetchedData[r]?.[platform.colIndexData]?.trim() || ""
+        });
       }
 
-      // поиск
+      // поиск по имени
       if (currentSearchTerm) {
         const term = currentSearchTerm.toLowerCase();
-        activeNames = activeNames.filter((n) => n.toLowerCase().includes(term));
-        awayData = awayData.filter((item) => item.name.toLowerCase().includes(term));
+        activeNames = activeNames.filter(n => n.toLowerCase().includes(term));
+        awayData    = awayData.filter(a => a.name.toLowerCase().includes(term));
       }
 
-      // realloc/lang
-      activeNames = activeNames.filter((n) => passReallocAndLang(n));
-      awayData   = awayData.filter((item) => passReallocAndLang(item.name));
+      // realloc/lang фильтры
+      activeNames = activeNames.filter(n => passReallocAndLang(n));
+      awayData    = awayData.filter(a => passReallocAndLang(a.name));
 
-      // status filter
+      // status фильтр
       let showActive = true, showAway = true;
       if (currentStatusFilter === "active") showAway = false;
-      else if (currentStatusFilter === "away") showActive = false;
+      if (currentStatusFilter === "away")   showActive = false;
 
-      // собираем HTML
+      // --- сюда добавили проверку на «пустую» платформу ---
+      if (activeNames.length === 0 && awayData.length === 0) {
+        container.innerHTML += `
+          <div class="platform-card">
+            <h5>
+              <a href="${platform.url}" target="_blank" rel="noopener">${platform.name}</a>
+              <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name]||""}">
+                <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
+              </span>
+            </h5>
+            <p class="text-center text-danger" style="margin:1rem 0;">
+              ⚠️ No active employees
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      // если не пустая — рисуем обычную карточку со списками
       let html = `
         <div class="platform-card">
           <h5>
             <a href="${platform.url}" target="_blank" rel="noopener">${platform.name}</a>
-            <span class="info-icon" data-toggle="tooltip" title="${
-              platformInfo[platform.name] || ""
-            }">
+            <span class="info-icon" data-toggle="tooltip" title="${platformInfo[platform.name]||""}">
               <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
             </span>
           </h5>`;
@@ -1798,22 +1818,14 @@ function applyFilters() {
       // Active
       if (showActive) {
         html += `<p><small>Active (${activeNames.length})</small></p><ul>`;
-        activeNames.forEach((n) => {
-          const name = n.trim();
-          const isYou    = name.toLowerCase() === "mikhail garayev";
-          const isNaziya = name.toLowerCase() === "naziya orujova";
-          const extraEmoji = isNaziya ? " 🎀" : "";
-          const crown      = isYou    ? "👑" : "";
-
+        activeNames.forEach(name => {
           const rawShift   = getEmployeeShiftName(name);
           const shiftName  = shiftDisplayNames[rawShift] || rawShift;
           const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
-
           html += `
             <li class="employee-item" data-employee="${name}">
               <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
-              <span class="employee-name">${name}${extraEmoji}</span>
-              ${crown}
+              <span class="employee-name">${name}</span>
             </li>`;
         });
         html += `</ul>`;
@@ -1821,72 +1833,57 @@ function applyFilters() {
 
       // Away
       if (showAway) {
-        let brbCount = 0;
         html += `<p><small>Away (${awayData.length})</small></p><ul>`;
-        awayData.forEach(({ name, reason }) => {
-          const txt = reason || "";
-          let reasonClass = "";
-          if (/(Break|BRB)/.test(txt) && /-([0-9]{2}:[0-9]{2})/.test(txt)) {
-            reasonClass = "break-overdue";
-          }
-          if (txt.includes("BRB")) brbCount++;
-
+        awayData.forEach(({name, reason}) => {
           const rawShift   = getEmployeeShiftName(name);
           const shiftName  = shiftDisplayNames[rawShift] || rawShift;
           const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
-
+          const cls = (/(Break|BRB)/.test(reason)&& /-([0-9]{2}:[0-9]{2})/.test(reason))
+                      ? "break-overdue" : "";
           html += `
-            <li class="employee-item ${reasonClass}" data-employee="${name}">
+            <li class="employee-item ${cls}" data-employee="${name}">
               <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
               <span class="employee-name">${name}</span>
-              ${txt ? `<span class="text-muted">(${txt})</span>` : ""}
+              ${reason? `<span class="text-muted">(${reason})</span>` : ""}
             </li>`;
         });
         html += `</ul>`;
-
-        if (brbCount >= 2) {
-          html += `
-            <p style="text-align:center;color:red;font-size:0.95rem;">
-              <span title="2 or more on BRB">&#9888;</span>
-              <span style="margin-left:6px;">2 or more on BRB</span>
-            </p>`;
-        }
       }
 
       html += `</div>`;
       container.innerHTML += html;
 
     } else {
-      // === Aircall ===
-      let filteredActive = aircallActive.filter((n) => n.toLowerCase() !== "away");
-      let filteredAway   = aircallAway.filter(({ name }) => name.toLowerCase() !== "away");
+      // === Aircall === (без изменений) ===
+      let filteredActive = aircallActive.filter(n => n.toLowerCase() !== "away");
+      let filteredAway   = aircallAway.filter(a => a.name.toLowerCase() !== "away");
 
       if (currentSearchTerm) {
         const term = currentSearchTerm.toLowerCase();
-        filteredActive = filteredActive.filter((n) => n.toLowerCase().includes(term));
-        filteredAway   = filteredAway.filter(({ name }) => name.toLowerCase().includes(term));
+        filteredActive = filteredActive.filter(n => n.toLowerCase().includes(term));
+        filteredAway   = filteredAway.filter(a => a.name.toLowerCase().includes(term));
       }
-      filteredActive = filteredActive.filter((n) => passReallocAndLang(n));
-      filteredAway   = filteredAway.filter(({ name }) => passReallocAndLang(name));
+      filteredActive = filteredActive.filter(n => passReallocAndLang(n));
+      filteredAway   = filteredAway.filter(a => passReallocAndLang(a.name));
 
       const showActive = currentStatusFilter !== "away";
       const showAway   = currentStatusFilter !== "active";
 
       renderAircallCardWithStatuses(filteredActive, filteredAway, showActive, showAway);
     }
-  }); // end platforms.forEach
+  });
 
   // навешиваем клик для открытия модалки
   container.querySelectorAll(".employee-item").forEach(item => {
-    item.addEventListener("click", () => {
-      openEmployeeModal(item.getAttribute("data-employee"));
-    });
+    item.addEventListener("click", () =>
+      openEmployeeModal(item.getAttribute("data-employee"))
+    );
   });
 
-setTimeout(() => {
-    fetchAircallStatuses().catch(console.error);
-  }, 100);
+  // обновляем статусы Aircall
+  setTimeout(() => fetchAircallStatuses().catch(console.error), 100);
 }
+
 
 
 function renderAircallCardWithStatuses(
