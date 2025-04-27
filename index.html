@@ -1206,6 +1206,41 @@
         <ul id="modal-platform-list" style="margin-left: 20px; font-size:0.9rem;"></ul>
 
       </div>
+
+      <div
+  class="modal fade"
+  id="candidateModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="candidateModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="candidateModalLabel">Рекомендованный кандидат</h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="candidateModalBody">
+        <!-- сюда JS вставит результат -->
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-dismiss="modal"
+        >Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
       <!-- Кнопки -->
       <div style="padding: 20px; text-align: right;">
         <button id="modal-inbox-link" class="btn btn-primary" style="margin-right: 10px;">Open Inbox</button>
@@ -2586,15 +2621,16 @@ function findCandidate() {
   // 1) только те, кто может перекомплектоваться
   const pool = window.empList.filter(e => e.canReallocate === 'Yes');
   if (!pool.length) {
-    document.getElementById('candidate-result').innerHTML =
-      '<div class="alert alert-warning">Нет сотрудников для перекомплектовки</div>';
-    return;
+    $('#candidateModalBody').html(
+      '<div class="alert alert-warning">Нет сотрудников для перекомплектовки</div>'
+    );
+    return $('#candidateModal').modal('show');
   }
 
   const badStatuses = ['will not attend the shift', 'not attended the shift'];
 
   const candidates = pool.map(e => {
-    // ——— 1. Проверка «не будет/не пришёл» ———
+    // 1. Проверка «не будет/не пришёл»
     const rowIdx = fetchedData.findIndex(row =>
       row.some(cell =>
         typeof cell === 'string' &&
@@ -2613,7 +2649,7 @@ function findCandidate() {
       }
     }
 
-    // ——— 2. На смене? ———
+    // 2. На смене?
     const rec = window.shiftsQuinyxData.find(r =>
       r.name.toLowerCase() === e.name.toLowerCase()
     ) || {};
@@ -2626,7 +2662,7 @@ function findCandidate() {
     const ed = new Date(now); ed.setHours(eh, em, 0, 0);
     if (now < sd || now > ed) return null;
 
-    // ——— 3. Не на брейке? ———
+    // 3. Не на брейке?
     const br = (window.allBreaksData || []).find(b =>
       b.Name.trim().toLowerCase() === e.name.trim().toLowerCase()
     );
@@ -2638,8 +2674,8 @@ function findCandidate() {
       }
     }
 
-    // ——— 4. Расчёт опыта и скоринга ———
-    // tenure
+    // 4. Расчёт опыта и скоринга
+    // — опыт
     let startDateObj = new Date(e.startDate);
     if (isNaN(startDateObj)) {
       const pd = e.startDate.split(/[./]/);
@@ -2652,22 +2688,22 @@ function findCandidate() {
       ? 0
       : Math.floor((now - startDateObj) / (1000*60*60*24*30));
 
-    // prime match
+    // — prime
     const primeMatch = e.prime === target ? 1 : 0;
 
-    // pref match — разбиваем на массив и сравниваем через canonical
-    const prefList = (e.pref || '')
-      .split(',')
-      .map(s => canonical(s));
+    // — pref
+    const prefList = (e.pref || '').split(',').map(s => canonical(s));
     const prefMatch = prefList.some(pk =>
       pk === targetKey || targetKey.includes(pk) || pk.includes(targetKey)
     ) ? 1 : 0;
 
-    // остальное
-    const langCount = (e.languages || '').trim()
+    // — языки и capacity
+    const langCount = e.languages.trim()
       ? e.languages.trim().split(/\s+/).length
       : 0;
     const cap = e.maxChats || 0;
+
+    // — финальный score
     const w = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
     const maxCap = Math.max(...pool.map(x => x.maxChats), 1);
     const score =
@@ -2678,26 +2714,36 @@ function findCandidate() {
       w.cp * (cap/maxCap);
 
     return { ...e, tenure, primeMatch, prefMatch, langCount, cap, score };
-  })
-  .filter(x => x);
+  }).filter(x => x);
 
   if (!candidates.length) {
-    document.getElementById('candidate-result').innerHTML =
-      '<div class="alert alert-warning">Нет доступных кандидатов</div>';
-    return;
+    $('#candidateModalBody').html(
+      '<div class="alert alert-warning">Нет доступных кандидатов</div>'
+    );
+    return $('#candidateModal').modal('show');
   }
 
+  // выбираем лучшего
   const best = candidates.sort((a,b) => b.score - a.score)[0];
-  document.getElementById('candidate-result').innerHTML = `
-    <div class="alert alert-info">
-      <strong>Рекомендуемый кандидат:</strong><br/>
-      ${best.name} (скор ${best.score.toFixed(2)})<br/>
-      Опыт: ${best.tenure} мес, Prime: ${best.primeMatch ? 'да' : 'нет'}, 
-      Pref: ${best.prefMatch ? 'да' : 'нет'}, Языков: ${best.langCount}, 
-      Capacity: ${best.cap}
-    </div>`;
-}
 
+  // собираем HTML для модалки
+  const html = `
+    <div class="text-center">
+      <h4>${best.name}</h4>
+      <p>скор <strong>${best.score.toFixed(2)}</strong></p>
+      <ul class="list-unstyled text-left mx-auto" style="max-width:200px;">
+        <li>Опыт: <strong>${best.tenure}</strong> мес</li>
+        <li>Prime: <strong>${best.primeMatch ? 'да' : 'нет'}</strong></li>
+        <li>Pref: <strong>${best.prefMatch ? 'да' : 'нет'}</strong></li>
+        <li>Языков: <strong>${best.langCount}</strong></li>
+        <li>Capacity: <strong>${best.cap}</strong></li>
+      </ul>
+    </div>
+  `;
+
+  $('#candidateModalBody').html(html);
+  $('#candidateModal').modal('show');
+}
 
 
         // Инициализация Bootstrap-Select и обработка изменения выбора платформ
