@@ -23,7 +23,7 @@
       /* Grid layout: header + sidebar + main + right panel */
       html, body { height: 100%; margin: 0; padding: 0; }
       .dashboard-header { grid-area: header; }
-      .dashboard-layout { display: grid; grid-template-rows: auto 1fr; grid-template-columns: 0 1fr 300px; grid-template-areas: "header header header" "sidebar main right"; transition: grid-template-columns .3s; }
+      .dashboard-layout { display: grid; grid-template-rows: auto 1fr; grid-template-columns: 0 1fr 300px; grid-template-areas: "header header header" "sidebar main right"; transition: grid-template-columns .3s; padding-top: 60px;}
       aside.sidebar { overflow: hidden; }
       main.main-content { grid-area: main; padding:1rem 2rem; overflow-y:auto; }
       aside.right-panel { grid-area: right; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-left:1px solid rgba(255,255,255,0.3); box-shadow:-4px 0 24px rgba(0,0,0,0.08); border-radius:16px 0 0 16px; padding:1rem; overflow-y:auto; }
@@ -59,14 +59,55 @@
       .filter-panel .filter-dropdown:hover, .filter-panel .filter-dropdown:focus, .filter-panel .search-input:hover, .filter-panel .search-input:focus { background:rgba(255,255,255,0.35); border-color:rgba(255,255,255,0.6); outline:none; }
       
       /* Stats cards grid */
-      #summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:1rem; max-width:1150px; margin:0 auto; }
+      #summary-grid {
+        display: grid !important;
+        /* сколько угодно колонок, но минимум по 180px и максимум 1fr */
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 1rem !important;
+        /* тянем на всю ширину родителя */
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding-bottom: 0;
+        justify-items: stretch;
+      }
+
       .stats-title { font-size:.75rem; color:#6c757d; text-transform:uppercase; letter-spacing:.05rem; }
       .stats-value { font-size:1.4rem; font-weight:700; margin:0.3rem 0; }
       .stats-card.small-font-card .stats-value { font-size:1rem; }
 
       #find-candidate { border-radius: 20px;}
       /* Platforms row */
-      .platforms-row { display:flex; flex-wrap:wrap; gap:1rem; }
+      /* 1) Общие статы — пусть остаются flex’ом или как вам удобно */
+      #summary-general {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  margin-bottom: 1.5rem;
+}
+
+
+/* 2) Платформенные статы — grid с тем же шаблоном, что и platform-card */
+#summary-platforms {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  margin: 0 0 1.5rem 0;
+}
+
+/* 3) Платформенные карточки — тоже grid, точно по этим же колонкам */
+.platforms-row {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  margin: 0 !important;
+  align-items: start !important;
+}
+
+
       .platform-card { flex:1 1 220px; min-width:200px; overflow-wrap:break-word; }
       .platform-card h5 { margin-bottom:.5rem; font-weight:600; }
       .platform-card ul { list-style:none; padding:0; margin:0; }
@@ -156,13 +197,25 @@
         background: var(--menu-bg-color);
         box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
         transition: transform .3s;
-        z-index: 90;
+        z-index: 200 !important;
         padding: 30px 20px;
         transform: translate(-100%);
+      }
+      aside.sidebar #sidebar {
+        position: fixed;             /* чтобы не зависело от потока */
+        top: 60px !important;        /* под шапку */
+        height: calc(100% - 60px);   /* занимать остальную высоту */
+        z-index: 90;                 /* чуть ниже шапки */
       }
 
       #sidebar.active {
         transform: translateX(0);
+      }
+      #sidebar-close {
+        position-absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 91;
       }
 
       #sidebar a {
@@ -267,15 +320,14 @@
         border-radius: 20px;
       }
       #summary-grid {
-        display: grid !important;
-        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-        grid-auto-rows: auto;
-        gap: 0.5rem 0.75rem !important;
-        max-width: 1150px !important;
-        margin: 0 auto 2rem;
-        margin-bottom: 0.5rem !important;
-        padding-bottom: 0;
-      }
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+      gap: 1rem !important;
+      width: 100% !important;      /* тянем на всю ширину родителя */
+      margin: 0 !important;        /* без авто-отступов */
+      padding: 0;
+    }
+
       .stats-card {
         display: flex;
         flex-direction: column;
@@ -478,14 +530,6 @@
       }
 
       /* Карточки и таблицы */
-      .platforms-row {
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: flex-start;
-        justify-content: space-between;
-        overflow-x: auto;
-        gap: 10px;
-      }
       .platform-card {
         flex: 1 1 220px;
         min-width: 220px;
@@ -563,6 +607,7 @@
         overflow-wrap: break-word;
         font-size: 1.2rem;
         font-weight: 700;
+        border-radius:16px;
       }
       .shift-summary-card:hover {
         transform: translateY(-3px);
@@ -803,6 +848,7 @@
         color: #0056b3;
       }
       .dashboard-header {
+        position: fixed;
         display: flex;
         padding: 1rem 2rem;
         min-height: 60px;
@@ -814,9 +860,15 @@
         border-radius: 0 0 12px 12px;
         position: sticky;
         top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
         z-index: 100;
       }
       .filters-wrapper {
+        displax: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
         border-radius: 30px !important;
         padding: 16px 24px !important;
         background: rgba(255, 255, 255, 0.1);
@@ -837,8 +889,15 @@
       border-radius: 20px;
     }
 
+    .filters-wrapper .bootstrap-select {
+  width: auto !important;
+  flex-shrink: 0;            /* не даём ужиматься */
+  margin-right: 0.5rem;      /* чуть отступа справа */
+}
+
     /* Применяем тот же стиль к кнопке bootstrap-select */
     .filters-wrapper .bootstrap-select .dropdown-toggle.filter-dropdown {
+      flex: 0 0 auto !important;
       box-sizing: border-box !important;
       height: 40px !important;
       padding: 8px 16px !important;
@@ -907,6 +966,19 @@
   background: var(--card-bg-color) !important;
   border: 1px solid var(--card-border-color) !important;
   box-shadow: none !important;
+}
+      /* Используем вашу переменную тёмного фона */
+.shift-summary-card,
+aside.right-panel .alert-card {
+  background: var(--card-bg-color) !important;
+  border: 1px solid var(--card-border-color) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* И чтобы текст внутри них тоже был читабельным */
+.shift-summary-card,
+aside.right-panel .alert-card {
+  color: var(--card-text-color) !important;
 }
 
       
@@ -978,6 +1050,26 @@
       body.dark-theme .platform-card .text-muted {
       color: #f1f1f1 !important;
      }
+     /* Увеличиваем размер шрифта и делаем чуть погуще */
+    #user-display-name {
+      font-size: 1.1rem;      /* вы можете подправить под свой вкус */
+      font-weight: 500;
+    }
+
+    /* В светлой теме пусть остаётся ваш стандартный цвет */
+    #user-display-name {
+      color: var(--text-color);
+    }
+
+    /* В тёмной теме — строгий белый */
+    body.dark-theme #user-display-name {
+      color: #ffffff !important;
+    }
+
+     body.dark-theme #user-display-name.text-muted {
+      color: #ffffff !important;
+    }
+
 
      /* для контейнера фильтров без тени в темной теме */
       body.dark-theme .filter-panel,
@@ -1107,6 +1199,20 @@ body.dark-theme .bootstrap-select .dropdown-toggle {
       border: 1px solid var(--card-border-color) !important;
       border-radius: 20px !important;
     }
+    
+    /* Сброс фонового цвета и установка белого текста для второго столбца таблицы в dark-theme */
+body.dark-theme .shift-summary-grid td:nth-child(2),
+body.dark-theme .shift-summary-grid th:nth-child(2) {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* Если внутри ячеек ещё есть span-элементы с фоном, сбросим и у них */
+body.dark-theme .shift-summary-grid td:nth-child(2) span {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
 
 
       @keyframes pulse {
@@ -1265,7 +1371,23 @@ body.dark-theme .bootstrap-select .dropdown-toggle {
       <!-- Sidebar -->
       <aside class="sidebar">
         <div id="sidebar">
-          <div class="close-btn" id="sidebar-close">&times;</div>
+          <!-- новый close-btn с SVG-стрелкой -->
+          <div class="close-btn" id="sidebar-close" title="Close sidebar">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24" height="24"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 
+                  5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 
+                  1 0-.708l6-6a.5.5 0 0 1 .708 0z"
+              />
+            </svg>
+          </div>
           <a href="https://mikhailgarayev.github.io/shldashboard/shifts.html">🗓️ Today`s Shifts by Platform</a>
           <a href="https://mikhailgarayev.github.io/shldashboard/allocations.html">📈 Allocation stats</a>
           <a href="https://my.yigim.az/login" target="_blank">📊 YIGIM Dashboard</a>
@@ -1351,10 +1473,15 @@ body.dark-theme .bootstrap-select .dropdown-toggle {
     </div>
 
         <!-- Stats Cards -->
-        <div id="summary-grid"></div>
+        <!-- 1) Общие карточки (On shift now, Should be, Not here, WNATS, Weather) -->
+        <div id="summary-general"></div>
 
-        <!-- Platforms -->
+        <!-- 2) Только платформенные статы (CS, CS/Post Order, PSR, SiMo, Aircall, Venue, ST) -->
+        <div id="summary-platforms"></div>
+
+        <!-- 3) Платформенные platform-card -->
         <div id="platforms-container" class="platforms-row"></div>
+
       </main>
 
       <!-- Right Panel: Breaks & Shift-Overs -->
@@ -1433,16 +1560,7 @@ body.dark-theme .bootstrap-select .dropdown-toggle {
       <button id="modal-admin-link" class="btn btn-outline-primary">Admin Panel</button>
     </div>
   </div>
-    <div class="dashboard-container">
-      <div class="info-cards d-flex flex-wrap gap-3 my-3 px-3">
-      </div>
-      <!-- Контент -->
-      <div id="shift-summary" class="shift-summary-card">
-  <!-- flex-контейнер вместо таблицы -->
-  <div id="summary-grid" class="d-flex flex-wrap gap-3 justify-content-center">
-    <!-- сюда через JS будут вставлены все stats-card -->
-  </div>
-</div>
+
 
       <div id="platforms-container" class="platforms-row"></div>
     <!-- Секция с двумя карточками: Shift-Overs и Breaks -->
@@ -1525,82 +1643,69 @@ body.dark-theme .bootstrap-select .dropdown-toggle {
         // ===============================
         // WEATHER SECTION WITH CACHING & EMOJI
         const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d";
-        const CITY_NAME = "Baku,AZ";
-        async function fetchWeather() {
-          const cacheKey = "bakuWeatherData";
-          const cacheTimeKey = "bakuWeatherTimestamp";
-          const now = Date.now();
-          const cacheTTL = 15 * 60 * 1000; // 15 минут
 
-          const cachedData = localStorage.getItem(cacheKey);
-          const cachedTimestamp = localStorage.getItem(cacheTimeKey);
+/**
+ * Универсальная функция: запрашивает погоду для произвольного города и кладёт
+ * результат в указанные элементы.
+ *
+ * @param {string} city       — строка вида "Ganja,AZ"
+ * @param {string} tempElemId — id блока для температуры (например "temp-ganja")
+ * @param {string} windElemId — id блока для ветра       (например "wind-ganja")
+ */
+async function fetchWeatherFor(city, tempElemId, windElemId) {
+  const cacheKey     = city + "_weatherData";
+  const cacheTimeKey = city + "_weatherTimestamp";
+  const now          = Date.now();
+  const cacheTTL     = 15 * 60 * 1000; // 15 минут
 
-          if (cachedData && cachedTimestamp && now - cachedTimestamp < cacheTTL) {
-            const data = JSON.parse(cachedData);
-            updateWeatherUI(data);
-            return;
-          }
+  let data;
+  const rawData      = localStorage.getItem(cacheKey);
+  const rawTs        = localStorage.getItem(cacheTimeKey);
 
-          const url = `https://api.openweathermap.org/data/2.5/weather?q=${CITY_NAME}&units=metric&appid=${OPENWEATHER_API_KEY}`;
-          try {
-            const res = await fetch(url);
-            if (!res.ok) {
-              console.error("Ошибка получения погоды: " + res.statusText);
-              return;
-            }
-            const data = await res.json();
-            localStorage.setItem(cacheKey, JSON.stringify(data));
-            localStorage.setItem(cacheTimeKey, now);
-            updateWeatherUI(data);
-          } catch (err) {
-            console.error("Ошибка при запросе погоды: " + err);
-          }
-        }
-        function updateWeatherUI(data) {
-          const temperature = data.main?.temp ?? null;
-          const windSpeed = data.wind?.speed;
-          // Определяем погодный смайлик
-          let weatherEmoji = "";
-          if (data.weather && data.weather.length > 0) {
-            const condition = data.weather[0].main;
-            switch (condition) {
-              case "Clear":
-                weatherEmoji = "☀️";
-                break;
-              case "Clouds":
-                weatherEmoji = "☁️";
-                break;
-              case "Rain":
-              case "Drizzle":
-                weatherEmoji = "🌧️";
-                break;
-              case "Thunderstorm":
-                weatherEmoji = "⛈️";
-                break;
-              case "Snow":
-                weatherEmoji = "❄️";
-                break;
-              default:
-                weatherEmoji = "";
-                break;
-            }
-          }
+  if (rawData && rawTs && now - rawTs < cacheTTL) {
+    data = JSON.parse(rawData);
+  } else {
+    const url = `https://api.openweathermap.org/data/2.5/weather` +
+                `?q=${encodeURIComponent(city)}` +
+                `&units=metric&appid=${OPENWEATHER_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("Weather API error for", city, res.statusText);
+      return;
+    }
+    data = await res.json();
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(cacheTimeKey, now);
+  }
 
-          document.getElementById("baku-temp").textContent =
-            temperature ? `${Math.round(temperature)} °C ${weatherEmoji}` : "-- °C";
-            // показываем 0 m/s если скорость равна нулю, и только при undefined/null рисуем "--"
-            const windEl = document.getElementById("baku-wind");
-            // получаем из data.wind.speed, если есть, иначе undefined
-            const rawSpeed = data.wind?.speed;
-            // если число или 0
-            const hasSpeed = typeof rawSpeed === 'number';
-            // округляем до одной цифры, если число, иначе оставляем плейсхолдер
-            const displaySpeed = hasSpeed
-              ? Math.round(rawSpeed * 10) / 10
-              : '--';
+  // Build display strings
+  const tempRaw   = data.main?.temp;
+  const windRaw   = data.wind?.speed;
+  const emoji     = (() => {
+    const cond = data.weather?.[0]?.main;
+    switch(cond){
+      case "Clear":       return "☀️";
+      case "Clouds":      return "☁️";
+      case "Rain": 
+      case "Drizzle":     return "🌧️";
+      case "Thunderstorm":return "⛈️";
+      case "Snow":        return "❄️";
+      default:            return "";
+    }
+  })();
 
-            windEl.textContent = `${displaySpeed} m/s`;
-          }
+  const tempText = (tempRaw != null)
+    ? `${Math.round(tempRaw)} °C ${emoji}`
+    : "-- °C";
+  const windText = (typeof windRaw === "number")
+    ? `${Math.round(windRaw*10)/10} m/s`
+    : "-- m/s";
+
+  // Вставляем в DOM
+  document.getElementById(tempElemId).textContent = tempText;
+  document.getElementById(windElemId).textContent = windText;
+}
+
         
         // ===============================
 
@@ -1632,7 +1737,7 @@ body.dark-theme .bootstrap-select .dropdown-toggle {
         const SHIFT_RANGE = "list1!AT5:BH47";
         const RANGE = "list1!A1:BJ100";
         const RESPONSIBLES_RANGE = "list1!B5:C27";
-        const BREAKS_RANGE = "prebreaks!A1:D40";
+        const BREAKS_RANGE = "prebreaks!A1:D80";
         const SHIFT_QUINYX_RANGE = "shiftsquinyx!B3:C"; 
 
         let employeeData = {};
@@ -2079,41 +2184,42 @@ function applyFilters() {
         }
       }
 
-      // — Away (только если есть)
-      if (showAway && awayData.length > 0) {
-        let brbCount = 0;
-        html += `<p><small>Away (${awayData.length})</small></p><ul>`;
-        awayData.forEach(({ name, reason }) => {
-          const txt = reason || "";
-          let reasonClass = "";
-          if (/(Break|BRB)/.test(txt) && /-\d{1,2}:\d{2}(?::\d{2})?/.test(txt)) {
-            reasonClass = "break-overdue";
-          }
-          if (txt.includes("BRB")) brbCount++;
+// — Always render Away section, even if awayData.length === 0
+if (showAway) {
+  let brbCount = 0;
+  html += `<p><small>Away (${awayData.length})</small></p><ul>`;
+  awayData.forEach(({ name, reason }) => {
+    const txt = reason || "";
+    let reasonClass = "";
+    // mark overdue breaks
+    if (/(Break|BRB)/.test(txt) && /-\d{1,2}:\d{2}(?::\d{2})?/.test(txt)) {
+      reasonClass = "break-overdue";
+    }
+    if (txt.includes("BRB")) brbCount++;
 
-          const rawShift = getEmployeeShiftName(name);
-          const shiftName = shiftDisplayNames[rawShift] || rawShift;
-          const badgeClass =
-            shiftBadgeClasses[shiftName] || "badge-secondary";
+    const rawShift   = getEmployeeShiftName(name);
+    const shiftName  = shiftDisplayNames[rawShift] || rawShift;
+    const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
 
-          html += `
-            <li class="employee-item ${reasonClass}" data-employee="${name}">
-              <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
-              <span class="employee-name">${name}</span>
-              ${txt ? `<span class="text-muted">(${txt})</span>` : ""}
-            </li>
-          `;
-        });
-        html += `</ul>`;
-        if (brbCount >= 2) {
-          html += `
-            <p style="text-align:center;color:red;font-size:0.95rem;">
-              <span title="2 or more on BRB">&#9888;</span>
-              <span style="margin-left:6px;">2 or more on BRB</span>
-            </p>
-          `;
-        }
-      }
+    html += `
+      <li class="employee-item ${reasonClass}" data-employee="${name}">
+        <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
+        <span class="employee-name">${name}</span>
+        ${txt ? `<span class="text-muted">(${txt})</span>` : ""}
+      </li>
+    `;
+  });
+  html += `</ul>`;
+  if (brbCount >= 2) {
+    html += `
+      <p style="text-align:center;color:red;font-size:0.95rem;">
+        <span title="2 or more on BRB">&#9888;</span>
+        <span style="margin-left:6px;">2 or more on BRB</span>
+      </p>
+    `;
+  }
+}
+
 
       html += `</div>`;
       container.innerHTML += html;
@@ -2180,24 +2286,28 @@ function renderAircallCardWithStatuses(
       </h5>`;
 
   // Active
-  if (showActive) {
-    html += `<p><small>Active (${activeList.length})</small></p><ul id="aircall-active-list">`;
-    activeList.forEach((name, i) => {
-      const rawShift   = getEmployeeShiftName(name);
-      const shiftName  = shiftDisplayNames[rawShift] || rawShift;
-      const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
-      const safeId     = `aircall-active-${i}`;
-      html += `
-        <li id="${safeId}" class="employee-item d-flex align-items-center" data-employee="${name}">
-          <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
-            ${shiftName}
-          </span>
-          <span class="employee-name" style="margin-right:6px;">${name}</span>
-          &nbsp;–&nbsp;<span class="aircall-status">Checking...</span>
-        </li>
-      `;
-    });
-    html += `</ul>`;
+    if (showActive) {
+    if (activeList.length === 0) {
+      html += `<p class="text-center text-warning">⚠️ No active employees</p>`;
+    } else {
+      html += `<p><small>Active (${activeList.length})</small></p><ul id="aircall-active-list">`;
+      activeList.forEach((name, i) => {
+        const rawShift   = getEmployeeShiftName(name);
+        const shiftName  = shiftDisplayNames[rawShift] || rawShift;
+        const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
+        const safeId     = `aircall-active-${i}`;
+        html += `
+          <li id="${safeId}" class="employee-item d-flex align-items-center" data-employee="${name}">
+            <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
+              ${shiftName}
+            </span>
+            <span class="employee-name" style="margin-right:6px;">${name}</span>
+            &nbsp;–&nbsp;<span class="aircall-status">Checking...</span>
+          </li>
+        `;
+      });
+      html += `</ul>`;
+    }
   }
 
   // Away
@@ -2243,8 +2353,10 @@ function renderAircallCardWithStatuses(
 
   function renderShiftSummary(data) {
   // контейнер, где рендерятся все stats-card
-  const container = document.getElementById("summary-grid");
-  container.innerHTML = "";
+  const generalContainer  = document.getElementById("summary-general");
+const platformContainer = document.getElementById("summary-platforms");
+generalContainer.innerHTML  = "";
+platformContainer.innerHTML = "";
 
   // ваши карточки: title — заголовок, value — строка из ячейки (например "2, Alice, Bob"), away — опционально
   const summaryCards = [
@@ -2253,9 +2365,10 @@ function renderAircallCardWithStatuses(
     { title: "CS",            value: data[6][31] || "", away: data[8][31] || "" },
     { title: "CS/Post Order", value: data[6][33] || "", away: data[8][33] || "" },
     { title: "PSR",           value: data[6][35] || "", away: data[8][35] || "" },
-    { title: "Venue",         value: data[6][37] || "", away: data[8][37] || "" },
+    { title: "SiMo",          value: data[6][41] || "", away: data[8][41] || "" },
     { title: "Aircall",       value: data[6][39] || "", away: data[8][39] || "" },
-    { title: "Simo",          value: data[6][41] || "", away: data[8][41] || "" },
+    { title: "Venue",         value: data[6][37] || "", away: data[8][37] || "" },
+    { title: "Trainee",       value: data[11][41] || "", away: data[13][41] || "" },
     { title: "ST",            value: data[6][43] || "", away: data[8][43] || "" },
     // Special: Not here и WNATS тоже делают из столбца 29 и 27, плюс детали из колонки 10
     { 
@@ -2309,35 +2422,60 @@ function renderAircallCardWithStatuses(
         <div class="stats-title">${card.title}</div>
         <div class="stats-value">${card.value}</div>
       `;
-      if (card.away) {
-        html += `<div class="stats-value" style="font-size:0.9rem; color:#666;">Away: ${card.away}</div>`;
-      }
+      html += `
+      <div class="stats-value" style="font-size:0.9rem; color:#666;">
+      Away: ${card.away || 0}
+      </div>`;
+
       div.innerHTML = html;
     }
 
-    container.appendChild(div);
+    // список названий «платформенных» карточек
+const platformTitles = [
+  "CS",
+  "CS/Post Order",
+  "PSR",
+  "SiMo",
+  "Aircall",
+  "Venue",
+  "Trainee",
+  "ST"
+];
+
+// если это карточка платформы — в платформенный грид,
+// иначе — в общий контейнер
+if (platformTitles.includes(card.title)) {
+  platformContainer.appendChild(div);
+} else {
+  generalContainer.appendChild(div);
+}
   });
 
   // вставляем погоду как последнюю карточку
   // новый код — в конце renderShiftSummary
-  const weatherCard = document.createElement("div");
-  weatherCard.className = "stats-card";
-  weatherCard.id = "weather-card";
-  weatherCard.innerHTML = `
-    <div class="stats-title">Baku Weather</div>
-    <div class="stats-value" id="baku-temp">-- °C</div>
+    // вставляем карточки погоды для всех городов
+    const weatherCities = [
+    { city: "Baku,AZ",        title: "Baku Weather",       tempId: "temp-baku",  windId: "wind-baku" },
+    { city: "Ganja,AZ",       title: "Ganja Weather",      tempId: "temp-ganja", windId: "wind-ganja" },
+    { city: "Lankaran,AZ",    title: "Lankaran Weather",   tempId: "temp-lank",  windId: "wind-lank" },
+    { city: "Nakhchivan,AZ",  title: "Nakhchivan Weather", tempId: "temp-nakh",  windId: "wind-nakh" },
+    { city: "Mingachevir,AZ", title: "Mingachevir Weather",tempId: "temp-ming",  windId: "wind-ming" }
+  ];
 
-    <div class="stats-title" style="margin-top:.5rem;">Wind Speed</div>
-    <div class="stats-value small" id="baku-wind">-- m/s</div>
-  `;
-  container.appendChild(weatherCard);
+  weatherCities.forEach(({ city, title, tempId, windId }) => {
+    const card = document.createElement("div");
+    card.className = "stats-card";
+    card.innerHTML = `
+      <div class="stats-title">${title}</div>
+      <div class="stats-value" id="${tempId}">--</div>
+      <div class="stats-title" style="margin-top:.5rem;">Wind Speed</div>
+      <div class="stats-value small" id="${windId}">--</div>
+    `;
+    generalContainer.appendChild(card);
+    // запускаем запрос именно для этого города и этих id
+    fetchWeatherFor(city, tempId, windId);
+  });
 
-
-  // реинициализируем Bootstrap-Tooltip для всех [data-toggle="tooltip"]
-  $('[data-toggle="tooltip"]').tooltip();
-
-  // и подгружаем погоду
-  fetchWeather();
 }
 
 function renderResponsiblePeople(data) {
@@ -3060,30 +3198,22 @@ document.addEventListener("DOMContentLoaded", () => {
   loadThemePreference();
 
   // Сайдбар
-  const layout     = document.querySelector(".dashboard-layout");
-  const sidebar    = document.getElementById("sidebar");
-  const hamburger  = document.getElementById("hamburger-menu");
-  const closeBtn   = document.getElementById("sidebar-close");
+  const layout    = document.querySelector(".dashboard-layout");
+  const sidebar   = document.getElementById("sidebar");
+  const hamburger = document.getElementById("hamburger-menu");
+  const closeBtn  = document.getElementById("sidebar-close");
 
+  // Открытие сайдбара по бургер-меню
   hamburger.addEventListener("click", (e) => {
     e.stopPropagation();
     sidebar.classList.add("active");
-    layout.classList.add("sidebar-open");      // ← добавили
+    layout.classList.add("sidebar-open");
   });
 
+  // Закрытие по кнопке «×»
   closeBtn.addEventListener("click", () => {
     sidebar.classList.remove("active");
-    layout.classList.remove("sidebar-open");    // ← и здесь убираем
-  });
-
-  // чтобы кликом вне меню тоже закрывалось
-  document.addEventListener("click", (e) => {
-    if ( sidebar.classList.contains("active") &&
-         !sidebar.contains(e.target) &&
-         !e.target.closest("#hamburger-menu") ) {
-      sidebar.classList.remove("active");
-      layout.classList.remove("sidebar-open");
-    }
+    layout.classList.remove("sidebar-open");
   });
 
 
