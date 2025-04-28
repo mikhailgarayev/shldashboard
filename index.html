@@ -1057,6 +1057,16 @@ aside.right-panel .alert-card {
       font-size: 1.1rem;      /* вы можете подправить под свой вкус */
       font-weight: 500;
     }
+    /* чтобы анимация была плавной */
+#notification-bell img {
+  transition: filter 0.3s ease;
+}
+
+/* в тёмной теме просто инвертируем изображение */
+body.dark-theme #notification-bell img {
+  filter: invert(1) brightness(1.5);
+}
+
 
     /* В светлой теме пусть остаётся ваш стандартный цвет */
     #user-display-name {
@@ -1215,6 +1225,83 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
   color: #ffffff !important;
 }
 
+/* родительский контейнер — общий флекс со всеми переключателями */
+.toggle-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;      /* расстояние между текстом и слайдером */
+  margin-right: 1rem;
+}
+
+/* при необходимости подкорректируйте размер шрифта/отступ у лейбла */
+.toggle-container .toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+/* сам «слайдер» */
+.dnd-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+.dnd-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.dnd-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: background-color 0.3s;
+  border-radius: 24px;
+}
+.dnd-switch .slider:before {
+  content: "";
+  position: absolute;
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
+  background-color: white;
+  transition: transform 0.3s;
+  border-radius: 50%;
+}
+
+/* состояние «включено» */
+.dnd-switch input:checked + .slider {
+  background-color: #007bff;
+}
+.dnd-switch input:checked + .slider:before {
+  transform: translateX(26px);
+}
+/* Делать контейнер блочным flex-элементом и выравнивать его содержимое по центру */
+/* 1) Контейнер переключателя — flex-центр */
+#dnd-toggle-container {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Override положения кружка при включённом чекбоксе */
+#dnd-toggle-container .dnd-switch input:checked + .slider:before {
+  bottom: 3px !important;            /* сохраняем смещение от низа */
+  transform: translateX(26px) !important; /* сдвигаем вправо */
+}
+
+/* Не даём треку «подпрыгивать» */
+#dnd-toggle-container .dnd-switch input:checked + .slider {
+  top: 0 !important;
+  bottom: 0 !important;
+}
+
+/* Вместо position:relative+top — просто поднимем/опустим весь лейбл чуть ниже */
+#dnd-toggle-container .dnd-switch {
+  /* экспериментируй с 1px–3px, пока не ляжет точно по центру */
+  margin-top: 8px !important;
+}
+
+
 
 
       @keyframes pulse {
@@ -1319,7 +1406,31 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
 
       <!-- Правая часть: тема + refresh + имя + logout -->
       <div class="d-flex align-items-center flex-wrap header-gap">
+        <div class="toggle-container" id="dnd-toggle-container">
+          <span class="toggle-label">Do not Disturb</span>
+          <label class="dnd-switch">
+            <input type="checkbox" id="dnd-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        
         <!-- Переключатель темы -->
+         <!-- куда-нибудь перед <span id="user-display-name">… -->
+<div id="notification-bell" style="position:relative; cursor:pointer; margin-right:1rem;">
+  <img src="https://www.svgrepo.com/show/525245/bell-off.svg"
+       alt="Notifications"
+       title="Notifications"
+       style="width:24px; height:24px;" />
+  <span id="notification-count"
+        style="position:absolute; top:-4px; right:-4px;
+               background:#dc3545; color:#fff;
+               border-radius:50%; padding:2px 6px;
+               font-size:0.7rem; display:none;">
+    0
+  </span>
+</div>
+
         <div class="d-flex align-items-center gap-2">
           <span>Theme:</span>
           <label class="theme-switch mb-0" style="margin-left: 8px;">
@@ -1605,6 +1716,19 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/js/bootstrap-select.min.js"></script>
       <script>
+        // ========== Do Not Disturb ==========
+        let doNotDisturb = localStorage.getItem('doNotDisturb') === 'true';
+
+        function setDoNotDisturb(value) {
+          doNotDisturb = value;
+          localStorage.setItem('doNotDisturb', value);
+        }
+
+        // чтобы не спамить повторно
+        // очередь для панели в интерфейсе
+        const notificationQueue = [];
+
+
         // -------------- begin shift‐badge config --------------
 
         // map платформ → bootstrap‐класс бейджа
@@ -1645,6 +1769,11 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
         // ===============================
         // WEATHER SECTION WITH CACHING & EMOJI
         const OPENWEATHER_API_KEY = "f97220cfb6bcefa391405990e7b9825d";
+        const STORAGE_KEY = "notifiedEmptyPlatforms";
+
+        let notifiedEmpty = new Set(
+  JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")
+);
 
 /**
  * Универсальная функция: запрашивает погоду для произвольного города и кладёт
@@ -2885,6 +3014,31 @@ async function fetchAircallStatuses() {
           fetchData();
         }
 
+        function showDesktopNotification(title, body) {
+  if (doNotDisturb) return;       // 🛑 ничего не делаем
+  if (Notification.permission === "granted") {
+    new Notification(title, { body, icon: "favicon.png" });
+  }
+}
+
+function addInPageNotification(message) {
+  if (doNotDisturb) return;       // 🛑 ничего не делаем
+  notificationQueue.push(message);
+  const $cnt = document.getElementById("notification-count");
+  $cnt.textContent = notificationQueue.length;
+  $cnt.style.display = notificationQueue.length > 0 ? "block" : "none";
+}
+
+      // по клику показываем список и сбрасываем счётчик
+      document.getElementById("notification-bell")
+        .addEventListener("click", () => {
+          if (!notificationQueue.length) return;
+          alert("🔔 Notifications:\n\n" + notificationQueue.join("\n")); 
+          notificationQueue.length = 0;
+          document.getElementById("notification-count").style.display = "none";
+        });
+
+
         async function fetchData() {
           document.getElementById("refresh-spinner").style.display =
             "inline-block";
@@ -2945,6 +3099,7 @@ async function fetchAircallStatuses() {
           await fetchTransfers();
           fetchAircallStatuses();
           applyFilters();
+          checkEmptyPlatforms(data);
           
           // подключаем кнопку
           document.getElementById('find-candidate')
@@ -2963,6 +3118,45 @@ async function fetchAircallStatuses() {
         
           return found?.platform || null;
         }
+
+        function saveNotifiedEmpty() {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify([...notifiedEmpty]));
+        }
+        // для каждой платформы смотрим, не стало ли 0 активных
+function checkEmptyPlatforms(data) {
+  // summaryCards в renderShiftSummary — в data[6] строчка «On shift now» в 6-м ряду, но нам проще руками перебрать
+  const platformCols = {
+    "CS": 31,
+    "CS/Post Order": 33,
+    "PSR": 35,
+    "SiMo": 41,
+    "Aircall": 39,
+    "Venue": 37,
+    "Trainee": 41,   // тут в вашем summaryCards они брали data[11][41]
+    "ST": 43
+  };
+  Object.entries(platformCols).forEach(([name, colIdx]) => {
+    const count = parseInt(data[6][colIdx] || "0", 10);
+
+    // если 0 и ещё не уведомляли
+    if (count === 0 && !notifiedEmpty.has(name)) {
+      notifiedEmpty.add(name);
+      saveNotifiedEmpty();              // сохраним сразу
+      const msg = `⚠️ Платформа ${name} теперь без активных сотрудников`;
+      showDesktopNotification("Empty platform", msg);
+      addInPageNotification(msg);
+    }
+
+    // если снова появилось — сбросим, чтобы при повторном уходе в 0 можно было уведомить снова
+    if (count > 0 && notifiedEmpty.has(name)) {
+      notifiedEmpty.delete(name);
+      saveNotifiedEmpty();              // и это сохраним
+    }
+  });
+}
+
+// …внутри fetchData(), сразу после renderShiftSummary(data):
+
         
         function generateWoltEmail(name) {
           if (!name) return "";
@@ -3005,21 +3199,36 @@ async function fetchAircallStatuses() {
       }
 
       function loadThemePreference() {
-        const isDark = localStorage.getItem("darkThemeEnabled") === "true";
-        document.body.classList.toggle("dark-theme", isDark);
-        const themeCheckbox = document.getElementById("theme-checkbox");
-        if (themeCheckbox) themeCheckbox.checked = isDark;
-        setLogoutIcon(isDark);
-      }
+  const isDark = localStorage.getItem("darkThemeEnabled") === "true";
+  document.body.classList.toggle("dark-theme", isDark);
+
+  const bellIcon = document.querySelector("#notification-bell img");
+  bellIcon.src = isDark
+    ? "https://www.svgrepo.com/show/526479/bell-off.svg"
+    : "https://www.svgrepo.com/show/527618/bell-off.svg";
+
+  const themeCheckbox = document.getElementById("theme-checkbox");
+  if (themeCheckbox) themeCheckbox.checked = isDark;
+  setLogoutIcon(isDark);
+}
+
 
 
         
       function toggleTheme(e) {
-      const isDark = e.target.checked;
-      document.body.classList.toggle("dark-theme", isDark);
-      localStorage.setItem("darkThemeEnabled", isDark);
-      setLogoutIcon(isDark);
-    }
+  const isDark = e.target.checked;
+  document.body.classList.toggle("dark-theme", isDark);
+
+  // подменяем иконку:
+  const bellIcon = document.querySelector("#notification-bell img");
+  bellIcon.src = isDark
+    ? "https://www.svgrepo.com/show/526479/bell-off.svg"
+    : "https://www.svgrepo.com/show/527618/bell-off.svg";
+
+  localStorage.setItem("darkThemeEnabled", isDark);
+  setLogoutIcon(isDark);
+}
+
 
 function findCandidate() {
   const target = document.getElementById('target-platform').value;
@@ -3199,6 +3408,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Загрузка темы
   loadThemePreference();
 
+  const dndCheckbox = document.getElementById('dnd-toggle');
+  dndCheckbox.checked = doNotDisturb;
+  dndCheckbox.addEventListener('change', e => {
+    setDoNotDisturb(e.target.checked);
+  })
+  // … остальной ваш код инициализации
+
+
   // Сайдбар
   const layout    = document.querySelector(".dashboard-layout");
   const sidebar   = document.getElementById("sidebar");
@@ -3283,8 +3500,13 @@ document.addEventListener("DOMContentLoaded", () => {
   .addEventListener('click', findCandidate);
 
   // Первичная загрузка данных
+  if ("Notification" in window) {
+  Notification.requestPermission().then(p => {
+    console.log("Push permission:", p);
+  });
+}
+
   fetchData();
-  fetchWeather();
 });
      
       
