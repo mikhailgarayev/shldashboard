@@ -1344,7 +1344,8 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       const auth = firebase.auth();
 
       const brbAlertSent = {};
-      const overdueBreakNotified = {}; 
+      const BREAK_NOTIF_KEY = 'overdueBreakNotified';
+      let overdueBreakNotified = JSON.parse(localStorage.getItem(BREAK_NOTIF_KEY) || '{}');
       const brbOverdueNotified = {};
       const TRANSFERS_API = 'https://script.google.com/macros/s/AKfycbz1QN5KuR4ZDGxkrApKqDzHDj1ewm5UTVP0vDjblopXqlOKlsDea7JOkldx_fBZ-GrA/exec?json=true';
 
@@ -2891,37 +2892,47 @@ async function fetchBreaksData() {
 
   // ===== Проверяем просроченные перерывы и уведомляем =====
   (function checkOverdueBreaks() {
-  const ALLOWED_BREAK_MINUTES = 60;  // 1 час
+  const ALLOWED_BREAK_MINUTES = 60;
   const now = new Date();
 
+  // 1) Собираем всех active-сотрудников в Set
+  const activeSet = new Set();
+  platforms.forEach(p => {
+    for (let r = p.rowActiveNamesStart; r <= p.rowActiveNamesEnd; r++) {
+      const nm = fetchedData[r]?.[p.colIndexNames]?.trim();
+      if (nm) activeSet.add(nm.toLowerCase());
+    }
+  });
+
+  // 2) Проходим по всем перерывам
   (window.allBreaksData || []).forEach(r => {
-    const name    = r.Name?.trim();
-    const timeStr = (r["Break Time"] || "").trim(); // например "10:52:46" или "10:52"
-    if (!name || !timeStr) return;
+    const name = r.Name?.trim();
+    if (!name) return;
+    const key = name.toLowerCase();
 
-    const parts = timeStr.split(":").map(Number);
-    if (parts.length < 2 || parts.some(isNaN)) return;
+    // 3) Если сотрудник уже active — сбрасываем флаг и НЕ уведомляем
+    if (activeSet.has(key)) {
+      if (overdueBreakNotified[key]) {
+        delete overdueBreakNotified[key];
+        localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
+      }
+      return;
+    }
 
-    // Правильно: собираем дату начала перерыва
-    const [h, m, s = 0] = parts;
+    // 4) Иначе — проверяем длительность
+    const [h, m, s = 0] = (r["Break Time"] || "").split(":").map(Number);
     const breakDate = new Date(now);
     breakDate.setHours(h, m, s, 0);
-
-    // Считаем, сколько минут прошло с этого момента
     const durationMins = (now - breakDate) / 60000;
 
     if (durationMins > ALLOWED_BREAK_MINUTES) {
-      if (!overdueBreakNotified[name]) {
+      if (!overdueBreakNotified[key]) {
         const lateMin = Math.floor(durationMins);
         const msg = `❗ ${name} is late from break for ${lateMin} min.`;
         showDesktopNotification("Break overdue", msg);
         addInPageNotification(msg);
-        overdueBreakNotified[name] = true;
-      }
-    } else {
-      // если сотрудник вернулся в лимит — сбрасываем флаг
-      if (overdueBreakNotified[name]) {
-        delete overdueBreakNotified[name];
+        overdueBreakNotified[key] = true;
+        localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
       }
     }
   });
