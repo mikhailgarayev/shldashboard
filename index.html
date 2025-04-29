@@ -2890,7 +2890,7 @@ async function fetchBreaksData() {
   }
 
   // ===== Проверяем просроченные перерывы и уведомляем =====
-  ((function checkOverdueBreaks() {
+  (function checkOverdueBreaks() {
   const ALLOWED_BREAK_MINUTES = 60;  // 1 час
 
   (window.allBreaksData || []).forEach(r => {
@@ -2923,7 +2923,6 @@ async function fetchBreaksData() {
     }
   });
 })();
-)();
 }
 
         function checkOverdueBRB() {
