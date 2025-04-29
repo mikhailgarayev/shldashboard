@@ -2892,36 +2892,38 @@ async function fetchBreaksData() {
   // ===== Проверяем просроченные перерывы и уведомляем =====
   (function checkOverdueBreaks() {
   const now = new Date();
-  const MAX_LATE_MINUTES = 15;  // порог «опоздания»
+  const ALLOWED_BREAK_MINUTES = 60;  // теперь 1 час
 
   (window.allBreaksData || []).forEach(r => {
-    const name = r.Name?.trim();
-    const time = (r["Break Time"] || "").trim();
-    if (!name || !time) return;
+    const name    = r.Name?.trim();
+    const timeStr = (r["Break Time"] || "").trim();
+    if (!name || !timeStr) return;
 
-    const [hh, mm] = time.split(":").map(Number);
-    if (isNaN(hh)) return;
+    // Разбираем формат HH:MM или HH:MM:SS
+    const parts = timeStr.split(":").map(Number);
+    const hh = parts[0], mm = parts[1], ss = parts[2] || 0;
+    if (isNaN(hh) || isNaN(mm)) return;
 
+    // Формируем дату начала перерыва сегодня
     const dt = new Date(now);
-    dt.setHours(hh, mm, 0, 0);
+    dt.setHours(hh, mm, ss, 0);
 
-    const diffMins = Math.floor((now - dt) / 60000);
+    // Сколько минут назад был старт перерыва
+    const diffMins = (now - dt) / 60000;
 
-    // 1) уведомляем только если перерыв уже прошёл, 
-    //    но не более MAX_LATE_MINUTES назад
-    if (dt < now && diffMins > 0 && diffMins <= MAX_LATE_MINUTES) {
+    if (diffMins > ALLOWED_BREAK_MINUTES) {
       if (!overdueBreakNotified[name]) {
-        const msg = `❗ ${name} employee is late from break for ${diffMins} min.`;
+        const lateMin = Math.floor(diffMins);
+        const msg = `❗ ${name} employee is late from break for ${lateMin} min.`;
         showDesktopNotification("Break overdue", msg);
         addInPageNotification(msg);
         overdueBreakNotified[name] = true;
       }
-    }
-    // 2) сбрасываем флаг, если
-    //    a) перерыв ещё не наступил или
-    //    b) он уже слишком «старый»
-    else if ((dt >= now || diffMins > MAX_LATE_MINUTES) && overdueBreakNotified[name]) {
-      delete overdueBreakNotified[name];
+    } else {
+      // если снова попал в допустимые рамки — сбрасываем флаг
+      if (overdueBreakNotified[name]) {
+        delete overdueBreakNotified[name];
+      }
     }
   });
 })();
@@ -2938,7 +2940,7 @@ async function fetchBreaksData() {
     const name = li.dataset.employee;
     if (!brbOverdueNotified[name]) {
       const reason = li.querySelector('.text-muted')?.textContent || '';
-      const msg = `⏰ ${name} опоздал(а) с BRB ${reason}`;
+      const msg = `⏰ ${name} was late from BRB for ${reason}`;
       showDesktopNotification('BRB Overdue', msg);
       addInPageNotification(msg);
       brbOverdueNotified[name] = true;
