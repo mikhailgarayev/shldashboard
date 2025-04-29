@@ -1334,7 +1334,8 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       };
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
-      
+
+      const brbAlertSent = {};
       const TRANSFERS_API = 'https://script.google.com/macros/s/AKfycbz1QN5KuR4ZDGxkrApKqDzHDj1ewm5UTVP0vDjblopXqlOKlsDea7JOkldx_fBZ-GrA/exec?json=true';
 
       // 2) Глобальная переменная для кеша:
@@ -2348,12 +2349,16 @@ if (showAway) {
         <span style="margin-left:6px;">2 or more on BRB</span>
       </p>
     `;
-      const msg = `⚠️ ${brbCount} or more on BRB in ${platform.name}`;
-  showDesktopNotification('BRB Alert', msg);
-  addInPageNotification(msg);
+      const msg = `⚠️ ${brbCount} or more on BRB on ${platform.name}`;
+      if (!brbAlertSent[platform.name]) {
+      showDesktopNotification('BRB Alert', msg);
+      addInPageNotification(msg);
+      brbAlertSent[platform.name] = true;
     }
+  } else {
+    // сбрасываем флаг, чтобы при следующем повторном выходе за порог оповещение снова ушло
+    brbAlertSent[platform.name] = false;
   }
-
 
       html += `</div>`;
       container.innerHTML += html;
