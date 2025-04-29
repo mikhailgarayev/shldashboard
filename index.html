@@ -1403,77 +1403,81 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
   <body class="hidden">
       <!-- Header -->
       <header class="dashboard-header">
-        <!-- Левая часть: бургер + заголовок -->
-      <div class="d-flex align-items-center gap-3">
-        <div class="hamburger-menu" id="hamburger-menu">
-          <span style="font-size: 24px; cursor: pointer;">☰</span>
-        </div>
-        <h1 class="mb-0" style="font-size: 1.3rem;">
-          Support Monitoring Dashboard
-        </h1>
-      </div>
+  <!-- 1) Левая часть: бургер + заголовок -->
+  <div class="d-flex align-items-center gap-3">
+    <div class="hamburger-menu" id="hamburger-menu">
+      <span style="font-size: 24px; cursor: pointer;">☰</span>
+    </div>
+    <h1 class="mb-0" style="font-size: 1.3rem;">
+      Support Monitoring Dashboard
+    </h1>
+  </div>
 
-      <!-- Правая часть: тема + refresh + имя + logout -->
-      <div class="d-flex align-items-center flex-wrap header-gap">
-        <div class="toggle-container" id="dnd-toggle-container">
-          <span class="toggle-label">Do not Disturb</span>
-          <label class="dnd-switch">
-            <input type="checkbox" id="dnd-toggle" />
-            <span class="slider"></span>
-          </label>
-        </div>
-        
-        
-        <!-- Переключатель темы -->
-         <!-- куда-нибудь перед <span id="user-display-name">… -->
-<div id="notification-bell" style="position:relative; cursor:pointer; margin-right:1rem;">
-  <img src="https://www.svgrepo.com/show/525245/bell-off.svg"
-       alt="Notifications"
-       title="Notifications"
-       style="width:24px; height:24px;" />
-  <span id="notification-count"
-        style="position:absolute; top:-4px; right:-4px;
-               background:#dc3545; color:#fff;
-               border-radius:50%; padding:2px 6px;
-               font-size:0.7rem; display:none;">
-    0
-  </span>
-</div>
+  <!-- 2) Центральная часть: переключатели + таймер -->
+  <div class="d-flex align-items-center flex-wrap header-gap">
+    <!-- Do Not Disturb -->
+    <div class="toggle-container" id="dnd-toggle-container">
+      <span class="toggle-label">Do not Disturb</span>
+      <label class="dnd-switch">
+        <input type="checkbox" id="dnd-toggle" />
+        <span class="slider"></span>
+      </label>
+    </div>
 
-        <div class="d-flex align-items-center gap-2">
-          <span>Theme:</span>
-          <label class="theme-switch mb-0" style="margin-left: 8px;">
-            <input type="checkbox" id="theme-checkbox" />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="refresh-section d-flex align-items-center gap-2">
-  <span id="timer-label">
-    Refresh in: <span id="countdown">15</span>s
-  </span>
-  <img
-    id="refresh-icon"
-    src="https://www.svgrepo.com/show/168563/refresh.svg"
-    alt="Refresh"
-    title="Refresh now"
-    style="width:24px; height:24px; cursor:pointer;"
-    onclick="refreshNow()"
-  />
-</div>
+    <!-- Bell -->
+    <div id="notification-bell" style="position:relative; cursor:pointer; margin-right:1rem;">
+      <img
+        src="https://www.svgrepo.com/show/525245/bell-off.svg"
+        alt="Notifications"
+        title="Notifications"
+        style="width:24px; height:24px;"
+      />
+      <span
+        id="notification-count"
+        style="position:absolute; top:-4px; right:-4px; background:#dc3545;
+               color:#fff; border-radius:50%; padding:2px 6px; font-size:0.7rem;
+               display:none;"
+      >0</span>
+    </div>
 
+    <!-- Theme toggle -->
+    <div class="d-flex align-items-center gap-2">
+      <span>Theme:</span>
+      <label class="theme-switch mb-0" style="margin-left: 8px;">
+        <input type="checkbox" id="theme-checkbox" />
+        <span class="slider"></span>
+      </label>
+    </div>
 
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span id="user-display-name" class="small text-muted"></span>
-          <img
-            id="logout-btn"
-            src="./log-out.svg"
-            alt="Log Out"
-            title="Log Out"
-            style="width: 22px; height: 22px; cursor: pointer; margin-left: 8px;"
-          />
-        </div>
-    </header>
+    <!-- Refresh -->
+    <div class="refresh-section d-flex align-items-center gap-2">
+      <span id="timer-label">
+        Refresh in: <span id="countdown">15</span>s
+      </span>
+      <img
+        id="refresh-icon"
+        src="https://www.svgrepo.com/show/168563/refresh.svg"
+        alt="Refresh"
+        title="Refresh now"
+        style="width:24px; height:24px; cursor:pointer;"
+        onclick="refreshNow()"
+      />
+    </div>
+  </div>
+
+  <!-- 3) Правая часть: имя + logout -->
+  <div class="d-flex align-items-center gap-2">
+    <span id="user-display-name" class="small text-muted"></span>
+    <img
+      id="logout-btn"
+      src="./log-out.svg"
+      alt="Log Out"
+      title="Log Out"
+      style="width:22px; height:22px; cursor:pointer; margin-left:8px;"
+    />
+  </div>
+</header>
+
     <!-- Grid container -->
     <div class="dashboard-layout">
 
@@ -3108,7 +3112,7 @@ function addInPageNotification(message) {
           document.getElementById('find-candidate')
           .addEventListener('click', findCandidate);
           
-          document.getElementById("refresh-spinner").style.display = "none";
+          document.getElementById("refresh-icon").classList.remove('rotating');
           if (autoRefreshEnabled) resetAutoRefresh();
         }
 
