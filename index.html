@@ -1414,7 +1414,7 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
   </div>
 
   <!-- 2) Центральная часть: переключатели + таймер -->
-  <div class="d-flex align-items-center flex-wrap header-gap">
+  <div class="d-flex align-items-center flex-wrap header-gap flex-grow-1 justify-content-start">
     <!-- Do Not Disturb -->
     <div class="toggle-container" id="dnd-toggle-container">
       <span class="toggle-label">Do not Disturb</span>
@@ -2985,17 +2985,25 @@ async function fetchAircallStatuses() {
         let countdownValue = refreshInterval;
 
         function resetAutoRefresh() {
-          clearTimeout(refreshTimer);
-          clearInterval(countdownTimer);
-          countdownValue = refreshInterval;
-          updateCountdownDisplay();
-          refreshTimer = setTimeout(fetchData, refreshInterval * 1000);
-          countdownTimer = setInterval(() => {
-            countdownValue--;
-            updateCountdownDisplay();
-            if (countdownValue <= 0) clearInterval(countdownTimer);
-          }, 1000);
-        }
+  clearTimeout(refreshTimer);
+  clearInterval(countdownTimer);
+  countdownValue = refreshInterval;
+  updateCountdownDisplay();
+
+  // через лямбду, чтобы успеть добавить класс перед fetchData()
+  refreshTimer = setTimeout(() => {
+    const ico = document.getElementById("refresh-icon");
+    ico.classList.add("rotating");  // старт анимации
+    fetchData();
+  }, refreshInterval * 1000);
+
+  countdownTimer = setInterval(() => {
+    countdownValue--;
+    updateCountdownDisplay();
+    if (countdownValue <= 0) clearInterval(countdownTimer);
+  }, 1000);
+}
+
         function updateCountdownDisplay() {
           const countdownElem = document.getElementById("countdown");
           if (countdownElem) {
