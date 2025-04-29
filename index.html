@@ -2895,7 +2895,7 @@ async function fetchBreaksData() {
   const ALLOWED_BREAK_MINUTES = 60;
   const now = new Date();
 
-  // 1) Собираем всех active-сотрудников в Set
+  // 1) Сотрудники, помеченные active по листу
   const activeSet = new Set();
   platforms.forEach(p => {
     for (let r = p.rowActiveNamesStart; r <= p.rowActiveNamesEnd; r++) {
@@ -2910,7 +2910,7 @@ async function fetchBreaksData() {
     if (!name) return;
     const key = name.toLowerCase();
 
-    // 3) Если сотрудник уже active — сбрасываем флаг и НЕ уведомляем
+    // Если человек снова active — очищаем флаг и не уведомляем
     if (activeSet.has(key)) {
       if (overdueBreakNotified[key]) {
         delete overdueBreakNotified[key];
@@ -2919,7 +2919,27 @@ async function fetchBreaksData() {
       return;
     }
 
-    // 4) Иначе — проверяем длительность
+    // **НОВЫЙ БЛОК**: проверяем, не закончилась ли у него смена
+    // ищем в данных по сменам
+    const shiftRec = (window.shiftsQuinyxData || [])
+      .find(x => x.name.trim().toLowerCase() === key);
+    if (shiftRec) {
+      const [, endStr] = shiftRec.shift.split('-');
+      const [eh, em] = endStr.split(':').map(Number);
+      const endDate = new Date(now);
+      endDate.setHours(eh, em, 0, 0);
+      // если сейчас уже после конца смены — пропускаем
+      if (now > endDate) {
+        // и очищаем флаг в случае, если когда-то было уведомление
+        if (overdueBreakNotified[key]) {
+          delete overdueBreakNotified[key];
+          localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
+        }
+        return;
+      }
+    }
+
+    // 3) Проверяем длительность break-а
     const [h, m, s = 0] = (r["Break Time"] || "").split(":").map(Number);
     const breakDate = new Date(now);
     breakDate.setHours(h, m, s, 0);
