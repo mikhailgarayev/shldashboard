@@ -2891,31 +2891,40 @@ async function fetchBreaksData() {
 
   // ===== Проверяем просроченные перерывы и уведомляем =====
   (function checkOverdueBreaks() {
-    const now = new Date();
-    (window.allBreaksData || []).forEach(r => {
-      const name = r.Name?.trim();
-      const time = r["Break Time"]?.trim();
-      if (!name || !time) return;
-      const [hh, mm] = time.split(":").map(Number);
-      if (isNaN(hh)) return;
-      const dt = new Date(now);
-      dt.setHours(hh, mm, 0, 0);
+  const now = new Date();
+  const MAX_LATE_MINUTES = 15;  // порог «опоздания»
 
-      // Если время перерыва уже прошло и ещё не уведомляли
-      if (dt < now && !overdueBreakNotified[name]) {
-        const diffMins = Math.floor((now - dt) / 60000);
+  (window.allBreaksData || []).forEach(r => {
+    const name = r.Name?.trim();
+    const time = (r["Break Time"] || "").trim();
+    if (!name || !time) return;
+
+    const [hh, mm] = time.split(":").map(Number);
+    if (isNaN(hh)) return;
+
+    const dt = new Date(now);
+    dt.setHours(hh, mm, 0, 0);
+
+    const diffMins = Math.floor((now - dt) / 60000);
+
+    // 1) уведомляем только если перерыв уже прошёл, 
+    //    но не более MAX_LATE_MINUTES назад
+    if (dt < now && diffMins > 0 && diffMins <= MAX_LATE_MINUTES) {
+      if (!overdueBreakNotified[name]) {
         const msg = `❗ ${name} employee is late from break for ${diffMins} min.`;
         showDesktopNotification("Break overdue", msg);
         addInPageNotification(msg);
         overdueBreakNotified[name] = true;
       }
-
-      // Если breakTime снова перенесли вперёд — сбрасываем флаг
-      if (dt > now && overdueBreakNotified[name]) {
-        delete overdueBreakNotified[name];
-      }
-    });
-  })();
+    }
+    // 2) сбрасываем флаг, если
+    //    a) перерыв ещё не наступил или
+    //    b) он уже слишком «старый»
+    else if ((dt >= now || diffMins > MAX_LATE_MINUTES) && overdueBreakNotified[name]) {
+      delete overdueBreakNotified[name];
+    }
+  });
+})();
 }
 
         function checkOverdueBRB() {
