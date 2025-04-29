@@ -2348,6 +2348,10 @@ if (showAway) {
         <span style="margin-left:6px;">2 or more on BRB</span>
       </p>
     `;
+      const msg = `⚠️ ${brbCount} or more on BRB in ${platform.name}`;
+  showDesktopNotification('BRB Alert', msg);
+  addInPageNotification(msg);
+    }
   }
 }
 
