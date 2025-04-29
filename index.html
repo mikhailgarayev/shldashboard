@@ -1344,6 +1344,8 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       const auth = firebase.auth();
 
       const brbAlertSent = {};
+      const overdueBreakNotified = {}; 
+      const brbOverdueNotified = {};
       const TRANSFERS_API = 'https://script.google.com/macros/s/AKfycbz1QN5KuR4ZDGxkrApKqDzHDj1ewm5UTVP0vDjblopXqlOKlsDea7JOkldx_fBZ-GrA/exec?json=true';
 
       // 2) Глобальная переменная для кеша:
@@ -2403,8 +2405,9 @@ if (showAway) {
 
   // Обновляем статусы Aircall
   setTimeout(() => fetchAircallStatuses().catch(console.error), 100);
-}
 
+  checkOverdueBRB();
+}
 
 
 function renderAircallCardWithStatuses(
@@ -2828,63 +2831,119 @@ async function fetchBreaksData() {
 
   if (!list.length) {
     c.innerHTML = "<p>No breaks</p>";
-    return;
+  } else {
+    // Генерация HTML списка
+    c.innerHTML = "<ul>" + list.map(r => {
+      const key = `${r["Working Space"]}–${r["Break Time"]}`;
+      const conflictClass = counts[key] > 1 ? "break-conflict" : "";
+      return `
+        <li class="${conflictClass}">
+          <strong>${r.Name}</strong><br/>
+          Break at
+            <span class="break-time"
+                  data-name="${r.Name}"
+                  data-time="${r["Break Time"]}"
+            >${r["Break Time"]}</span>
+          <button class="edit-btn"
+                  title="Edit time"
+                  style="border:none;background:none;cursor:pointer;">
+            <img src="https://www.svgrepo.com/show/502640/edit-1.svg"
+                 alt="edit" width="16" height="16">
+          </button><br/>
+          Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
+        </li>
+      `;
+    }).join("") + "</ul>";
+
+    // Редактирование времени
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const name = btn.previousElementSibling.dataset.name;
+        const timeSpan = btn.previousElementSibling;
+        const oldTime = timeSpan.dataset.time;
+        const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
+        if (!newTime || newTime === oldTime) return;
+        fetch("https://breaks-proxy.mikhail-garayev.workers.dev/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            newBreakTime: newTime,
+            secret: "superWoltKey42"
+          })
+        })
+        .then(res => res.text())
+        .then(response => {
+          if (response === "Success") {
+            timeSpan.textContent = newTime;
+            timeSpan.dataset.time = newTime;
+            alert("Break time updated successfully!");
+          } else {
+            alert("Server response:\n" + response);
+          }
+        })
+        .catch(err => {
+          alert("Request failed:\n" + err.message);
+        });
+      });
+    });
   }
 
-  // Генерация HTML
-  c.innerHTML = "<ul>" + list.map(r => {
-    const key = `${r["Working Space"]}–${r["Break Time"]}`;
-    const conflictClass = counts[key] > 1 ? "break-conflict" : "";
-    return `
-      <li class="${conflictClass}">
-        <strong>${r.Name}</strong><br/>
-        Break at <span class="break-time" data-name="${r.Name}" data-time="${r["Break Time"]}">${r["Break Time"]}</span>
-        <button class="edit-btn" title="Edit time" style="border:none;background:none;cursor:pointer;">
-        <img src="https://www.svgrepo.com/show/502640/edit-1.svg" alt="edit" width="16" height="16">
-        </button><br/>
-        Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
-      </li>
-    `;
-  }).join("") + "</ul>";
+  // ===== Проверяем просроченные перерывы и уведомляем =====
+  (function checkOverdueBreaks() {
+    const now = new Date();
+    (window.allBreaksData || []).forEach(r => {
+      const name = r.Name?.trim();
+      const time = r["Break Time"]?.trim();
+      if (!name || !time) return;
+      const [hh, mm] = time.split(":").map(Number);
+      if (isNaN(hh)) return;
+      const dt = new Date(now);
+      dt.setHours(hh, mm, 0, 0);
 
-  document.querySelectorAll(".edit-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const name = btn.dataset.name;
-    const timeSpan = btn.previousElementSibling;
-    const oldTime = timeSpan.dataset.time;
-
-    const newTime = prompt(`Enter new break time for ${name}:`, oldTime);
-    if (!newTime || newTime === oldTime) return;
-
-    fetch("https://breaks-proxy.mikhail-garayev.workers.dev/", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    name,
-    newBreakTime: newTime,
-    secret: "superWoltKey42" // тот же, что в Worker и Google Script
-  })
-})
-
-    .then(res => res.text())
-    .then(response => {
-      if (response === "Success") {
-        timeSpan.textContent = newTime;
-        timeSpan.dataset.time = newTime;
-        alert("Break time updated successfully!");
-      } else {
-        alert("Server response:\n" + response);
+      // Если время перерыва уже прошло и ещё не уведомляли
+      if (dt < now && !overdueBreakNotified[name]) {
+        const diffMins = Math.floor((now - dt) / 60000);
+        const msg = `❗ ${name} employee is late from break for ${diffMins} min.`;
+        showDesktopNotification("Break overdue", msg);
+        addInPageNotification(msg);
+        overdueBreakNotified[name] = true;
       }
-    })
-    .catch(err => {
-      alert("Request failed:\n" + err.message);
+
+      // Если breakTime снова перенесли вперёд — сбрасываем флаг
+      if (dt > now && overdueBreakNotified[name]) {
+        delete overdueBreakNotified[name];
+      }
     });
-  }); // ← закрываем addEventListener
-});   // ← закрываем forEach
+  })();
 }
 
+        function checkOverdueBRB() {
+  // найдём все li, помеченные классом break-overdue и содержащие "BRB"
+  const overdueBRB = Array.from(
+    document.querySelectorAll('.employee-item.break-overdue')
+  ).filter(li => /\bBRB\b/.test(li.textContent));
+
+  // для каждого нового — шлём уведомление
+  overdueBRB.forEach(li => {
+    const name = li.dataset.employee;
+    if (!brbOverdueNotified[name]) {
+      const reason = li.querySelector('.text-muted')?.textContent || '';
+      const msg = `⏰ ${name} опоздал(а) с BRB ${reason}`;
+      showDesktopNotification('BRB Overdue', msg);
+      addInPageNotification(msg);
+      brbOverdueNotified[name] = true;
+    }
+  });
+
+  // сбросим флаг, если человек уже не просрочен
+  Object.keys(brbOverdueNotified).forEach(name => {
+    if (!overdueBRB.some(li => li.dataset.employee === name)) {
+      delete brbOverdueNotified[name];
+    }
+  });
+}
+        
         // кладём в глобальную window.shiftsQuinyxData
         async function fetchShiftsQuinyxData() {
           const raw = await fetchSheetData("shiftsquinyx!A2:C");
