@@ -1676,7 +1676,6 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
   </div>
 
 
-      <div id="platforms-container" class="platforms-row"></div>
     <!-- Секция с двумя карточками: Shift-Overs и Breaks -->
     <div
   id="alerts-section"
@@ -2359,6 +2358,7 @@ if (showAway) {
     // сбрасываем флаг, чтобы при следующем повторном выходе за порог оповещение снова ушло
     brbAlertSent[platform.name] = false;
   }
+}
 
       html += `</div>`;
       container.innerHTML += html;
