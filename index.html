@@ -3049,6 +3049,7 @@ function addInPageNotification(message) {
 
 
         async function fetchData() {
+          const data = await fetchSheetData(RANGE);
           fetchedData = data;
           const shiftData = await fetchSheetData(SHIFT_RANGE);
           window.allShiftData = shiftData;
