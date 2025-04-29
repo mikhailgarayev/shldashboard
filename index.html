@@ -2892,31 +2892,34 @@ async function fetchBreaksData() {
   // ===== Проверяем просроченные перерывы и уведомляем =====
   (function checkOverdueBreaks() {
   const ALLOWED_BREAK_MINUTES = 60;  // 1 час
+  const now = new Date();
 
   (window.allBreaksData || []).forEach(r => {
     const name    = r.Name?.trim();
-    const timeStr = (r["Break Time"] || "").trim();   // например "0:52:46"
+    const timeStr = (r["Break Time"] || "").trim(); // например "10:52:46" или "10:52"
     if (!name || !timeStr) return;
 
-    // разбиваем на [часы, минуты, секунды]
     const parts = timeStr.split(":").map(Number);
     if (parts.length < 2 || parts.some(isNaN)) return;
 
-    // считаем длительность в минутах
-    const durationMins = parts[0] * 60 
-                       + parts[1] 
-                       + (parts[2] || 0) / 60;
+    // Правильно: собираем дату начала перерыва
+    const [h, m, s = 0] = parts;
+    const breakDate = new Date(now);
+    breakDate.setHours(h, m, s, 0);
+
+    // Считаем, сколько минут прошло с этого момента
+    const durationMins = (now - breakDate) / 60000;
 
     if (durationMins > ALLOWED_BREAK_MINUTES) {
       if (!overdueBreakNotified[name]) {
         const lateMin = Math.floor(durationMins);
-        const msg = `❗ ${name} employee is late from break for ${lateMin} min.`;
+        const msg = `❗ ${name} is late from break for ${lateMin} min.`;
         showDesktopNotification("Break overdue", msg);
         addInPageNotification(msg);
         overdueBreakNotified[name] = true;
       }
     } else {
-      // если вернулся в лимит — сбрасываем флаг, чтобы в следующий раз
+      // если сотрудник вернулся в лимит — сбрасываем флаг
       if (overdueBreakNotified[name]) {
         delete overdueBreakNotified[name];
       }
