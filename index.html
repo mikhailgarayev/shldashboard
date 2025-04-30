@@ -178,6 +178,31 @@
         font-size: 1rem;
         color: var(--text-color);
       }
+      .notifications-dropdown {
+        position: absolute;
+        top: calc(100% + 20px);    /* прямо под иконкой */
+        right: -135px;     /* по правому краю контейнера */
+        width: 300px; /* или ваша ширина */
+        max-height: 400px;
+        overflow-y: auto;
+        background: var(--card-bg-color);
+        border: 1px solid var(--card-border-color);
+        box-shadow: var(--card-shadow);
+        border-radius: 8px;
+        z-index: 1000;
+        display: none;
+    }
+    .notifications-dropdown.show {
+      display: block;
+    }
+    .notifications-dropdown .unread {
+      background-color: rgba(220,53,69,0.1);
+      font-weight: bold;
+    }
+    .notifications-dropdown .read {
+      background-color: transparent;
+      color: var(--text-color);
+    }
 
       /* Сайдбар (меню) */
       .hamburger-menu {
@@ -1060,6 +1085,7 @@ aside.right-panel .alert-card {
     /* чтобы анимация была плавной */
 #notification-bell img {
   transition: filter 0.3s ease;
+  position: relative;
 }
 
 /* в тёмной теме просто инвертируем изображение */
@@ -1349,18 +1375,32 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       const brbOverdueNotified = {};
       const TRANSFERS_API = 'https://script.google.com/macros/s/AKfycbz1QN5KuR4ZDGxkrApKqDzHDj1ewm5UTVP0vDjblopXqlOKlsDea7JOkldx_fBZ-GrA/exec?json=true';
 
-      // 2) Глобальная переменная для кеша:
-      let transfersData = [];
 
-      // 3) Функция загрузки архива/сегодняшних данных:
-      async function fetchTransfers() {
-        try {
-          const res = await fetch(TRANSFERS_API);
-          transfersData = await res.json();
-        } catch (e) {
-          console.error('Transfers load error', e);
-        }
-      }
+async function fetchStatusChanges() {
+  try {
+    const res = await fetch(TRANSFERS_API);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // API возвращает массив объектов вида
+    // { Timestamp: "...", Name: "...", FromPlatform: "...", ToPlatform: "...", Duration: "..." }
+    const raw = await res.json();
+    // приводим к единому формату
+    window.transfersData = raw
+      .map(item => ({
+        name:         item.Name,
+        fromPlatform: item.FromPlatform,
+        toPlatform:   item.ToPlatform,
+        duration:     item.Duration,
+        timestamp:    item.Timestamp
+      }))
+      // отбрасываем неполные записи
+      .filter(t => t.name && t.fromPlatform && t.toPlatform);
+    console.log('transfersData', window.transfersData);
+  } catch (err) {
+    console.error('Ошибка fetchStatusChanges:', err);
+    window.transfersData = [];
+  }
+}
+
 
       // Список разрешённых email
       const allowedEmails = [
@@ -1441,7 +1481,9 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
                color:#fff; border-radius:50%; padding:2px 6px; font-size:0.7rem;
                display:none;"
       >0</span>
+      <div id="notifications-panel" class="notifications-dropdown"></div>
     </div>
+    <!-- Notifications dropdown panel -->
 
     <!-- Theme toggle -->
     <div class="d-flex align-items-center gap-2">
@@ -1983,35 +2025,39 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
           }
         }
 
-       async function fetchEmployeeList() {
-        // подтягиваем теперь столбцы A–H (включая H с датой старта)
-        const data = await fetchSheetData("emplist!A1:H");
-        if (!data || data.length < 2) return;
-      
-        for (let i = 1; i < data.length; i++) {
-          const row = data[i];
-          if (!row[0]) continue;  // если нет имени — пропускаем
-      
-          const empName         = row[0].trim();
-          const empId           = row[1]?.trim()   || "";
-          const canRealloc      = row[2]?.trim()   || "";
-          const primePlatform   = row[3]?.trim()   || "";
-          const preferredPlatform = row[4]?.trim() || "";
-          const languages       = row[5]?.trim()   || "";
-          const capacity        = row[6]?.trim()   || "N/A";
-          const startDateRaw    = row[7]?.trim()   || "";   // колонка H
-      
-          employeeData[empName] = {
-            id:           empId,
-            canReallocate: canRealloc,
-            prime:        primePlatform,
-            pref:         preferredPlatform,
-            languages:    languages,
-            capacity:     capacity,
-            startDate:    startDateRaw      // ← сохраняем дату старта
-          };
-        }
-      }
+        async function fetchEmployeeList() {
+  // подтягиваем столбцы A–H (A: Name, B: ID, C: Role, D: CanReallocate, E: Prime, F: Pref, G: Languages, H: Capacity, I: StartDate)
+  // если у вас H — это capacity, а I — дата начала, нужно заменить диапазон на A1:I
+  const data = await fetchSheetData("emplist!A1:I");
+  if (!data || data.length < 2) return;
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[0]) continue;  // если нет имени — пропускаем
+
+    const empName           = row[0].trim();               // A
+    const empId             = row[1]?.trim()     || "";     // B
+    const role              = row[2]?.trim()     || "N/A";  // C
+    const canRealloc        = row[3]?.trim()     || "N/A";  // D
+    const primePlatform     = row[4]?.trim()     || "N/A";  // E
+    const preferredPlatform = row[5]?.trim()     || "N/A";  // F
+    const languages         = row[6]?.trim()     || "N/A";  // G
+    const capacity          = row[7]?.trim()     || "N/A";  // H
+    const startDateRaw      = row[8]?.trim()     || "";     // I
+
+    employeeData[empName] = {
+      id:            empId,
+      role:          role,
+      canReallocate: canRealloc,
+      prime:         primePlatform,
+      pref:          preferredPlatform,
+      languages:     languages,
+      capacity:      capacity,
+      startDate:     startDateRaw
+    };
+  }
+}
+
 
         function generateInboxLink(empId) {
           return (
@@ -2027,6 +2073,52 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
           );
         }
 
+        // Вставьте где-нибудь рядом с другими утилитами
+function normalize(str) {
+  return String(str || "")
+    .toLowerCase()
+    .replace(/[\s\/-]+/g, ""); // убираем пробелы, косую черту, дефис
+}
+// парсит строки вида "DD.MM.YYYY HH:mm:ss" → JS Date
+// парсит строки вида "DD.MM.YYYY HH:mm:ss" → JS Date,
+// обрабатывает некорректные или неполные строки без падения
+function parseDDMMYYYY(str) {
+  if (typeof str !== 'string') {
+    console.warn('parseDDMMYYYY got non-string:', str);
+    return new Date(str);           // попробуем native-парсер
+  }
+
+  // разделяем по любому числу пробелов
+  const parts = str.trim().split(/\s+/);
+  if (parts.length < 2) {
+    // нет времени — попытка native-парсера
+    return new Date(str);
+  }
+  const [datePart, timePart] = parts;
+
+  const dp = datePart.split('.');
+  if (dp.length !== 3) {
+    console.warn('parseDDMMYYYY got bad datePart:', datePart);
+    return new Date(str);
+  }
+  let [day, month, year] = dp;
+
+  // гарантируем по две цифры
+  day   = String(day).padStart(2,'0');
+  month = String(month).padStart(2,'0');
+
+  // формируем ISO-строку
+  const iso = `${year}-${month}-${day}T${timePart}`;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) {
+    console.warn('parseDDMMYYYY failed to parse:', iso);
+    return new Date(str);
+  }
+  return d;
+}
+
+
+
 async function openEmployeeModal(empName) {
   const info = employeeData[empName];
   if (!info) {
@@ -2034,7 +2126,6 @@ async function openEmployeeModal(empName) {
     return;
   }
 
-  // ——————————————————————————————————————————
   // 1) Смена
   const rec = window.shiftsQuinyxData.find(
     r => r.name.toLowerCase() === empName.toLowerCase()
@@ -2044,18 +2135,16 @@ async function openEmployeeModal(empName) {
   document.getElementById("modal-emp-shift").textContent =
     `${shiftName} (${shiftTime})`;
 
-  // ——————————————————————————————————————————
   // 2) Перерыв
   let breakTime = "—";
   if (Array.isArray(window.allBreaksData)) {
-    const br = allBreaksData.find(b =>
-      b["Name"]?.trim().toLowerCase() === empName.trim().toLowerCase()
+    const br = window.allBreaksData.find(b =>
+      b.Name?.trim().toLowerCase() === empName.trim().toLowerCase()
     );
     if (br) breakTime = br["Break Time"] || "—";
   }
   document.getElementById("modal-emp-break").textContent = breakTime;
 
-  // ——————————————————————————————————————————
   // 3) Общая инфа
   const parts = empName.trim().split(" ");
   const email = parts.length >= 2
@@ -2077,49 +2166,44 @@ async function openEmployeeModal(empName) {
     window.open(generateAdminLink(info.id), "_blank");
   };
 
-  // ——————————————————————————————————————————
-  // 4) Переходы ПО ПЛАТФОРМАМ за сегодня
-  // фильтруем все записи для этого сотрудника
-  const allTransfers = (Array.isArray(transfersData) ? transfersData : []).filter(
-    t => t.name && t.name.toLowerCase() === empName.toLowerCase()
-  );
+  // 4) Переходы по платформам за сегодня (отличные от основной)
+  const today = new Date().toISOString().slice(0,10); // "YYYY-MM-DD"
+  const shiftNorm = normalize(shiftName);
 
-  // определяем сегодняшнюю локальную дату в формате YYYY-MM-DD
-  const now   = new Date();
-  const today = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0")
-  ].join("-");
+  const myChanges = (window.transfersData || []).filter(t => {
+    // имя совпадает
+    if (t.name.trim().toLowerCase() !== empName.trim().toLowerCase()) return false;
+    // не считаем переходы на ту же смену
+    if (normalize(t.toPlatform) === shiftNorm) return false;
+    // дата из timestamp
+    const dt = new Date(t.timestamp);
+    if (isNaN(dt)) return false;
+    return dt.toISOString().slice(0,10) === today;
+  });
 
-  // оставляем только записи, где время начинается с этой даты
-  const todaysTransfers = allTransfers.filter(t =>
-    typeof t.time === "string" && t.time.slice(0, 10) === today
-  );
+  // вставляем количество изменений
+  document.getElementById("modal-platform-count").textContent = myChanges.length;
 
-  // вставляем количество
-  document.getElementById("modal-platform-count").textContent =
-    todaysTransfers.length;
-
-  // и список
+  // строим список
   const listEl = document.getElementById("modal-platform-list");
-  if (todaysTransfers.length > 0) {
-    listEl.innerHTML = todaysTransfers
-      .map(t => {
-        // t.time = "YYYY-MM-DD HH:mm:ss"
-        const timeOnly = t.time.split(" ")[1] || t.time;
-        return `<li>${timeOnly} → ${t.newPlatform}</li>`;
-      })
-      .join("");
+  if (myChanges.length > 0) {
+    listEl.innerHTML = myChanges.map(t => {
+      const timeOnly = new Date(t.timestamp)
+                          .toTimeString()
+                          .slice(0,8); // "HH:MM:SS"
+      return `<li>${timeOnly} → <strong>${t.toPlatform}</strong> (${t.duration})</li>`;
+    }).join("");
   } else {
-    listEl.innerHTML = "<li>No changes today</li>";
+    listEl.innerHTML = "<li>No platform changes today</li>";
   }
 
-  // ——————————————————————————————————————————
   // 5) Показываем модалку
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 }
+
+
+
 
 
         function closeEmployeeModal() {
@@ -2628,12 +2712,9 @@ function renderResponsiblePeople(data) {
   if (existing) existing.remove();
 
   // Оставляем только роли "Shift Lead…" и "In charge…"
-  const responsibleRows = data.filter(([name, role]) => {
-    if (!name || !role) return false;
-    const r = role.trim();
-    return /^Shift\s+Lead\b/i.test(r)
-        || /^In\s+charge\b/i.test(r);
-  });
+  const responsibleRows = data.filter(([name, role]) =>
+  /shift\s+lead/i.test(role) || /in\s+charge/i.test(role)
+);
   if (responsibleRows.length === 0) return;
 
   // Начало HTML
@@ -3150,14 +3231,82 @@ function addInPageNotification(message) {
   $cnt.style.display = notificationQueue.length > 0 ? "block" : "none";
 }
 
-      // по клику показываем список и сбрасываем счётчик
-      document.getElementById("notification-bell")
-        .addEventListener("click", () => {
-          if (!notificationQueue.length) return;
-          alert("🔔 Notifications:\n\n" + notificationQueue.join("\n")); 
-          notificationQueue.length = 0;
-          document.getElementById("notification-count").style.display = "none";
-        });
+      // ───── Панель in-page уведомлений ─────
+
+// загрузка/сохранение
+function loadNotifications() {
+  return JSON.parse(localStorage.getItem('notifications') || '[]');
+}
+function saveNotifications(arr) {
+  localStorage.setItem('notifications', JSON.stringify(arr));
+}
+
+// пуш в очередь + бейдж
+function pushNotification(text) {
+  const arr = loadNotifications();
+  arr.unshift({ text, timestamp: Date.now(), read: false });
+  saveNotifications(arr);
+  renderBadge(arr);
+}
+
+// рендер бейджа на колокольчике
+function renderBadge(arr) {
+  const unread = arr.filter(n => !n.read).length;
+  const $cnt = document.getElementById('notification-count');
+  if (unread > 0) {
+    $cnt.textContent = unread;
+    $cnt.style.display = 'block';
+  } else {
+    $cnt.style.display = 'none';
+  }
+}
+
+// рендер панели
+function renderPanel() {
+  const arr = loadNotifications();
+  const panel = document.getElementById('notifications-panel');
+  if (!arr.length) {
+    panel.innerHTML = '<p class="p-3 text-center text-muted">Нет уведомлений</p>';
+    return;
+  }
+  panel.innerHTML = '<ul class="list-group">' +
+    arr.map((n, i) => {
+      const cls = n.read ? 'read' : 'unread';
+      const time = new Date(n.timestamp).toLocaleTimeString();
+      return `<li class="list-group-item ${cls}">${n.text}
+                <br><small class="text-muted">${time}</small>
+              </li>`;
+    }).join('') +
+    '</ul>';
+}
+
+// при открытии панели — помечаем «прочитанными»
+function markAllRead() {
+  const arr = loadNotifications().map(n => ({ ...n, read: true }));
+  saveNotifications(arr);
+  renderBadge(arr);
+  renderPanel();
+}
+
+// перехват in-page уведомлений
+function addInPageNotification(message) {
+  if (doNotDisturb) return;
+  pushNotification(message);
+}
+
+// клик по колокольчику
+document.getElementById('notification-bell').addEventListener('click', () => {
+  const panel = document.getElementById('notifications-panel');
+  panel.classList.toggle('show');
+  if (panel.classList.contains('show')) {
+    renderPanel();
+    markAllRead();
+  }
+});
+
+// инициализация бейджа при загрузке
+renderBadge(loadNotifications());
+
 
 
         async function fetchData() {
@@ -3211,7 +3360,7 @@ function addInPageNotification(message) {
           renderResponsiblePeople(responsiblesData);
           await fetchBreaksData();
           await fetchShiftsQuinyxData();
-          await fetchTransfers();
+          await fetchStatusChanges();
           fetchAircallStatuses();
           applyFilters();
           checkEmptyPlatforms(data);
@@ -3257,7 +3406,7 @@ function checkEmptyPlatforms(data) {
     if (count === 0 && !notifiedEmpty.has(name)) {
       notifiedEmpty.add(name);
       saveNotifiedEmpty();              // сохраним сразу
-      const msg = `⚠️ Платформа ${name} теперь без активных сотрудников`;
+      const msg = `⚠️ No active employees on ${name}`;
       showDesktopNotification("Empty platform", msg);
       addInPageNotification(msg);
     }
