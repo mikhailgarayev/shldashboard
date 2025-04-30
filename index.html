@@ -1359,12 +1359,12 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
     <script>
       // Инициализация Firebase
       const firebaseConfig = {
-        apiKey: "AIzaSyAHyxC12UaO6QU_nCiWFnegul1Vix5skm8",
-        authDomain: "shldashboard.firebaseapp.com",
-        projectId: "shldashboard",
-        storageBucket: "shldashboard.firebasestorage.app",
-        messagingSenderId: "362566153595",
-        appId: "1:362566153595:web:ee35c2588bd0f798e6f9de"
+        apiKey: ENV.FIREBASE_API_KEY,
+        authDomain: ENV.FIREBASE_AUTH_DOMAIN,
+        projectId: ENV.FIREBASE_PROJECT_ID,
+        storageBucket: ENV.FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: ENV.FIREBASE_MESSAGING_SENDER_ID,
+        appId: ENV.FIREBASE_APP_ID
       };
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
