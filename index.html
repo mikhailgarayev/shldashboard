@@ -2125,7 +2125,7 @@ async function openEmployeeModal(empName) {
   }
 
   // 1) Смена
-  const rec       = window.shiftsQuinyxData.find(
+  const rec = window.shiftsQuinyxData.find(
     r => r.name.toLowerCase() === empName.toLowerCase()
   ) || {};
   const shiftName = rec.platform || "—";
@@ -2164,22 +2164,23 @@ async function openEmployeeModal(empName) {
     window.open(generateAdminLink(info.id), "_blank");
   };
 
-  // 4) Переходы за сегодня — запрашиваем только JSON из Apps Script
+  // 4) Подготовка списка переходов
   const countEl = document.getElementById("modal-platform-count");
   const listEl  = document.getElementById("modal-platform-list");
   countEl.textContent = "…";
   listEl.innerHTML    = "<li>Loading…</li>";
 
+  // Показываем модалку сразу, ещё до fetch
+  document.getElementById("modal-overlay").classList.add("show");
+  document.getElementById("employee-modal").classList.add("show");
+
   try {
-    // сборка URL: json=1 + имя сотрудника
-    const url = `${TRANSITIONS_API}&name=${encodeURIComponent(empName)}`;
-    const res = await fetch(url);
+    // Оригинальный TRANSITIONS_API без дублирования json=1
+    const res = await fetch(TRANSITIONS_API);
     if (!res.ok) throw new Error(res.statusText);
-    const moves = await res.json(); // массив [ [name,toPlat,mainPlat,fromStr,toStr,dur], … ]
+    const moves = await res.json(); // [ [name,toPlat,mainPlat,fromStr,toStr,dur], … ]
 
-    // количество
     countEl.textContent = moves.length;
-
     if (moves.length > 0) {
       listEl.innerHTML = moves.map(r => {
         const [, toPlat, , fromStr, toStr, durStr] = r;
@@ -2198,11 +2199,8 @@ async function openEmployeeModal(empName) {
     countEl.textContent = "—";
     listEl.innerHTML    = `<li class="text-danger">Error loading data</li>`;
   }
-
-  // 5) Показываем модалку
-  document.getElementById("modal-overlay").classList.add("show");
-  document.getElementById("employee-modal").classList.add("show");
 }
+
 
 
 
