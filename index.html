@@ -2170,15 +2170,16 @@ async function openEmployeeModal(empName) {
   countEl.textContent = "…";
   listEl.innerHTML    = "<li>Loading…</li>";
 
-  // Показываем модалку сразу, ещё до fetch
+  // Показываем модалку сразу
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 
   try {
-    // Оригинальный TRANSITIONS_API без дублирования json=1
-    const res = await fetch(TRANSITIONS_API);
+    // **Важно**: передаём empName в запрос
+    const url = `${TRANSITIONS_API}&name=${encodeURIComponent(empName)}`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error(res.statusText);
-    const moves = await res.json(); // [ [name,toPlat,mainPlat,fromStr,toStr,dur], … ]
+    const moves = await res.json(); // теперь только переходы данного сотрудника
 
     countEl.textContent = moves.length;
     if (moves.length > 0) {
@@ -2200,7 +2201,6 @@ async function openEmployeeModal(empName) {
     listEl.innerHTML    = `<li class="text-danger">Error loading data</li>`;
   }
 }
-
 
 
 
