@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number blocking</title>
+  <style>
+    /* Reset */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(135deg, #e0e5ec 0%, #f9fafb 100%); }
+    .container { display: flex; gap: 20px; padding: 20px; height: 100%; }
+
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .panel h1 {
+      padding: 16px;
+      text-align: center;
+      font-size: 1.6rem;
+      color: #333;
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 20px;
+    }
+    .controls input,
+    .controls select {
+      flex: 1;
+      min-width: 120px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.35);
+      backdrop-filter: blur(8px);
+      font-size: 0.95rem;
+      color: #333;
+    }
+    .controls input::placeholder { color: #666; }
+
+    .table-wrapper { flex: 1; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { position: sticky; top: 0; background: rgba(255,255,255,0.4); }
+    th, td {
+      padding: 14px 18px;
+      text-align: left;
+      color: #222;
+      white-space: nowrap;
+    }
+    th { font-weight: 600; }
+    th.sortable { cursor: pointer; }
+    tbody tr { background: rgba(255,255,255,0.2); transition: background 0.3s; }
+    tbody tr:nth-child(even) { background: rgba(255,255,255,0.15); }
+    tbody tr:hover { background: rgba(255,255,255,0.3); }
+
+    .block-btn {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(220, 20, 60, 0.3);
+      color: #b00;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .block-btn:hover:not(:disabled) { background: rgba(220, 20, 60, 0.5); }
+    .block-btn:disabled { background: rgba(200,200,200,0.4); color: #666; cursor: default; }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.35);
+      border-top: 1px solid rgba(255,255,255,0.3);
+    }
+    .pagination button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.4);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .pagination button:hover:not(:disabled) { background: rgba(255,255,255,0.6); }
+    .pagination button:disabled { opacity: 0.5; cursor: default; }
+
+    .right-panel iframe {
+      width: 100%; height: 100%; border: none;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="panel">
+      <h1>Number blocking</h1>
+      <div class="controls">
+        <input id="search-input" type="search" placeholder="Number search">
+        <input id="date-input" type="date">
+        <select id="page-size">
+          <option value="5">5 strings</option>
+          <option value="10">10 strings</option>
+          <option value="50" selected>50 strings</option>
+          <option value="100">100 strings</option>
+        </select>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Number</th>
+              <th>Employee</th>
+              <th data-key="dateObj" class="sortable">Date/Time <span id="date-sort-indicator"></span></th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="requests-table">
+            <tr><td colspan="4" style="text-align:center; font-style:italic;">Loading data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button id="prev-page">← Prev</button>
+        <span id="page-info">1/1</span>
+        <button id="next-page">Next →</button>
+      </div>
+    </div>
+    <div class="panel right-panel">
+      <iframe src="https://example.com" title="Embedded Site"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const PROXY_URL = 'https://script.google.com/macros/s/AKfycbwg8OA11IxeKtjOK2D4-mdacAKimOkZ9JqfjQapu0ias1Zkb4k2bD4lLMY4U5fsB5eaow/exec';
+    let state = [];
+    let sortDir = null;
+    let pageSize = 50;
+    let pageIndex = 0;
+
+    function isBlocked(item) {
+      return item.blocked === true || String(item.blocked).toUpperCase() === 'TRUE';
+    }
+
+    async function fetchSheetData() {
+      const res = await fetch(PROXY_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const jsonMatch = text.match(/^[\s\S]*?\]/);
+      const json = jsonMatch ? jsonMatch[0] : text;
+      const data = JSON.parse(json);
+      state = data.map(item => {
+        const raw = item.datetime || item.date || '';
+        const d = new Date(raw);
+        return {
+          phone: item.phone,
+          employee: item.employee,
+          dateObj: isNaN(d) ? null : d,
+          isoDate: !isNaN(d) ? d.toISOString().slice(0,10) : '',
+          formatted: formatDate(raw),
+          blocked: item.blocked
+        };
+      });
+      pageIndex = 0;
+      renderTable();
+    }
+
+    async function blockNumber(phone) {
+      await fetch(`${PROXY_URL}?action=block&phone=${encodeURIComponent(phone)}`);
+      await fetchSheetData();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('requests-table');
+      const search = document.getElementById('search-input').value.trim().toLowerCase();
+      const dateVal = document.getElementById('date-input').value;
+      pageSize = parseInt(document.getElementById('page-size').value, 10);
+
+      let filtered = state;
+      if (search) filtered = filtered.filter(i => String(i.phone).toLowerCase().includes(search));
+      if (dateVal) filtered = filtered.filter(i => i.isoDate === dateVal);
+      if (sortDir) {
+        filtered.sort((a,b) => a.dateObj && b.dateObj ? (sortDir==='asc' ? a.dateObj - b.dateObj : b.dateObj - a.dateObj) : 0);
+      }
+
+      const total = Math.max(1, Math.ceil(filtered.length / pageSize));
+      pageIndex = Math.min(pageIndex, total - 1);
+
+      tbody.innerHTML = '';
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; font-style:italic;">Нет записей</td></tr>`;
+      } else {
+        filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize).forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.phone || ''}</td>
+            <td>${item.employee || ''}</td>
+            <td>${item.formatted}</td>
+            <td><button class="block-btn"${isBlocked(item) ? ' disabled' : ''}>Block</button></td>
+          `;
+          if (!isBlocked(item)) {
+            tr.querySelector('.block-btn').addEventListener('click', () => blockNumber(item.phone));
+          }
+          tbody.appendChild(tr);
+        });
+      }
+
+      document.getElementById('prev-page').disabled = pageIndex === 0;
+      document.getElementById('next-page').disabled = pageIndex >= total - 1;
+      document.getElementById('page-info').textContent = `${pageIndex+1}/${total}`;
+    }
+
+    function formatDate(str) {
+      const d = new Date(str);
+      if (isNaN(d)) return str;
+      const day = d.getDate();
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const month = monthNames[d.getMonth()];
+      const year = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      const ss = String(d.getSeconds()).padStart(2,'0');
+      return `${day} ${month} ${year}, ${hh}:${mm}:${ss}`;
+    }
+
+    document.getElementById('search-input').addEventListener('input', () => { pageIndex=0; renderTable(); });
+    document.getElementById('date-input').addEventListener('change', () => { pageIndex=0; renderTable(); });
+    document.getElementById('page-size').addEventListener('change', () => { pageIndex=0; renderTable(); });
+    document.getElementById('prev-page').addEventListener('click', () => { pageIndex--; renderTable(); });
+    document.getElementById('next-page').addEventListener('click', () => { pageIndex++; renderTable(); });
+    document.querySelector('th.sortable').addEventListener('click', () => { sortDir = sortDir==='asc'?'desc':'asc'; document.getElementById('date-sort-indicator').textContent = sortDir==='asc'?'↑':'↓'; renderTable(); });
+
+    fetchSheetData();
+    setInterval(fetchSheetData, 10000);
+  </script>
+</body>
+</html>
