@@ -842,6 +842,10 @@
         z-index: 1001;
         width: 330px;
         pointer-events: none;
+        max-height: 80vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
 
       #employee-modal.show {
@@ -871,6 +875,20 @@
       }
       #employee-modal a:hover {
         color: #0056b3;
+      }
+      /* Контейнер с инфой и кнопками оставляем по контенту, а вот список делаем скроллимым */
+      #employee-modal > div:nth-of-type(2) {
+        /* это как раз <div> с padding вокруг всей таблички инфы и списка */
+        flex: 1 1 auto;
+        overflow-y: auto;
+      }
+      
+      /* Если хотите более точечно только список платформенных переходов: */
+      #modal-platform-list {
+        max-height: 200px;    /* или сколько вам нужно */
+        overflow-y: auto;
+        margin-left: 20px;
+        font-size: 0.9rem;
       }
       .dashboard-header {
         position: fixed;
