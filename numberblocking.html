@@ -107,7 +107,7 @@
 <body>
   <div class="container">
     <div class="panel">
-      <h1>Number blocking</h1>
+      <h1>Number blocking dashboard</h1>
       <div class="controls">
         <input id="search-input" type="search" placeholder="Number search">
         <input id="date-input" type="date">
@@ -209,7 +209,7 @@
             <td>${item.phone || ''}</td>
             <td>${item.employee || ''}</td>
             <td>${item.formatted}</td>
-            <td><button class="block-btn"${isBlocked(item) ? ' disabled' : ''}>Block</button></td>
+            <td><button class="block-btn"${isBlocked(item) ? ' disabled' : ''}>Mark blocked</button></td>
           `;
           if (!isBlocked(item)) {
             tr.querySelector('.block-btn').addEventListener('click', () => blockNumber(item.phone));
