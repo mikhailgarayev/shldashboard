@@ -1379,7 +1379,7 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
 
 // Кэш для всех переходов за сегодня
 window.transitionsCache = [];
-
+window.transitionsCacheLoaded = loadAllTransitions();
 /**
  * Загружает все переходы за сегодня и сохраняет в window.transitionsCache.
  */
@@ -2111,19 +2111,6 @@ function parseDDMMYYYY(str) {
 
 
 
-async function loadAllTransitions() {
-  try {
-    const res = await fetch(TRANSITIONS_API);
-    if (!res.ok) throw new Error(res.statusText);
-    // ожидаем JSON: [ [name,toPlat,mainPlat,fromStr,toStr,dur], … ]
-    window.transitionsCache = await res.json();
-    console.log(`Loaded ${window.transitionsCache.length} transitions`);
-  } catch (e) {
-    console.error('Failed to load transitions cache:', e);
-    window.transitionsCache = [];
-  }
-}
-
 // Внутри вашей fetchData(), сразу после прочих await:
 async function fetchData() {
   // … ваши existing fetchData шаги …
@@ -2135,14 +2122,13 @@ async function fetchData() {
   checkEmptyPlatforms(data);
 
   // загружаем кэш переходов
-  await loadAllTransitions();
 
   // … остальной init-код …
 }
 
 
 // Обновлённая функция модалки
-function openEmployeeModal(empName) {
+async function openEmployeeModal(empName) {
   const info = employeeData[empName];
   if (!info) {
     console.warn("Данные о сотруднике не найдены: " + empName);
@@ -2189,18 +2175,18 @@ function openEmployeeModal(empName) {
     window.open(generateAdminLink(info.id), "_blank");
   };
 
-  // 4) Переходы за сегодня — фильтруем по кэшу
+  // 4) Ждём, пока transitionsCache загрузится, и сразу фильтруем
+  await window.transitionsCacheLoaded;
   const countEl = document.getElementById("modal-platform-count");
   const listEl  = document.getElementById("modal-platform-list");
   const normPlat = normalize(shiftName);
 
   const todayMoves = window.transitionsCache.filter(r => {
     const [ name, toPlat ] = r;
-    return name.toLowerCase() === empName.toLowerCase()
+    return name.trim().toLowerCase() === empName.trim().toLowerCase()
         && normalize(toPlat) !== normalize(normPlat);
   });
 
-  // выводим
   countEl.textContent = todayMoves.length;
   if (todayMoves.length) {
     listEl.innerHTML = todayMoves.map(r => {
@@ -2215,7 +2201,7 @@ function openEmployeeModal(empName) {
     listEl.innerHTML = "<li>No platform changes today</li>";
   }
 
-  // 5) Показать модалку мгновенно
+  // 5) Показать модалку
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 }
@@ -3376,7 +3362,6 @@ renderBadge(loadNotifications());
           renderResponsiblePeople(responsiblesData);
           await fetchBreaksData();
           await fetchShiftsQuinyxData();
-          await loadAllTransitions();
           fetchAircallStatuses();
           applyFilters();
           checkEmptyPlatforms(data);
