@@ -2026,28 +2026,25 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
         }
 
         async function fetchEmployeeList() {
-  // подтягиваем столбцы A–H (A: Name, B: ID, C: Role, D: CanReallocate, E: Prime, F: Pref, G: Languages, H: Capacity, I: StartDate)
-  // если у вас H — это capacity, а I — дата начала, нужно заменить диапазон на A1:I
-  const data = await fetchSheetData("emplist!A1:I");
+  // теперь A–H: A: Name, B: ID, C: CanReallocate, D: Prime, E: Pref, F: Languages, G: Capacity, H: StartDate
+  const data = await fetchSheetData("emplist!A1:H");
   if (!data || data.length < 2) return;
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (!row[0]) continue;  // если нет имени — пропускаем
+    const empName           = row[0]?.trim();
+    if (!empName) continue;
 
-    const empName           = row[0].trim();               // A
-    const empId             = row[1]?.trim()     || "";     // B
-    const role              = row[2]?.trim()     || "N/A";  // C
-    const canRealloc        = row[3]?.trim()     || "N/A";  // D
-    const primePlatform     = row[4]?.trim()     || "N/A";  // E
-    const preferredPlatform = row[5]?.trim()     || "N/A";  // F
-    const languages         = row[6]?.trim()     || "N/A";  // G
-    const capacity          = row[7]?.trim()     || "N/A";  // H
-    const startDateRaw      = row[8]?.trim()     || "";     // I
+    const empId             = row[1]?.trim() || "";
+    const canRealloc        = row[2]?.trim() || "No";
+    const primePlatform     = row[3]?.trim() || "N/A";
+    const preferredPlatform = row[4]?.trim() || "N/A";
+    const languages         = row[5]?.trim() || "";
+    const capacity          = row[6]?.trim() || "";
+    const startDateRaw      = row[7]?.trim() || "";
 
     employeeData[empName] = {
       id:            empId,
-      role:          role,
       canReallocate: canRealloc,
       prime:         primePlatform,
       pref:          preferredPlatform,
