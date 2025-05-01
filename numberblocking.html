@@ -140,7 +140,7 @@
       </div>
     </div>
     <div class="panel right-panel">
-      <iframe src="https://example.com" title="Embedded Site"></iframe>
+      <iframe src="https://dashboard.aircall.io/calls/blocked_numbers" title="Embedded Site"></iframe>
     </div>
   </div>
 
@@ -201,7 +201,7 @@
 
       tbody.innerHTML = '';
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; font-style:italic;">Нет записей</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; font-style:italic;">No data</td></tr>`;
       } else {
         filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize).forEach(item => {
           const tr = document.createElement('tr');
