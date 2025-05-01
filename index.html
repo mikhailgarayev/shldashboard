@@ -1373,7 +1373,8 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       const BREAK_NOTIF_KEY = 'overdueBreakNotified';
       let overdueBreakNotified = JSON.parse(localStorage.getItem(BREAK_NOTIF_KEY) || '{}');
       const brbOverdueNotified = {};
-      const TRANSFERS_API = 'https://script.google.com/macros/s/AKfycbz1QN5KuR4ZDGxkrApKqDzHDj1ewm5UTVP0vDjblopXqlOKlsDea7JOkldx_fBZ-GrA/exec?json=true';
+      const TRANSITIONS_API = 'https://script.google.com/macros/s/AKfycbwlp0Gsq8sVkI28nFW1TZvW_immH6PLrXejAeexj-48MhFtV7_uQ8SVjNi13RUfv_uj/exec?json=1';
+
 
 
 async function fetchStatusChanges() {
@@ -2119,12 +2120,12 @@ function parseDDMMYYYY(str) {
 async function openEmployeeModal(empName) {
   const info = employeeData[empName];
   if (!info) {
-    logDebug("Данные о сотруднике не найдены: " + empName);
+    console.warn("Данные о сотруднике не найдены: " + empName);
     return;
   }
 
   // 1) Смена
-  const rec = window.shiftsQuinyxData.find(
+  const rec       = window.shiftsQuinyxData.find(
     r => r.name.toLowerCase() === empName.toLowerCase()
   ) || {};
   const shiftName = rec.platform || "—";
@@ -2163,43 +2164,45 @@ async function openEmployeeModal(empName) {
     window.open(generateAdminLink(info.id), "_blank");
   };
 
-  // 4) Переходы по платформам за сегодня (отличные от основной)
-  const today = new Date().toISOString().slice(0,10); // "YYYY-MM-DD"
-  const shiftNorm = normalize(shiftName);
+  // 4) Переходы за сегодня — запрашиваем только JSON из Apps Script
+  const countEl = document.getElementById("modal-platform-count");
+  const listEl  = document.getElementById("modal-platform-list");
+  countEl.textContent = "…";
+  listEl.innerHTML    = "<li>Loading…</li>";
 
-  const myChanges = (window.transfersData || []).filter(t => {
-    // имя совпадает
-    if (t.name.trim().toLowerCase() !== empName.trim().toLowerCase()) return false;
-    // не считаем переходы на ту же смену
-    if (normalize(t.toPlatform) === shiftNorm) return false;
-    // дата из timestamp
-    const dt = new Date(t.timestamp);
-    if (isNaN(dt)) return false;
-    return dt.toISOString().slice(0,10) === today;
-  });
+  try {
+    // сборка URL: json=1 + имя сотрудника
+    const url = `${TRANSITIONS_API}&name=${encodeURIComponent(empName)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.statusText);
+    const moves = await res.json(); // массив [ [name,toPlat,mainPlat,fromStr,toStr,dur], … ]
 
-  // вставляем количество изменений
-  document.getElementById("modal-platform-count").textContent = myChanges.length;
+    // количество
+    countEl.textContent = moves.length;
 
-  // строим список
-  const listEl = document.getElementById("modal-platform-list");
-  if (myChanges.length > 0) {
-    listEl.innerHTML = myChanges.map(t => {
-      const timeOnly = new Date(t.timestamp)
-                          .toTimeString()
-                          .slice(0,8); // "HH:MM:SS"
-      return `<li>${timeOnly} → <strong>${t.toPlatform}</strong> (${t.duration})</li>`;
-    }).join("");
-  } else {
-    listEl.innerHTML = "<li>No platform changes today</li>";
+    if (moves.length > 0) {
+      listEl.innerHTML = moves.map(r => {
+        const [, toPlat, , fromStr, toStr, durStr] = r;
+        return `
+          <li>
+            <strong>${fromStr}</strong> → <strong>${toStr}</strong><br>
+            To: <em>${toPlat}</em> (Duration ${durStr})
+          </li>
+        `;
+      }).join("");
+    } else {
+      listEl.innerHTML = "<li>No platform changes today</li>";
+    }
+  } catch (err) {
+    console.error("Error loading transitions:", err);
+    countEl.textContent = "—";
+    listEl.innerHTML    = `<li class="text-danger">Error loading data</li>`;
   }
 
   // 5) Показываем модалку
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 }
-
-
 
 
 
