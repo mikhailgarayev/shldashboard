@@ -1659,6 +1659,25 @@ async function fetchStatusChanges() {
         <!-- 3) Платформенные platform-card -->
         <div id="platforms-container" class="platforms-row"></div>
 
+        <!-- Встроенный iframe с Converse Dashboard -->
+<div class="glass-card" style="margin-top: 2rem; height: 600px;">
+  <h2 style="margin-bottom: 1rem; font-size: 1.25rem; color: var(--text-color);">
+    Conversation Lists
+  </h2>
+  <iframe
+    src="https://ops.wolt.com/support/converse/dashboard/conversation-lists?activePage=1&pageSize=20"
+    frameborder="0"
+    style="
+      width: 100%;
+      height: calc(100% - 2.5rem);
+      border: none;
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+    "
+  ></iframe>
+</div>
+
+
       </main>
 
       <!-- Right Panel: Breaks & Shift-Overs -->
