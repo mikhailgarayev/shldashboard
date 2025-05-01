@@ -1377,28 +1377,22 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
 
 
 
-async function fetchStatusChanges() {
+// Кэш для всех переходов за сегодня
+window.transitionsCache = [];
+
+/**
+ * Загружает все переходы за сегодня и сохраняет в window.transitionsCache.
+ */
+async function loadAllTransitions() {
   try {
-    const res = await fetch(TRANSFERS_API);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    // API возвращает массив объектов вида
-    // { Timestamp: "...", Name: "...", FromPlatform: "...", ToPlatform: "...", Duration: "..." }
-    const raw = await res.json();
-    // приводим к единому формату
-    window.transfersData = raw
-      .map(item => ({
-        name:         item.Name,
-        fromPlatform: item.FromPlatform,
-        toPlatform:   item.ToPlatform,
-        duration:     item.Duration,
-        timestamp:    item.Timestamp
-      }))
-      // отбрасываем неполные записи
-      .filter(t => t.name && t.fromPlatform && t.toPlatform);
-    console.log('transfersData', window.transfersData);
+    const res = await fetch(TRANSITIONS_API);
+    if (!res.ok) throw new Error(res.statusText);
+    // ожидаем массив записей: [ [name,toPlat,mainPlat,fromStr,toStr,dur], ... ]
+    window.transitionsCache = await res.json();
+    console.log('Transitions cache loaded:', window.transitionsCache.length);
   } catch (err) {
-    console.error('Ошибка fetchStatusChanges:', err);
-    window.transfersData = [];
+    console.error('Не удалось загрузить transitions:', err);
+    window.transitionsCache = [];
   }
 }
 
@@ -2117,7 +2111,38 @@ function parseDDMMYYYY(str) {
 
 
 
-async function openEmployeeModal(empName) {
+async function loadAllTransitions() {
+  try {
+    const res = await fetch(TRANSITIONS_API);
+    if (!res.ok) throw new Error(res.statusText);
+    // ожидаем JSON: [ [name,toPlat,mainPlat,fromStr,toStr,dur], … ]
+    window.transitionsCache = await res.json();
+    console.log(`Loaded ${window.transitionsCache.length} transitions`);
+  } catch (e) {
+    console.error('Failed to load transitions cache:', e);
+    window.transitionsCache = [];
+  }
+}
+
+// Внутри вашей fetchData(), сразу после прочих await:
+async function fetchData() {
+  // … ваши existing fetchData шаги …
+  await fetchBreaksData();
+  await fetchShiftsQuinyxData();
+  await fetchStatusChanges();
+  fetchAircallStatuses();
+  applyFilters();
+  checkEmptyPlatforms(data);
+
+  // загружаем кэш переходов
+  await loadAllTransitions();
+
+  // … остальной init-код …
+}
+
+
+// Обновлённая функция модалки
+function openEmployeeModal(empName) {
   const info = employeeData[empName];
   if (!info) {
     console.warn("Данные о сотруднике не найдены: " + empName);
@@ -2164,42 +2189,33 @@ async function openEmployeeModal(empName) {
     window.open(generateAdminLink(info.id), "_blank");
   };
 
-  // 4) Переходы за сегодня — запрашиваем только JSON из Apps Script
+  // 4) Переходы за сегодня — фильтруем по кэшу
   const countEl = document.getElementById("modal-platform-count");
   const listEl  = document.getElementById("modal-platform-list");
-  countEl.textContent = "…";
-  listEl.innerHTML    = "<li>Loading…</li>";
+  const normPlat = normalize(shiftName);
 
-  try {
-    // сборка URL: json=1 + имя сотрудника
-    const url = `${TRANSITIONS_API}&name=${encodeURIComponent(empName)}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(res.statusText);
-    const moves = await res.json(); // массив [ [name,toPlat,mainPlat,fromStr,toStr,dur], … ]
+  const todayMoves = window.transitionsCache.filter(r => {
+    const [ name, toPlat ] = r;
+    return name.toLowerCase() === empName.toLowerCase()
+        && normalize(toPlat) !== normalize(normPlat);
+  });
 
-    // количество
-    countEl.textContent = moves.length;
-
-    if (moves.length > 0) {
-      listEl.innerHTML = moves.map(r => {
-        const [, toPlat, , fromStr, toStr, durStr] = r;
-        return `
-          <li>
-            <strong>${fromStr}</strong> → <strong>${toStr}</strong><br>
-            To: <em>${toPlat}</em> (Duration ${durStr})
-          </li>
-        `;
-      }).join("");
-    } else {
-      listEl.innerHTML = "<li>No platform changes today</li>";
-    }
-  } catch (err) {
-    console.error("Error loading transitions:", err);
-    countEl.textContent = "—";
-    listEl.innerHTML    = `<li class="text-danger">Error loading data</li>`;
+  // выводим
+  countEl.textContent = todayMoves.length;
+  if (todayMoves.length) {
+    listEl.innerHTML = todayMoves.map(r => {
+      const [, toPlat, , fromStr, toStr, durStr] = r;
+      return `
+        <li>
+          <strong>${fromStr}</strong> → <strong>${toStr}</strong><br>
+          To: <em>${toPlat}</em> (Duration ${durStr})
+        </li>`;
+    }).join("");
+  } else {
+    listEl.innerHTML = "<li>No platform changes today</li>";
   }
 
-  // 5) Показываем модалку
+  // 5) Показать модалку мгновенно
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 }
@@ -3360,7 +3376,7 @@ renderBadge(loadNotifications());
           renderResponsiblePeople(responsiblesData);
           await fetchBreaksData();
           await fetchShiftsQuinyxData();
-          await fetchStatusChanges();
+          await loadAllTransitions();
           fetchAircallStatuses();
           applyFilters();
           checkEmptyPlatforms(data);
