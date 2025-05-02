@@ -1444,7 +1444,7 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       const TRANSITIONS_API = 'https://script.google.com/macros/s/AKfycbwlp0Gsq8sVkI28nFW1TZvW_immH6PLrXejAeexj-48MhFtV7_uQ8SVjNi13RUfv_uj/exec?json=1';
 
 
-      window.CURRENT_UPDATE_ID = '2025-05-02-v1'; // обновление, которое сейчас на сайте
+      window.CURRENT_UPDATE_ID = '2025-05-02-v1.2'; // обновление, которое сейчас на сайте
 
         // --- Default settings ---
       const NOTIF_SETTINGS_KEY = 'notifSettings';
@@ -2127,22 +2127,29 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
         }
 
         async function fetchSheetData(range) {
-          try {
-            const res = await fetch("https://sheets-proxy.mikhail-garayev.workers.dev", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                secret: "superWoltKey42",
-                range: range
-              })
-            });
-            const data = await res.json();
-            return data.values;
-          } catch (e) {
-            console.error("Sheets proxy error:", e);
-            return null;
+        try {
+          // Добавляем cache-busting параметр и отключаем HTTP-кэш
+          const url = `https://sheets-proxy.mikhail-garayev.workers.dev?cacheBust=${Date.now()}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({
+              secret: "superWoltKey42",
+              range: range
+            })
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
           }
+          const data = await res.json();
+          return data.values;
+        } catch (e) {
+          console.error("Sheets proxy error:", e);
+          return null;
         }
+      }
+
 
         async function fetchEmployeeList() {
   // теперь A–H: A: Name, B: ID, C: CanReallocate, D: Prime, E: Pref, F: Languages, G: Capacity, H: StartDate
@@ -3825,6 +3832,8 @@ function findCandidate() {
           <p>New release <strong>${window.CURRENT_UPDATE_ID}</strong></p>
           <p>Find candidate update: Find candidate feature now shows top 3 employees</p>
           <p>Notifications settings: You can set notifications settings as you wish</p>
+          <p>Platform changes: You can see employees platform changes by clicking on his name</p>
+          <p>Responsible people bug: Fixed responsible people bug</p>
           <button id="close-update-modal">OK</button>
         </div>
       </div>
