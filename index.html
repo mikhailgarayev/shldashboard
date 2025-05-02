@@ -156,6 +156,54 @@
         border: 1px solid #dc3545 !important;
       }
 
+      /* Dark-theme support for candidate modal */
+      body.dark-theme .modal-content {
+        background-color: var(--card-bg-color) !important;
+        color: var(--text-color) !important;
+      }
+      body.dark-theme .modal-content h5,
+      body.dark-theme .modal-content p,
+      body.dark-theme .modal-content li,
+      body.dark-theme .modal-content ul {
+        color: var(--card-text-color) !important;
+      }
+      /* Кнопка Close */
+      body.dark-theme .modal-content .btn-secondary {
+        background-color: #444 !important;
+        border-color: #666 !important;
+        color: #fff !important;
+      }
+      body.dark-theme .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.8) !important;
+      }
+
+      /* == What’s New? modal в dark-theme == */
+      body.dark-theme #whats-new-modal > div > div {
+        /* перекрываем inline background:white */
+        background-color: var(--card-bg-color) !important;
+        color: var(--text-color)            !important;
+        border-radius: 8px;
+        padding: 20px;
+      }
+      /* Заголовок и текст */
+      body.dark-theme #whats-new-modal > div > div h2,
+      body.dark-theme #whats-new-modal > div > div p {
+        color: var(--text-color) !important;
+      }
+      /* Кнопка OK */
+      body.dark-theme #whats-new-modal > div > div button#close-update-modal {
+        background-color: var(--card-border-color) !important;
+        color: var(--card-text-color)      !important;
+        border: 1px solid var(--card-text-color) !important;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      /* Усиленное затемнение фона, если нужно */
+      body.dark-theme #whats-new-modal > div {
+        background: rgba(0, 0, 0, 0.85) !important;
+      }
+
       /* Общий сброс и фон */
       html,
       body {
@@ -1374,6 +1422,8 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
     <script>
       // Инициализация Firebase
       const firebaseConfig = {
@@ -1386,7 +1436,7 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       };
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
-
+      const database = firebase.database();
       const brbAlertSent = {};
       const BREAK_NOTIF_KEY = 'overdueBreakNotified';
       let overdueBreakNotified = JSON.parse(localStorage.getItem(BREAK_NOTIF_KEY) || '{}');
@@ -1394,6 +1444,37 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
       const TRANSITIONS_API = 'https://script.google.com/macros/s/AKfycbwlp0Gsq8sVkI28nFW1TZvW_immH6PLrXejAeexj-48MhFtV7_uQ8SVjNi13RUfv_uj/exec?json=1';
 
 
+      window.CURRENT_UPDATE_ID = '2025-05-02-v1'; // обновление, которое сейчас на сайте
+
+        // --- Default settings ---
+      const NOTIF_SETTINGS_KEY = 'notifSettings';
+      const defaultSettings = {
+        breakOverdue: false,
+        brbOverdue:   true,
+        emptyPlatforms: true,
+        notHere: true,
+        brbTwoOrMore: true
+      };
+      // маппинг «генерируемый» → «реальный» e-mail
+      function normalizeEmail(email) {
+        const aliases = {
+          'ramil.guliyev@wolt.com':  'ramil.quliyev@wolt.com',
+          'adil.ibrahimov@wolt.com': 'adil.ibragimov@wolt.com'
+        };
+        return aliases[email] || email;
+      }
+
+      // Загрузить настройки из localStorage или взять дефолт
+      function loadNotifSettings() {
+        const stored = localStorage.getItem(NOTIF_SETTINGS_KEY);
+        return stored ? JSON.parse(stored) : {...defaultSettings};
+      }
+
+      // Сохранить настройки
+      function saveNotifSettings(settings) {
+        localStorage.setItem(NOTIF_SETTINGS_KEY, JSON.stringify(settings));
+      }
+      
 
 async function fetchStatusChanges() {
   try {
@@ -1485,7 +1566,10 @@ async function fetchStatusChanges() {
         <span class="slider"></span>
       </label>
     </div>
-
+    <!-- вставить сразу после блока #notification-bell -->
+    <button id="notif-settings-btn" class="btn btn-link p-0 ml-2" title="Notification settings">
+      <img src="https://www.svgrepo.com/show/528592/settings.svg" alt="Settings" width="24" height="24"/>
+    </button>
     <!-- Bell -->
     <div id="notification-bell" style="position:relative; cursor:pointer; margin-right:1rem;">
       <img
@@ -1773,7 +1857,7 @@ async function fetchStatusChanges() {
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="candidateModalLabel">Recommended candidate</h5>
+            <h5 class="modal-title" id="candidateModalLabel">Recommended candidates</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -2179,9 +2263,14 @@ async function openEmployeeModal(empName) {
 
   // 3) Общая инфа
   const parts = empName.trim().split(" ");
-  const email = parts.length >= 2
+  // сначала генерируем «обычный»
+  const rawEmail = parts.length >= 2
     ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com`
     : `${parts[0].toLowerCase()}@wolt.com`;
+
+  // а потом «нормализуем» под реальные записи Aircall
+  const email = normalizeEmail(rawEmail);
+
 
   document.getElementById("modal-emp-name").textContent      = empName;
   document.getElementById("modal-emp-email").textContent     = email;
@@ -2336,6 +2425,8 @@ async function openEmployeeModal(empName) {
 
 function applyFilters() {
   const container = document.getElementById("platforms-container");
+  const settings = loadNotifSettings();
+
   container.innerHTML = "";
 
   platforms.forEach((platform) => {
@@ -2460,22 +2551,27 @@ if (showAway) {
   });
   html += `</ul>`;
   if (brbCount >= 2) {
-    html += `
-      <p style="text-align:center;color:red;font-size:0.95rem;">
-        <span title="2 or more on BRB">&#9888;</span>
-        <span style="margin-left:6px;">2 or more on BRB</span>
-      </p>
-    `;
+  // UI-подсказка остаётся всегда
+  html += `
+    <p style="text-align:center;color:red;font-size:0.95rem;">
+      <span title="2 or more on BRB">&#9888;</span>
+      <span style="margin-left:6px;">2 or more on BRB</span>
+    </p>
+  `;
+
+  // нотификация только если включена в настройках
+  if (settings.brbTwoOrMore) {
+    if (!brbAlertSent[platform.name]) {
       const msg = `⚠️ ${brbCount} or more on BRB on ${platform.name}`;
-      if (!brbAlertSent[platform.name]) {
       showDesktopNotification('BRB Alert', msg);
       addInPageNotification(msg);
       brbAlertSent[platform.name] = true;
     }
-  } else {
-    // сбрасываем флаг, чтобы при следующем повторном выходе за порог оповещение снова ушло
-    brbAlertSent[platform.name] = false;
   }
+} else {
+  // сбрасываем флаг, чтобы при следующем превышении порога вновь уведомить
+  brbAlertSent[platform.name] = false;
+}
 }
 
       html += `</div>`;
@@ -2608,15 +2704,29 @@ function renderAircallCardWithStatuses(
   }, 100);
 }
 
+const LAST_NOTHERE_KEY = 'lastNotHereCount';
 
-  function renderShiftSummary(data) {
-  // контейнер, где рендерятся все stats-card
+function loadLastNotHereCount() {
+  return localStorage.getItem(LAST_NOTHERE_KEY) || 0;
+}
+
+function saveLastNotHereCount(count) {
+  localStorage.setItem(LAST_NOTHERE_KEY, count);
+}
+
+function renderShiftSummary(data) {
   const generalContainer  = document.getElementById("summary-general");
-const platformContainer = document.getElementById("summary-platforms");
-generalContainer.innerHTML  = "";
-platformContainer.innerHTML = "";
+  const platformContainer = document.getElementById("summary-platforms");
+  generalContainer.innerHTML  = "";
+  platformContainer.innerHTML = "";
 
-  // ваши карточки: title — заголовок, value — строка из ячейки (например "2, Alice, Bob"), away — опционально
+  // Загрузка настроек уведомлений
+  let settings = { notHere: false };
+  if (typeof loadNotifSettings === 'function') {
+    try { settings = loadNotifSettings(); }
+    catch (e) { console.warn('loadNotifSettings error', e); }
+  }
+
   const summaryCards = [
     { title: "On shift now",  value: data[6][27] || "" },
     { title: "Should be",     value: data[6][29] || "" },
@@ -2628,38 +2738,49 @@ platformContainer.innerHTML = "";
     { title: "Venue",         value: data[6][37] || "", away: data[8][37] || "" },
     { title: "Trainee",       value: data[11][41] || "", away: data[13][41] || "" },
     { title: "ST",            value: data[6][43] || "", away: data[8][43] || "" },
-    // Special: Not here и WNATS тоже делают из столбца 29 и 27, плюс детали из колонки 10
-    { 
-      title: "Not here", 
-      value: (data[8][29] || "") + (data[10][29] ? "," + data[10][29] : ""), 
-      customClass: "small-font-card" 
+    {
+      title: "Not here",
+      value: (data[8][29] || "") + (data[10][29] ? "," + data[10][29] : ""),
+      customClass: "small-font-card"
     },
-    { 
-      title: "WNATS", 
-      value: (data[8][27] || "") + (data[10][27] ? "," + data[10][27] : ""), 
-      customClass: "small-font-card" 
+    {
+      title: "WNATS",
+      value: (data[8][27] || "") + (data[10][27] ? "," + data[10][27] : ""),
+      customClass: "small-font-card"
     }
   ];
 
   summaryCards.forEach(card => {
-    // если нет даже count — пропускаем
     if (!card.value) return;
 
-    // создаём div.stats-card
     const div = document.createElement("div");
     div.className = `stats-card ${card.customClass || ""}`;
 
-    // разбираем для специальных тултипов
+    // Специальная обработка Not here / WNATS
     if (card.title === "Not here" || card.title === "WNATS") {
-      // value = "count, detail1, detail2, …"
-      const parts = card.value.split(",").map(s => s.trim()).filter(s => s !== "");
-      const count = parts.shift();        // первое — число
-      const details = parts;              // остаток — массив тултипов
-      // если Not here и count ≠ 0, добавляем красный фон
-      if (card.title === "Not here" && count !== "0") {
-        div.classList.add("red-card");
+      const parts  = card.value.split(",").map(s => s.trim()).filter(Boolean);
+      const count  = parts.shift();
+      const detail = parts;
+
+      if (card.title === "Not here") {
+        if (count !== "0") {
+          div.classList.add("red-card");
+
+          // Проверяем переход 0→N
+          const last = loadLastNotHereCount();
+          if (settings.notHere && last === "0") {
+            const msg = `${count} emps are Not Here`;
+            showDesktopNotification('Not Here', msg);
+            addInPageNotification(msg);
+          }
+          saveLastNotHereCount(count);
+
+        } else {
+          // сбрасываем, когда снова 0
+          saveLastNotHereCount("0");
+        }
       }
-      // формируем HTML
+
       div.innerHTML = `
         <div class="stats-title">${card.title}</div>
         <div class="stats-value d-inline-flex align-items-center gap-1">
@@ -2668,51 +2789,41 @@ platformContainer.innerHTML = "";
             src="https://www.svgrepo.com/show/474873/info.svg"
             data-toggle="tooltip"
             data-html="true"
-            title="${details.join("<br/>")}"
+            title="${detail.join("<br/>")}"
             class="info-icon"
             style="width:16px; height:16px; cursor:pointer;"
           />
         </div>
       `;
     } else {
-      // обычная карточка: title, value, away
+      // Обычные карточки
       let html = `
         <div class="stats-title">${card.title}</div>
         <div class="stats-value">${card.value}</div>
       `;
       html += `
-      <div class="stats-value" style="font-size:0.9rem; color:#666;">
-      Away: ${card.away || 0}
-      </div>`;
-
+        <div class="stats-value" style="font-size:0.9rem; color:#666;">
+          Away: ${card.away || 0}
+        </div>`;
       div.innerHTML = html;
     }
 
-    // список названий «платформенных» карточек
-const platformTitles = [
-  "CS",
-  "CS/Post Order",
-  "PSR",
-  "SiMo",
-  "Aircall",
-  "Venue",
-  "Trainee",
-  "ST"
-];
+    // Добавляем в нужный контейнер
+    const platformTitles = [
+      "CS","CS/Post Order","PSR",
+      "SiMo","Aircall","Venue",
+      "Trainee","ST"
+    ];
 
-// если это карточка платформы — в платформенный грид,
-// иначе — в общий контейнер
-if (platformTitles.includes(card.title)) {
-  platformContainer.appendChild(div);
-} else {
-  generalContainer.appendChild(div);
-}
+    if (platformTitles.includes(card.title)) {
+      platformContainer.appendChild(div);
+    } else {
+      generalContainer.appendChild(div);
+    }
   });
 
-  // вставляем погоду как последнюю карточку
-  // новый код — в конце renderShiftSummary
-    // вставляем карточки погоды для всех городов
-    const weatherCities = [
+  // Погода остаётся как раньше
+  const weatherCities = [
     { city: "Baku,AZ",        title: "Baku Weather",       tempId: "temp-baku",  windId: "wind-baku" },
     { city: "Ganja,AZ",       title: "Ganja Weather",      tempId: "temp-ganja", windId: "wind-ganja" },
     { city: "Lankaran,AZ",    title: "Lankaran Weather",   tempId: "temp-lank",  windId: "wind-lank" },
@@ -2730,11 +2841,10 @@ if (platformTitles.includes(card.title)) {
       <div class="stats-value small" id="${windId}">--</div>
     `;
     generalContainer.appendChild(card);
-    // запускаем запрос именно для этого города и этих id
     fetchWeatherFor(city, tempId, windId);
   });
-
 }
+
 
 function renderResponsiblePeople(data) {
   if (!Array.isArray(data) || data.length === 0) return;
@@ -3057,8 +3167,8 @@ async function fetchBreaksData() {
     const breakDate = new Date(now);
     breakDate.setHours(h, m, s, 0);
     const durationMins = (now - breakDate) / 60000;
-
-    if (durationMins > ALLOWED_BREAK_MINUTES) {
+    const settings = loadNotifSettings();
+    if (durationMins > ALLOWED_BREAK_MINUTES && settings.breakOverdue) {
       if (!overdueBreakNotified[key]) {
         const lateMin = Math.floor(durationMins);
         const msg = `❗ ${name} is late from break for ${lateMin} min.`;
@@ -3081,7 +3191,8 @@ async function fetchBreaksData() {
   // для каждого нового — шлём уведомление
   overdueBRB.forEach(li => {
     const name = li.dataset.employee;
-    if (!brbOverdueNotified[name]) {
+    const settings = loadNotifSettings();
+    if (!brbOverdueNotified[name] && settings.brbOverdue) {
       const reason = li.querySelector('.text-muted')?.textContent || '';
       const msg = `⏰ ${name} is late from BRB ${reason}`;
       showDesktopNotification('BRB Overdue', msg);
@@ -3145,15 +3256,23 @@ async function fetchAircallStatuses() {
   const spans = Array.from(document.querySelectorAll(".aircall-status"));
   if (!spans.length) return;
 
-  // Помечаем все спаны как «Loading…»
-  spans.forEach(span => {
-    span.textContent = "Loading…";
-  });
+  // 1) вспомогалка для кривых имейлов
+  function normalizeEmail(email) {
+    const aliases = {
+      'ramil.guliyev@wolt.com':  'ramil.quliyev@wolt.com',
+      'adil.ibrahimov@wolt.com': 'adil.ibragimov@wolt.com'
+    };
+    return aliases[email] || email;
+  }
 
-  // Собираем уникальные email
+  // Помечаем все спаны как «Loading…»
+  spans.forEach(span => span.textContent = "Loading…");
+
+  // Собираем уникальные нормализованные email
   const emails = [...new Set(spans.map(span => {
     const name = span.closest("li[data-employee]")?.dataset.employee || "";
-    return generateWoltEmail(name);
+    const raw = generateWoltEmail(name);
+    return normalizeEmail(raw);
   }))];
 
   let results = [];
@@ -3172,7 +3291,7 @@ async function fetchAircallStatuses() {
     console.error("Aircall batch error:", e);
   }
 
-  // Составляем мапу email → статус
+  // Мапим реальные email → статус
   const statusMap = results.reduce((acc, { email, status, error }) => {
     acc[email] = status ?? error ?? "Unknown";
     return acc;
@@ -3180,8 +3299,9 @@ async function fetchAircallStatuses() {
 
   // Обновляем каждый span
   spans.forEach(span => {
-    const li    = span.closest("li[data-employee]");
-    const email = generateWoltEmail(li?.dataset.employee || "");
+    const li = span.closest("li[data-employee]");
+    const raw = generateWoltEmail(li?.dataset.employee || "");
+    const email = normalizeEmail(raw);
     const status = statusMap[email] || "Error";
 
     span.textContent = status;
@@ -3189,6 +3309,7 @@ async function fetchAircallStatuses() {
     span.className = `aircall-status ${safeClass}`;
   });
 }
+
 
 
         let autoRefreshEnabled = true;
@@ -3435,7 +3556,8 @@ function checkEmptyPlatforms(data) {
     const count = parseInt(data[6][colIdx] || "0", 10);
 
     // если 0 и ещё не уведомляли
-    if (count === 0 && !notifiedEmpty.has(name)) {
+    const settings = loadNotifSettings();
+    if (count === 0 && !notifiedEmpty.has(name) && settings.emptyPlatforms) {
       notifiedEmpty.add(name);
       saveNotifiedEmpty();              // сохраним сразу
       const msg = `⚠️ No active employees on ${name}`;
@@ -3570,10 +3692,13 @@ function findCandidate() {
       }
     }
 
-    // 2. На смене?
+    // 2. На смене? Получаем текущую смену и платформу
     const rec = window.shiftsQuinyxData.find(r =>
       r.name.toLowerCase() === e.name.toLowerCase()
     ) || {};
+    // **НОВАЯ ПРОВЕРКА**: если уже на целевой платформе — пропускаем
+    if (rec.platform === target) return null;
+
     const parts = (rec.shift || '').split('-');
     if (parts.length < 2) return null;
     const [startStr, endStr] = parts;
@@ -3596,7 +3721,6 @@ function findCandidate() {
     }
 
     // 4. Расчёт опыта и скоринга
-    // — опыт
     let startDateObj = new Date(e.startDate);
     if (isNaN(startDateObj)) {
       const pd = e.startDate.split(/[./]/);
@@ -3609,22 +3733,17 @@ function findCandidate() {
       ? 0
       : Math.floor((now - startDateObj) / (1000*60*60*24*30));
 
-    // — prime
     const primeMatch = e.prime === target ? 1 : 0;
-
-    // — pref
     const prefList = (e.pref || '').split(',').map(s => canonical(s));
     const prefMatch = prefList.some(pk =>
       pk === targetKey || targetKey.includes(pk) || pk.includes(targetKey)
     ) ? 1 : 0;
 
-    // — языки и capacity
     const langCount = e.languages.trim()
       ? e.languages.trim().split(/\s+/).length
       : 0;
     const cap = e.maxChats || 0;
 
-    // — финальный score
     const w = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
     const maxCap = Math.max(...pool.map(x => x.maxChats), 1);
     const score =
@@ -3644,45 +3763,100 @@ function findCandidate() {
     return $('#candidateModal').modal('show');
   }
 
-  // выбираем лучшего
-  const best = candidates.sort((a,b) => b.score - a.score)[0];
+  // топ-3 по скору
+  const top3 = candidates
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
 
-  // внутри findCandidate(), после const best = …
-const rec = window.shiftsQuinyxData
-  .find(r => r.name.toLowerCase() === best.name.toLowerCase()) || {};
+  // строим HTML в ряд
+  let html = `<div class="d-flex justify-content-between">`;
+  top3.forEach((best, idx) => {
+    const rec = window.shiftsQuinyxData.find(r =>
+      r.name.toLowerCase() === best.name.toLowerCase()
+    ) || {};
+    const shiftInfo = `${rec.platform || '–'} (${rec.shift || '–'})`;
 
-const shiftInfo = `${rec.platform || '–'} (${rec.shift || '–'})`;
+    let breakTime = '–';
+    if (Array.isArray(window.allBreaksData)) {
+      const br = window.allBreaksData.find(b =>
+        b.Name?.trim().toLowerCase() === best.name.trim().toLowerCase()
+      );
+      if (br) breakTime = br['Break Time'] || '–';
+    }
 
-let breakTime = '–';
-if (Array.isArray(window.allBreaksData)) {
-  const br = window.allBreaksData.find(b =>
-    b.Name?.trim().toLowerCase() === best.name.trim().toLowerCase()
-  );
-  if (br) breakTime = br['Break Time'] || '–';
-}
-
-
-  // собираем HTML для модалки
-  const html = `
-  <div class="text-center">
-    <h4>${best.name}</h4>
-    <p>Score <strong>${best.score.toFixed(2)}</strong></p>
-    <ul class="list-unstyled text-left mx-auto" style="max-width:200px;">
-      <li>Current Shift: <strong>${shiftInfo}</strong></li>
-      <li>Break: <strong>${breakTime}</strong></li>
-      <li>Total working time: <strong>${best.tenure}</strong> months</li>
-      <li>Is this his prime platform: <strong>${best.primeMatch ? 'Yes' : 'No'}</strong></li>
-      <li>Is this his preferrable platform: <strong>${best.prefMatch ? 'Yes' : 'No'}</strong></li>
-      <li>Languages: <strong>${best.langCount}</strong></li>
-      <li>Chat capacity: <strong>${best.cap}</strong></li>
-    </ul>
-  </div>
-`;
+    html += `
+      <div style="flex:1; max-width:30%; padding:0 10px; box-sizing:border-box;">
+        <h5>№${idx+1} — ${best.name}</h5>
+        <p>Score: <strong>${best.score.toFixed(2)}</strong></p>
+        <ul class="list-unstyled mb-0">
+          <li>Shift: <strong>${shiftInfo}</strong></li>
+          <li>Break: <strong>${breakTime}</strong></li>
+          <li>Tenure: <strong>${best.tenure}</strong> mo.</li>
+          <li>Prime match: <strong>${best.primeMatch? 'Yes': 'No'}</strong></li>
+          <li>Pref match: <strong>${best.prefMatch? 'Yes': 'No'}</strong></li>
+          <li>Languages: <strong>${best.langCount}</strong></li>
+          <li>Capacity: <strong>${best.cap}</strong></li>
+        </ul>
+      </div>
+    `;
+  });
+  html += `</div>`;
 
   $('#candidateModalBody').html(html);
   $('#candidateModal').modal('show');
 }
 
+
+ // 1) Сам рендер модалки (как раньше)
+ function showWhatsNewModal(onClose) {
+    const modal = document.createElement('div');
+    modal.id = 'whats-new-modal';
+    modal.innerHTML = `
+      <div style="
+        position:fixed; top:0; left:0; width:100%; height:100%;
+        background:rgba(0,0,0,0.5); display:flex;
+        justify-content:center; align-items:center;
+      ">
+        <div style="
+          background:white; padding:20px; border-radius:8px;
+          max-width:400px; text-align:center;
+        ">
+          <h2>What’s new?</h2>
+          <p>New release <strong>${window.CURRENT_UPDATE_ID}</strong></p>
+          <p>Find candidate update: Find candidate feature now shows top 3 employees</p>
+          <p>Notifications settings: You can set notifications settings as you wish</p>
+          <button id="close-update-modal">OK</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('close-update-modal')
+      .addEventListener('click', () => {
+        onClose();
+        document.body.removeChild(modal);
+      });
+  }
+
+  // 2) Отметка, что пользователь «увидел» апдейт
+  async function markSeenInRTDB(uid) {
+    // update() — чтобы не затирать другие поля
+    await database.ref(`users/${uid}`).update({
+      lastSeenUpdateId: window.CURRENT_UPDATE_ID
+    });
+  }
+
+  // 3) Проверка при входе пользователя
+  firebase.auth().onAuthStateChanged(async user => {
+    if (!user) return; // гость — пропускаем
+
+    const ref = database.ref(`users/${user.uid}/lastSeenUpdateId`);
+    const snapshot = await ref.get();
+    const lastSeen = snapshot.exists() ? snapshot.val() : null;
+
+    if (lastSeen !== window.CURRENT_UPDATE_ID) {
+      showWhatsNewModal(() => markSeenInRTDB(user.uid));
+    }
+  });
 
         // Инициализация Bootstrap-Select и обработка изменения выбора платформ
         $(document).ready(function () {
@@ -3703,6 +3877,30 @@ document.addEventListener("DOMContentLoaded", loadThemePreference);
 document.addEventListener("DOMContentLoaded", () => {
   // Загрузка темы
   loadThemePreference();
+
+// При открытии модалки — заполняем чекбоксы
+$('#notif-settings-btn').on('click', () => {
+  const s = loadNotifSettings();
+  $('#notif-break-overdue').prop('checked', s.breakOverdue);
+  $('#notif-brb-overdue').prop('checked',   s.brbOverdue);
+  $('#notif-empty-platforms').prop('checked', s.emptyPlatforms);
+  $('#notif-not-here').prop('checked', s.notHere);
+  $('#notif-brb-two-or-more').prop('checked', s.brbTwoOrMore);
+  $('#notifSettingsModal').modal('show');
+});
+
+// При изменении любого чекбокса — сохраняем
+$('#notif-settings-form input[type=checkbox]').on('change', () => {
+  const newS = {
+    breakOverdue:     $('#notif-break-overdue').prop('checked'),
+    brbOverdue:       $('#notif-brb-overdue').prop('checked'),
+    emptyPlatforms:   $('#notif-empty-platforms').prop('checked'),
+    notHere:          $('#notif-not-here').prop('checked'),
+    brbTwoOrMore:     $('#notif-brb-two-or-more').prop('checked')
+  };
+  saveNotifSettings(newS);
+});
+
 
   const dndCheckbox = document.getElementById('dnd-toggle');
   dndCheckbox.checked = doNotDisturb;
@@ -3808,5 +4006,56 @@ document.addEventListener("DOMContentLoaded", () => {
       
       </script>
     </div>
-  </body>
+    <!-- Notification Settings Modal -->
+<div class="modal fade" id="notifSettingsModal" tabindex="-1" aria-labelledby="notifSettingsLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="notifSettingsLabel">Notifications settings</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="notif-settings-form">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="notif-break-overdue">
+            <label class="form-check-label" for="notif-break-overdue">
+              Late from break notifications (disable for now)
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="notif-brb-overdue">
+            <label class="form-check-label" for="notif-brb-overdue">
+              Late from BRB notifications
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="notif-empty-platforms">
+            <label class="form-check-label" for="notif-empty-platforms">
+              Notifications for empty platforms
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="notif-not-here">
+            <label class="form-check-label" for="notif-not-here">
+              Not Here notifications
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="notif-brb-two-or-more">
+            <label class="form-check-label" for="notif-brb-two-or-more">
+              Notifications for 2 or more BRB
+            </label>
+          </div>
+                
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
 </html>
