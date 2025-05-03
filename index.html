@@ -1661,6 +1661,52 @@ body.dark-theme #notebook-choice button:hover {
   /* экспериментируй с 1px–3px, пока не ляжет точно по центру */
   margin-top: 8px !important;
 }
+/* Стили самого overlay */
+.maintenance-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  display: none; /* по умолчанию скрыт */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Показываем overlay через класс .show */
+.maintenance-overlay.show {
+  display: flex;
+  /* плавное проявление: */
+  animation: fadeInOverlay 0.6s ease-out forwards;
+}
+
+/* Контент внутри overlay с лёгким «выезжанием» */
+.maintenance-content {
+  text-align: center;
+  color: #fff;
+  max-width: 90%;
+  animation: popIn 0.5s ease-out;
+}
+
+/* Ваш gif */
+.maintenance-gif {
+  display: block;
+  margin: 20px auto 0;
+  max-width: 200px;
+  height: auto;
+}
+
+/* Появление overlay */
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* «Поп-ин» контента */
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
 
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -1806,14 +1852,15 @@ async function fetchStatusChanges() {
     user.displayName || user.email;
   document.body.classList.remove("hidden");
 
+  // получаем оверлей техработ
+  const overlay = document.getElementById("maintenance-overlay");
   // ссылка на флаг техработ в БД
   const maintRef = database.ref("maintenanceMode");
 
-  // слушаем изменения флага и показываем/скрываем оверлей
+  // слушаем изменения флага и переключаем класс .show
   maintRef.on("value", (snap) => {
     const on = snap.val() === true;
-    document.getElementById("maintenance-overlay").style.display =
-      on ? "block" : "none";
+    overlay.classList.toggle("show", on);
   });
 
   // если это вы — показываем админ-кнопки
@@ -1827,15 +1874,13 @@ async function fetchStatusChanges() {
     const maintBtn = document.getElementById("maintenance-btn");
     maintBtn.style.display = "inline-block";
     maintBtn.addEventListener("click", async () => {
-      // переключаем текущее значение
+      // переключаем текущее значение в БД
       const snap = await maintRef.get();
       const current = snap.exists() && snap.val() === true;
       await maintRef.set(!current);
     });
   }
 });
-
-
 
 
       // Обработчик для кнопки Log Out
@@ -4599,23 +4644,18 @@ $('#notif-settings-form input[type=checkbox]').on('change', () => {
   <textarea id="notebook-content" placeholder="Write your notes..."></textarea>
 </div>
 <!-- Полноэкранный оверлей техработ -->
-<div
-  id="maintenance-overlay"
-  style="
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    color: #fff;
-    z-index: 9999;
-    text-align: center;
-    padding: 20vh 1rem;
-    box-sizing: border-box;
-  "
->
-  <h1>Support Monitoring Dashboard is under maintenance</h1>
-  <p>Sit back and listen to Aygün Kazımova.</p>
+<!-- Полноэкранный оверлей техработ -->
+<div id="maintenance-overlay" class="maintenance-overlay">
+  <div class="maintenance-content">
+    <h1>Ooopss...Support Monitoring Dashboard is under maintenance</h1>
+    <p>WWe apologize for the inconvenience. Sit back and listen to Aygün Kazımova. :)</p>
+    <!-- Ваш прикольный gif: -->
+    <img
+      src="https://i.giphy.com/vR1dPIYzQmkRzLZk2w.webp"
+      alt="Under maintenance"
+      class="maintenance-gif"
+    />
+  </div>
 </div>
 </body>
 </html>
