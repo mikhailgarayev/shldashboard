@@ -1480,14 +1480,13 @@ body.dark-theme .stats-card .small {
   color: rgba(255,255,255,0.7) !important;
 }
 
-  /* Floating notebook icon */
   #notebook-icon {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 40px;
+    right: 45px;
     width: 60px;
     height: 60px;
-    background: #ffffff;
+    background: white;
     border-radius: 50%;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 10001;
@@ -1495,24 +1494,52 @@ body.dark-theme .stats-card .small {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    user-select: none;
-    transition: transform 0.2s, background 0.3s;
+    transition: transform 0.2s;
   }
-  #notebook-icon:hover {
-    transform: scale(1.1);
+  #notebook-icon:hover { transform: scale(1.1); }
+  #notebook-icon img { width: 60%; height: 60%; }
+  body.dark-theme #notebook-icon { background: #333; }
+  body.dark-theme #notebook-icon img { filter: invert(1) brightness(1.2); }
+
+  /* Choice menu */
+#notebook-choice {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 240px;                    /* увеличить ширину */
+  padding: 12px;                   /* добавить отступы */
+  border-radius: 12px;             /* скругления */
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  background: var(--card-bg-color);/* в тёмной теме будет тёмный фон */
+  border: 1px solid var(--card-border-color);
+  display: none;                   /* по умолчанию скрыто */
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+  transition:
+    opacity 0.25s ease-out,
+    transform 0.25s ease-out;
+  z-index: 10002;
+}
+  body.dark-theme #notebook-choice {
+    background: #2b2b2b;
+    border-color: #444;
   }
-  /* Icon image */
-  #notebook-icon img {
-    width: 60%;
-    height: 60%;
-  }
-  /* Dark theme for notebook icon */
-  body.dark-theme #notebook-icon {
-    background: #333;
-  }
-  body.dark-theme #notebook-icon img {
-    filter: invert(1) brightness(1.2);
-  }
+#notebook-choice button {
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--menu-bg-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+  #notebook-choice button:hover {
+  background: rgba(0,0,0,0.05);
+}
+  body.dark-theme #notebook-choice button:hover { background: rgba(255,255,255,0.1); }
 
   /* Notebook panel */
   #notebook-panel {
@@ -1528,43 +1555,69 @@ body.dark-theme .stats-card .small {
     flex-direction: column;
     overflow: hidden;
   }
-  body.dark-theme #notebook-panel {
-    background: #2b2b2b;
-    border-color: #444;
-  }
-  /* Header for dragging panel */
-  #notebook-panel header {
-    background: #007bff;
-    color: white;
-    padding: 8px;
-    cursor: move;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  body.dark-theme #notebook-panel header {
-    background: #444;
-  }
-  #notebook-panel header .close-btn {
-    cursor: pointer;
-    font-size: 1.2rem;
-  }
-  /* Textarea fills remaining space */
-  #notebook-content {
-    flex: 1;
-    width: 100%;
-    border: none;
-    padding: 8px;
-    resize: none;
-    outline: none;
-    font-family: sans-serif;
-    font-size: 0.9rem;
-    background: transparent;
-    color: #333;
-  }
-  body.dark-theme #notebook-content {
-    color: #eee;
-  }
+  body.dark-theme #notebook-panel { background: #2b2b2b; border-color: #444; }
+  #notebook-panel header { background: #007bff; color: white; padding: 8px; display: flex; justify-content: space-between; align-items: center; cursor: move; }
+  body.dark-theme #notebook-panel header { background: #444; }
+  #notebook-panel header .close-btn { cursor: pointer; font-size: 1.2rem; }
+  #notebook-panel header #notebook-mode { font-weight: bold; }
+  #notebook-content { flex: 1; width: 100%; border: none; padding: 8px; resize: none; outline: none; font-family: sans-serif; font-size: 0.9rem; color: #333; }
+  body.dark-theme #notebook-content { color: #eee; }
+  /* Общий фон и цвета для textarea */
+#notebook-content {
+  background: var(--card-bg-color);      /* в светлой — белый */
+  color: var(--card-text-color);         /* в светлой — тёмно-серый */
+}
+
+/* Специфично для светлой темы */
+body:not(.dark-theme) #notebook-content {
+  background: #ffffff;
+  color: #333333;
+}
+
+/* Специфично для тёмной темы */
+body.dark-theme #notebook-content {
+  background: #3a3a3a;    /* чуть светлее, чем панель */
+  color: #eeeeee;         /* светлый текст */
+}
+
+/* Плейсхолдеры тоже настраиваем */
+#notebook-content::placeholder {
+  color: rgba(0,0,0,0.4);
+}
+body.dark-theme #notebook-content::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+/* Фон и рамка самого меню выбора */
+body.dark-theme #notebook-choice {
+  background: var(--card-bg-color);    /* ваш тёмный фон, например #2b2b2b */
+  border-color: var(--card-border-color); /* например #444 */
+}
+
+/* Кнопки в меню: светлый текст */
+body.dark-theme #notebook-choice button {
+  color: var(--card-text-color);   /* обычно #e5e5e5 или #fff */
+}
+
+/* При ховере, если нужно чуть подсветить */
+body.dark-theme #notebook-choice button:hover {
+  background: rgba(255,255,255,0.1);
+}
+/* Состояние «открыто» */
+#notebook-choice.show {
+  display: flex;
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Тёмная тема для кнопок меню */
+body.dark-theme #notebook-choice button {
+  background: #3a3a3a;
+  color: #fff;
+}
+body.dark-theme #notebook-choice button:hover {
+  background: rgba(255,255,255,0.1);
+}
+
 /* Делать контейнер блочным flex-элементом и выравнивать его содержимое по центру */
 /* 1) Контейнер переключателя — flex-центр */
 #dnd-toggle-container {
@@ -4088,93 +4141,83 @@ function findCandidate() {
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const icon = document.getElementById('notebook-icon');
+    const icon   = document.getElementById('notebook-icon');
+    const choice = document.getElementById('notebook-choice');
     const panel = document.getElementById('notebook-panel');
+    const modeLabel = document.getElementById('notebook-mode');
     const closeBtn = panel.querySelector('.close-btn');
     const textarea = document.getElementById('notebook-content');
-    let isMouseDown = false;
-    let dragIcon = false;
-    let dragPanel = false;
-    let startX, startY, offsetX, offsetY;
+    let currentMode = null;
+    let noteRef = null;
 
-    function clamp(value, min, max) {
-      return Math.min(Math.max(value, min), max);
-    }
+    // clamp helper
+    const clamp = (v,m,M)=>Math.min(Math.max(v,m),M);
     function clampPosition(left, top) {
-      const maxLeft = window.innerWidth - panel.offsetWidth;
-      const maxTop = window.innerHeight - panel.offsetHeight;
-      return { left: clamp(left, 0, maxLeft), top: clamp(top, 0, maxTop) };
+      return {
+        left: clamp(left,0,window.innerWidth-panel.offsetWidth),
+        top: clamp(top,0,window.innerHeight-panel.offsetHeight)
+      };
     }
 
+    // open choice menu
     icon.addEventListener('click', () => {
-      if (panel.style.display === 'flex') {
-        panel.style.display = 'none';
-      } else {
-        panel.style.display = 'flex';
+      // переключаем класс, CSS сам покажет/спрячет и анимирует
+      choice.classList.toggle('show');
+    });
+
+    // handle selection
+    choice.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        currentMode = btn.getAttribute('data-mode');
+        modeLabel.textContent = currentMode==='personal'? 'Personal Notebook':'General Notebook';
+        choice.classList.remove('show');
+        choice.style.removeProperty('display');
+        // show panel
+        panel.style.display='flex';
         const rect = icon.getBoundingClientRect();
         let left = rect.left;
-        let top = rect.top - panel.offsetHeight - 8;
-        const pos = clampPosition(left, top);
-        panel.style.left = pos.left + 'px';
-        panel.style.top = pos.top + 'px';
-      }
+        let top = rect.top - panel.offsetHeight -8;
+        const pos = clampPosition(left,top);
+        panel.style.left=pos.left+'px';
+        panel.style.top=pos.top+'px';
+        // attach to firebase
+        const user = firebase.auth().currentUser;
+        if(!user) return;
+        if(currentMode==='personal') {
+          noteRef = firebase.database().ref('users/'+user.uid+'/note');
+        } else {
+          noteRef = firebase.database().ref('generalNote');
+        }
+        // load
+        noteRef.once('value',snap=>{ textarea.value = snap.val()||''; });
+      });
     });
-    closeBtn.addEventListener('click', () => panel.style.display = 'none');
 
-    icon.addEventListener('mousedown', e => {
-      isMouseDown = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      e.preventDefault();
-    });
-    document.addEventListener('mousemove', e => {
-      if (!isMouseDown) return;
-      if (!dragIcon && Math.hypot(e.clientX - startX, e.clientY - startY) > 5) {
-        dragIcon = true;
-        const rect = icon.getBoundingClientRect();
-        icon.style.left = rect.left + 'px';
-        icon.style.top = rect.top + 'px';
-        icon.style.bottom = 'auto';
-        icon.style.right = 'auto';
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
-      }
-      if (dragIcon) {
-        let left = e.clientX - offsetX;
-        let top = e.clientY - offsetY;
-        left = clamp(left, 0, window.innerWidth - icon.offsetWidth);
-        top = clamp(top, 0, window.innerHeight - icon.offsetHeight);
-        icon.style.left = left + 'px';
-        icon.style.top = top + 'px';
-      }
-      if (dragPanel) {
-        let left = e.clientX - offsetX;
-        let top = e.clientY - offsetY;
-        const pos = clampPosition(left, top);
-        panel.style.left = pos.left + 'px';
-        panel.style.top = pos.top + 'px';
-      }
-    });
-    document.addEventListener('mouseup', () => { isMouseDown = dragIcon = dragPanel = false; });
+    // close panel
+    closeBtn.addEventListener('click',()=> panel.style.display='none');
 
-    const header = panel.querySelector('header');
-    header.addEventListener('mousedown', e => {
-      isMouseDown = true;
-      dragPanel = true;
-      offsetX = e.clientX - panel.offsetLeft;
-      offsetY = e.clientY - panel.offsetTop;
+    // dragging same as before...
+    let isMouseDown=false,dragPanel=false,offsetX,offsetY;
+    panel.querySelector('header').addEventListener('mousedown',e=>{
+      isMouseDown=true;dragPanel=true;
+      offsetX=e.clientX-panel.offsetLeft;
+      offsetY=e.clientY-panel.offsetTop;
       e.stopPropagation();
     });
+    document.addEventListener('mousemove',e=>{
+      if(dragPanel){
+        const pos=clampPosition(e.clientX-offsetX,e.clientY-offsetY);
+        panel.style.left=pos.left+'px';panel.style.top=pos.top+'px';
+      }
+    });
+    document.addEventListener('mouseup',()=>{isMouseDown=dragPanel=false;});
 
-    auth.onAuthStateChanged(user => {
-      if (!user) return;
-      const noteRef = database.ref('users/' + user.uid + '/note');
-      noteRef.on('value', snap => textarea.value = snap.val() || '');
-      let timeout;
-      textarea.addEventListener('input', () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => noteRef.set(textarea.value), 500);
-      });
+    // save on input
+    let timeout;
+    textarea.addEventListener('input',()=>{
+      clearTimeout(timeout);
+      if(!noteRef) return;
+      timeout=setTimeout(()=>noteRef.set(textarea.value),500);
     });
   });
         
@@ -4403,9 +4446,15 @@ $('#notif-settings-form input[type=checkbox]').on('change', () => {
 <div id="notebook-icon">
   <img id="notebook-icon-img" src="https://www.svgrepo.com/show/495547/note-favorite.svg" alt="Notebook">
 </div>
+
+<div id="notebook-choice">
+  <button data-mode="personal">Personal Notepad</button>
+  <button data-mode="general">General Notepad</button>
+</div>
+
 <div id="notebook-panel">
   <header>
-    <span>Notebook</span>
+    <span id="notebook-mode">Notebook</span>
     <span class="close-btn">&times;</span>
   </header>
   <textarea id="notebook-content" placeholder="Write your notes..."></textarea>
