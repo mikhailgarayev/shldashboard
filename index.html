@@ -1793,23 +1793,49 @@ async function fetchStatusChanges() {
       ];
 
       // Проверка авторизации – если пользователь не авторизован или его email не разрешён, перенаправляем на login.html
-      auth.onAuthStateChanged((user) => {
-        if (!user || !allowedEmails.includes(user.email)) {
-          window.location.replace("login.html");
-        } else {
-          // Если все ок, выводим имя пользователя и убираем класс hidden
-          document.getElementById("user-display-name").textContent =
-            user.displayName || user.email;
-          document.body.classList.remove("hidden");
+      // 3) Изменённый участок внутри вашего <script>
+        auth.onAuthStateChanged((user) => {
+  if (!user || !allowedEmails.includes(user.email)) {
+    // неавторизованный — на логин
+    window.location.replace("login.html");
+    return;
+  }
 
-          // Показываем кнопку рассылки только для mikhail.garayev@wolt.com
-          if (user.email === "mikhail.garayev@wolt.com") {
-            document
-              .getElementById("send-update-notif")
-              .style.display = "inline-block";
-          }
-        }
-      });
+  // авторизован — показываем шапку
+  document.getElementById("user-display-name").textContent =
+    user.displayName || user.email;
+  document.body.classList.remove("hidden");
+
+  // ссылка на флаг техработ в БД
+  const maintRef = database.ref("maintenanceMode");
+
+  // слушаем изменения флага и показываем/скрываем оверлей
+  maintRef.on("value", (snap) => {
+    const on = snap.val() === true;
+    document.getElementById("maintenance-overlay").style.display =
+      on ? "block" : "none";
+  });
+
+  // если это вы — показываем админ-кнопки
+  if (user.email === "mikhail.garayev@wolt.com") {
+    // кнопка рассылки
+    document
+      .getElementById("send-update-notif")
+      .style.display = "inline-block";
+
+    // кнопка техработ
+    const maintBtn = document.getElementById("maintenance-btn");
+    maintBtn.style.display = "inline-block";
+    maintBtn.addEventListener("click", async () => {
+      // переключаем текущее значение
+      const snap = await maintRef.get();
+      const current = snap.exists() && snap.val() === true;
+      await maintRef.set(!current);
+    });
+  }
+});
+
+
 
 
       // Обработчик для кнопки Log Out
@@ -1856,6 +1882,14 @@ async function fetchStatusChanges() {
     >
     Send update notification
     </button>
+    <!-- Кнопка “Maintenance Mode” -->
+<button
+id="maintenance-btn"
+class="btn btn-danger btn-sm ml-2"
+style="display:none;"
+>
+Enable maintenance
+</button>
 
     <!-- Bell -->
     <div id="notification-bell" style="position:relative; cursor:pointer; margin-right:1rem;">
@@ -4563,6 +4597,25 @@ $('#notif-settings-form input[type=checkbox]').on('change', () => {
     <span class="close-btn">&times;</span>
   </header>
   <textarea id="notebook-content" placeholder="Write your notes..."></textarea>
+</div>
+<!-- Полноэкранный оверлей техработ -->
+<div
+  id="maintenance-overlay"
+  style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    z-index: 9999;
+    text-align: center;
+    padding: 20vh 1rem;
+    box-sizing: border-box;
+  "
+>
+  <h1>Support Monitoring Dashboard is under maintenance</h1>
+  <p>Sit back and listen to Aygün Kazımova.</p>
 </div>
 </body>
 </html>
