@@ -405,7 +405,7 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
+        align-items: center !important;
         margin: 8px;
         padding: 0.8rem 0.6rem !important;
         box-shadow: 0 8px 32px rgba(0,0,0,0.1);
@@ -469,6 +469,20 @@
         font-size: 1.2rem;
         margin-top: 4px;
       }
+      .stats-card .progress {
+      height: 24px;
+      margin: 0.5rem 0;
+      background-color: rgba(255,255,255,0.1);
+      }
+      .stats-card .progress-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #fff;
+        white-space: nowrap;
+      }
+
       .red-card {
         background-color: #ffe5e5;
         border-color: #dc3545;     /* красная граница */
@@ -1368,6 +1382,103 @@ body.dark-theme .shift-summary-grid td:nth-child(2) span {
 .dnd-switch input:checked + .slider:before {
   transform: translateX(26px);
 }
+/* 1) Отменяем у всех .stats-card */
+.stats-card {
+  align-items: center !important;
+}
+
+/* 2) Применяем только к платформенным summary-карточкам */
+#summary-platforms .stats-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch !important;
+}
+
+/* 3) Блок цифр и блок прогресса — full-width только внутри #summary-platforms */
+#summary-platforms .stats-counts,
+#summary-platforms .stats-progress {
+  width: 100% !important;
+}
+
+/* 4) Две цифры с отступом по краям */
+#summary-platforms .stats-counts {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5rem 0;
+}
+
+/* 5) Общие стили для элементов «stat» */
+#summary-platforms .stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;         /* расстояние между цифрой и иконкой */
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #222;
+}
+
+/* 6) Иконка человека */
+#summary-platforms .stat-icon {
+  width: 1.2em;
+  height: 1.2em;
+  margin-left: 0.25em;
+}
+#summary-platforms .stat-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 7) Прогресс-бар внутри summary-platforms */
+#summary-platforms .stats-progress {
+  display: flex;
+  height: 6px;            /* подбираешь под свой макет */
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.05);
+  margin-top: 0.5rem;
+}
+#summary-platforms .stats-progress-active,
+#summary-platforms .stats-progress-away {
+  height: 100%;
+  flex-shrink: 0;
+}
+#summary-platforms .stats-progress-active {
+  background: #28a745;
+}
+#summary-platforms .stats-progress-away {
+  background: #dc3545;
+}
+/* убираем старую в тёмной теме */
+body.dark-theme .stat-icon img {
+  display: none !important;
+}
+
+/* рендерим новую иконку как фон */
+body.dark-theme .stat-icon {
+  display: inline-block;    /* чтобы работал фон */
+  width: 20px;              /* под размер SVG */
+  height: 20px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23fff' viewBox='0 0 16 16'><path d='M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z'/><path d='M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+      /* текст цифр и статусов */
+body.dark-theme .stat,
+body.dark-theme .stat-value,
+body.dark-theme .stats-title,
+body.dark-theme .stats-value {
+  color: #fff !important;
+}
+
+/* если у тебя остаются мелкие .small-тексты */
+body.dark-theme .stats-card .small {
+  color: rgba(255,255,255,0.7) !important;
+}
+
+
 /* Делать контейнер блочным flex-элементом и выравнивать его содержимое по центру */
 /* 1) Контейнер переключателя — flex-центр */
 #dnd-toggle-container {
@@ -2727,7 +2838,7 @@ function renderShiftSummary(data) {
   generalContainer.innerHTML  = "";
   platformContainer.innerHTML = "";
 
-  // Загрузка настроек уведомлений
+  // Загрузка настроек уведомлений (для Not here)
   let settings = { notHere: false };
   if (typeof loadNotifSettings === 'function') {
     try { settings = loadNotifSettings(); }
@@ -2747,21 +2858,62 @@ function renderShiftSummary(data) {
     { title: "ST",            value: data[6][43] || "", away: data[8][43] || "" },
     {
       title: "Not here",
-      value: (data[8][29] || "") + (data[10][29] ? "," + data[10][29] : ""),
+      value: (data[8][29] || "") + (data[10][29] ? "," + data[10][29] : "")
     },
     {
       title: "WNATS",
-      value: (data[8][27] || "") + (data[10][27] ? "," + data[10][27] : ""),
+      value: (data[8][27] || "") + (data[10][27] ? "," + data[10][27] : "")
     }
+  ];
+
+  const platformTitles = [
+    "CS","CS/Post Order","PSR",
+    "SiMo","Aircall","Venue",
+    "Trainee","ST"
   ];
 
   summaryCards.forEach(card => {
     if (!card.value) return;
 
     const div = document.createElement("div");
-    div.className = `stats-card ${card.customClass || ""}`;
+    div.className = "stats-card";
 
-    // Специальная обработка Not here / WNATS
+    // 1) PLATFORM CARD: progress-bar + цифры
+    if (platformTitles.includes(card.title)) {
+      const active = parseInt(card.value, 10) || 0;
+      const away   = parseInt(card.away  || "0", 10);
+      const total  = active + away || 1;
+      const pctA   = Math.round(active/total * 100);
+      const pctB   = 100 - pctA;
+
+      div.innerHTML = `
+  <div class="stats-title">${card.title}</div>
+  <div class="stats-counts">
+    <!-- Левый счётчик: число + иконка -->
+    <div class="stat stat-active">
+      <span class="stat-value">${active}</span>
+      <span class="stat-icon">
+        <img src="https://www.svgrepo.com/show/436843/person-fill.svg" 
+             alt="user" width="20" height="20"/>
+      </span>
+    </div>
+    <!-- Правый счётчик: только число -->
+    <div class="stat stat-away">
+      <span class="stat-value">${away}</span>
+    </div>
+  </div>
+  <div class="stats-progress">
+    <div class="stats-progress-active" style="width:${pctA}%;"></div>
+    <div class="stats-progress-away"  style="width:${pctB}%;"></div>
+  </div>
+`;
+
+
+      platformContainer.appendChild(div);
+      return;
+    }
+
+    // 2) SPECIAL CARDS: Not here / WNATS
     if (card.title === "Not here" || card.title === "WNATS") {
       const parts  = card.value.split(",").map(s => s.trim()).filter(Boolean);
       const count  = parts.shift();
@@ -2770,8 +2922,6 @@ function renderShiftSummary(data) {
       if (card.title === "Not here") {
         if (count !== "0") {
           div.classList.add("red-card");
-
-          // Проверяем переход 0→N
           const last = loadLastNotHereCount();
           if (settings.notHere && last === "0") {
             const msg = `${count} emps are Not Here`;
@@ -2779,9 +2929,7 @@ function renderShiftSummary(data) {
             addInPageNotification(msg);
           }
           saveLastNotHereCount(count);
-
         } else {
-          // сбрасываем, когда снова 0
           saveLastNotHereCount("0");
         }
       }
@@ -2800,34 +2948,19 @@ function renderShiftSummary(data) {
           />
         </div>
       `;
-    } else {
-      // Обычные карточки
-      let html = `
-        <div class="stats-title">${card.title}</div>
-        <div class="stats-value">${card.value}</div>
-      `;
-      html += `
-        <div class="stats-value" style="font-size:0.9rem; color:#666;">
-          Away: ${card.away || 0}
-        </div>`;
-      div.innerHTML = html;
-    }
-
-    // Добавляем в нужный контейнер
-    const platformTitles = [
-      "CS","CS/Post Order","PSR",
-      "SiMo","Aircall","Venue",
-      "Trainee","ST"
-    ];
-
-    if (platformTitles.includes(card.title)) {
-      platformContainer.appendChild(div);
-    } else {
       generalContainer.appendChild(div);
+      return;
     }
+
+    // 3) GENERAL STATS (On shift now / Should be)
+    div.innerHTML = `
+      <div class="stats-title">${card.title}</div>
+      <div class="stats-value">${card.value}</div>
+    `;
+    generalContainer.appendChild(div);
   });
 
-  // Погода остаётся как раньше
+  // 4) WEATHER CARDS (не меняем)
   const weatherCities = [
     { city: "Baku,AZ",        title: "Baku Weather",       tempId: "temp-baku",  windId: "wind-baku" },
     { city: "Ganja,AZ",       title: "Ganja Weather",      tempId: "temp-ganja", windId: "wind-ganja" },
@@ -2849,6 +2982,7 @@ function renderShiftSummary(data) {
     fetchWeatherFor(city, tempId, windId);
   });
 }
+
 
 
 function renderResponsiblePeople(data) {
