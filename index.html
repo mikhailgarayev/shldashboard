@@ -3157,67 +3157,89 @@ function renderShiftOvers() {
         
 async function fetchBreaksData() {
   const raw = await fetchSheetData(BREAKS_RANGE);
-  if (!raw) {
-    document.getElementById("breaks-app").textContent = "Error";
+  const container = document.getElementById("breaks-app");
+  if (!Array.isArray(raw) || raw.length < 2) {
+    container.textContent = "Error";
     return;
   }
 
-  const arr = arrayToObjects(raw);
-  const now = new Date();
-  const nextHour = new Date(now.getTime() + 3600 * 1000);
-  window.allBreaksData = arr;
+  // 1) Разбираем шапку
+  const header = raw[0].map(h => h.trim());
+  const idxName  = header.indexOf("Name");
+  const idxTime  = header.indexOf("Break Time");
+  const idxShift = header.indexOf("Shift Start Time");
+  const idxSpace = header.indexOf("Working Space");
 
-  // Фильтрация по режиму
-  let list;
-  if (currentBreakFilter === "upcoming") {
-    list = arr.filter(r => {
-      const [h, m] = (r["Break Time"] || "").split(":").map(Number);
-      if (isNaN(h)) return false;
-      const dt = new Date(now);
-      dt.setHours(h, m, 0, 0);
-      return dt > now && dt <= nextHour;
-    });
-  } else {
-    list = arr.slice().sort((a, b) => {
-      const pa = parseTimeToMinutes(a["Break Time"]),
-            pb = parseTimeToMinutes(b["Break Time"]);
-      return pa - pb;
-    });
+  if ([idxName, idxTime, idxShift, idxSpace].some(i => i < 0)) {
+    console.error("Bad header:", header);
+    container.textContent = "Bad header";
+    return;
   }
 
-  const c = document.getElementById("breaks-app");
+  // 2) Собираем массив объектов
+  const now = new Date();
+  const nextHour = new Date(now.getTime() + 60*60*1000);
 
-  // Подсчёт совпадений
-  const counts = {};
-  list.forEach(r => {
-    const key = `${r["Working Space"]}–${r["Break Time"]}`;
-    counts[key] = (counts[key] || 0) + 1;
-  });
+  const list = raw
+    .slice(1)
+    .map(row => ({
+      Name:         (row[idxName]  || "").trim(),
+      BreakTime:    (row[idxTime]  || "").trim(),
+      ShiftStart:   (row[idxShift] || "").trim(),
+      WorkingSpace: (row[idxSpace] || "").trim()
+    }))
+    // убираем строки без BreakTime
+    .filter(r => r.BreakTime)
+    // фильтр upcoming vs all
+    .filter(r => {
+      if (currentBreakFilter === "upcoming") {
+        const [h, m] = r.BreakTime.split(":").map(Number);
+        if (isNaN(h)||isNaN(m)) return false;
+        const dt = new Date(now);
+        dt.setHours(h, m, 0, 0);
+        return dt > now && dt <= nextHour;
+      }
+      return true;
+    })
+    // сортируем по времени BreakTime
+    .sort((a, b) => {
+      const toMin = t => {
+        const [h,m] = t.split(":").map(Number);
+        return h*60 + m;
+      };
+      return toMin(a.BreakTime) - toMin(b.BreakTime);
+    });
 
-  if (!list.length) {
-    c.innerHTML = "<p>No breaks</p>";
+  window.allBreaksData = list;
+
+  // 3) Рендер
+  if (list.length === 0) {
+    container.innerHTML = "<p>No breaks</p>";
   } else {
-    // Генерация HTML списка
-    c.innerHTML = "<ul>" + list.map(r => {
-      const key = `${r["Working Space"]}–${r["Break Time"]}`;
-      const conflictClass = counts[key] > 1 ? "break-conflict" : "";
+    // подсчёт конфликтов
+    const counts = {};
+    list.forEach(r => {
+      const key = `${r.WorkingSpace}–${r.BreakTime}`;
+      counts[key] = (counts[key]||0) + 1;
+    });
+
+    container.innerHTML = "<ul>" + list.map(r => {
+      const key = `${r.WorkingSpace}–${r.BreakTime}`;
+      const conflict = counts[key] > 1 ? "break-conflict" : "";
       return `
-        <li class="${conflictClass}">
+        <li class="${conflict}">
           <strong>${r.Name}</strong><br/>
           Break at
-            <span class="break-time"
-                  data-name="${r.Name}"
-                  data-time="${r["Break Time"]}"
-            >${r["Break Time"]}</span>
-          <button class="edit-btn"
-                  title="Edit time"
-                  style="border:none;background:none;cursor:pointer;">
-            <img src="https://www.svgrepo.com/show/502640/edit-1.svg"
-                 alt="edit" width="16" height="16">
+          <span class="break-time"
+                data-name="${r.Name}"
+                data-time="${r.BreakTime}">
+            ${r.BreakTime}
+          </span>
+          <button class="edit-btn" title="Edit time" style="border:none;background:none;cursor:pointer;">
+            <img src="https://www.svgrepo.com/show/502640/edit-1.svg" width="16" height="16"/>
           </button><br/>
-          Shift: ${r["Shift Start Time"]} | ${r["Working Space"]}
-        </li>
-      `;
+          Shift: ${r.ShiftStart} | ${r.WorkingSpace}
+        </li>`;
     }).join("") + "</ul>";
 
     // Редактирование времени
@@ -3304,7 +3326,7 @@ async function fetchBreaksData() {
     }
 
     // 3) Проверяем длительность break-а
-    const [h, m, s = 0] = (r["Break Time"] || "").split(":").map(Number);
+    const [h, m, s = 0] = (r.BreakTime || "").split(":").map(Number);
     const breakDate = new Date(now);
     breakDate.setHours(h, m, s, 0);
     const durationMins = (now - breakDate) / 60000;
