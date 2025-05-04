@@ -1487,7 +1487,7 @@ body.dark-theme .stats-card .small {
   color: #fff;
   padding: 12px 16px;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   z-index: 2000;
   max-width: 500px;
   font-size: 1.2rem;
@@ -2334,16 +2334,30 @@ function markAsRead(key) {
   }
 }
 
-// 3) Подписка на новые уведомления
+// 1) Получаем ссылку
 const notificationsRef = database.ref("notifications");
-notificationsRef.on("child_added", snap => {
-  const key = snap.key;
-  // если уже читали — пропускаем
-  if (readNotifs.includes(key)) return;
 
-  const { title, text } = snap.val();
-  showGlobalNotification(title, text, key);
+// 2) Сначала грузим все текущие уведомления и добавляем их ключи в readNotifs
+notificationsRef.once("value").then(snapshot => {
+  snapshot.forEach(childSnap => {
+    const key = childSnap.key;
+    if (!readNotifs.includes(key)) {
+      readNotifs.push(key);
+    }
+  });
+  // сохраняем обратно в localStorage
+  localStorage.setItem('readNotifs', JSON.stringify(readNotifs));
+
+  // 3) Только после этого подписываемся на новые уведомления
+  notificationsRef.on("child_added", snap => {
+    const key = snap.key;
+    if (readNotifs.includes(key)) return;      // старые пропускаем
+
+    const { title, text } = snap.val();
+    showGlobalNotification(title, text, key);
+  });
 });
+
 
 // 4) Визуализация всплывашки с передачей key
 function showGlobalNotification(title, text, key) {
@@ -4648,7 +4662,7 @@ $('#notif-settings-form input[type=checkbox]').on('change', () => {
 <div id="maintenance-overlay" class="maintenance-overlay">
   <div class="maintenance-content">
     <h1>Ooopss...Support Monitoring Dashboard is under maintenance</h1>
-    <p>We apologize for the inconvenience. Sit back and listen to Aygün Kazımova. :)</p>
+    <p>Sit back and listen to Aygün Kazımova.</p>
     <!-- Ваш прикольный gif: -->
     <img
       src="https://i.giphy.com/vR1dPIYzQmkRzLZk2w.webp"
