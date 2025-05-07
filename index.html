@@ -3451,17 +3451,17 @@ function renderShiftOvers() {
 
   // Фильтрация: отбираем тех, у кого shift заканчивается в течение часа
   const upcoming = arr.filter(r => {
-    if (!r.Shift) return false;
-    const parts = r.Shift.split("-");
-    if (parts.length !== 2) return false;
+  const parts = r.Shift.split("-");
+  if (parts.length !== 2) return false;
+  const [h, m] = parts[1].split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return false;
+  const end = new Date(now);
+  end.setHours(h, m, 0, 0);
+  // смещаем на завтра, если время ≤ now
+  if (end <= now) end.setDate(end.getDate() + 1);
+  return end > now && end <= next;
+});
 
-    const [h, m] = parts[1].split(":").map(Number);
-    if (isNaN(h)) return false;
-
-    const end = new Date(now);
-    end.setHours(h, m, 0, 0);
-    return end > now && end <= next;
-  });
 
   const c = document.getElementById("shift-overs-app");
 
@@ -3530,16 +3530,18 @@ async function fetchBreaksData() {
     // убираем строки без BreakTime
     .filter(r => r.BreakTime)
     // фильтр upcoming vs all
-    .filter(r => {
-      if (currentBreakFilter === "upcoming") {
-        const [h, m] = r.BreakTime.split(":").map(Number);
-        if (isNaN(h)||isNaN(m)) return false;
-        const dt = new Date(now);
-        dt.setHours(h, m, 0, 0);
-        return dt > now && dt <= nextHour;
-      }
-      return true;
-    })
+      .filter(r => {
+    if (currentBreakFilter === "upcoming") {
+      const [h, m] = r.BreakTime.split(":").map(Number);
+      if (isNaN(h) || isNaN(m)) return false;
+      const dt = new Date(now);
+      dt.setHours(h, m, 0, 0);
+      // если получилось время раньше now, это уже завтра
+      if (dt <= now) dt.setDate(dt.getDate() + 1);
+      return dt > now && dt <= nextHour;
+    }
+    return true;
+  })
     // сортируем по времени BreakTime
     .sort((a, b) => {
       const toMin = t => {
