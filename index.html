@@ -1049,25 +1049,54 @@
         margin-bottom: 20px;
       }
 
-      .aircall-status {
-      font-weight: bold;
-    }
-    
-    .status-available {
-      color: green;
-    }
-    
-    .status-on-a-call {
-      color: orange;
-    }
-    
-    .status-offline {
-      color: gray;
-    }
-    
-    .status-busy, .status-away {
-      color: red;
-    }
+      /* Зеленый для available */
+.aircall-status.status-available {
+  color: #35db00;
+  font-weight: bold; /* зелёный Bootstrap-style */
+}
+
+/* Оранжевый для разговорных статусов */
+.aircall-status.status-in_call,
+.aircall-status.status-calling,
+.aircall-status.status-ringing {
+  color: #fd7e14;
+  font-weight: bold; /* оранжевый */
+}
+
+/* Красный для остальных и офлайна */
+.aircall-status.status-offline,
+.aircall-status.status-other,
+.aircall-status.status-after_call_work  {
+  color: #dc3545;
+  font-weight: bold; /* красный */
+}
+
+/* Если есть ещё какие-то статусы «other» */
+.aircall-status.status-away,
+.aircall-status.status-unknown {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #999; /* по-умолчанию «unknown» */
+  transition: background 0.3s;
+}
+
+/* Цвета статусов */
+.status-indicator.status-available { background: #38e900; }
+.status-indicator.status-in_call   { background: #fd7e14; }
+.status-indicator.status-after_call_work   { background: #fd7e14; }
+.status-indicator.status-calling   { background: #fd7e14; }
+.status-indicator.status-offline   { background: #dc3545; }
+.status-indicator.status-other     { background: #dc3545; }
+/* серый для «unknown» */
+.status-indicator.status-unknown   { background: #999; }
+
 
 
 /* 4) Скругляем само выпадающее меню */
@@ -1308,9 +1337,6 @@ body.dark-theme .bootstrap-select .dropdown-toggle {
         cursor: pointer;
       }
 
-      .aircall-status {
-        color: green !important;
-      }
       /* точно такой же размер и отступы, как у обычных .filter-dropdown */
     .filters-wrapper .bootstrap-select .dropdown-toggle {
       box-sizing: border-box !important;
@@ -3099,8 +3125,8 @@ function renderAircallCardWithStatuses(
       </h5>`;
 
   // Active
-    if (showActive) {
-    if (activeList.length === 0) {
+  if (showActive) {
+    if (!activeList.length) {
       html += `<p class="text-center text-warning">⚠️ No active employees</p>`;
     } else {
       html += `<p><small>Active (${activeList.length})</small></p><ul id="aircall-active-list">`;
@@ -3108,14 +3134,13 @@ function renderAircallCardWithStatuses(
         const rawShift   = getEmployeeShiftName(name);
         const shiftName  = shiftDisplayNames[rawShift] || rawShift;
         const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
-        const safeId     = `aircall-active-${i}`;
         html += `
-          <li id="${safeId}" class="employee-item d-flex align-items-center" data-employee="${name}">
+          <li class="employee-item d-flex align-items-center" data-employee="${name}">
             <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
               ${shiftName}
             </span>
-            <span class="employee-name" style="margin-right:6px;">${name}</span>
-            &nbsp;–&nbsp;<span class="aircall-status">Checking...</span>
+            <span class="employee-name">${name}</span>
+            <span class="status-indicator status-unknown" title="Loading..." style="margin-left:6px;"></span>
           </li>
         `;
       });
@@ -3127,41 +3152,34 @@ function renderAircallCardWithStatuses(
   if (showAway) {
     html += `<p><small>Away (${awayList.length})</small></p><ul>`;
     awayList.forEach(({ name, reason }) => {
-      // Берём смену и бейдж
       const rawShift   = getEmployeeShiftName(name);
       const shiftName  = shiftDisplayNames[rawShift] || rawShift;
       const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
-
-      // Логика покраски в красный, если есть BRB или Break
-      const isOverdue =
-      /(?:Break|BRB)/i.test(reason || "") &&
-      /-([0-9]{2}:[0-9]{2})/.test(reason || "");
+      // определяем «просроченность» перерыва
+      const isOverdue = /(?:Break|BRB)/i.test(reason) &&
+                        /-\d{1,2}:\d{2}/.test(reason);
       const liClass   = isOverdue ? "break-overdue" : "";
-
-      const extra = reason ? ` (${reason})` : "";
-
       html += `
-      <li class="employee-item d-flex align-items-center ${liClass}" data-employee="${name}">
-        <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
-          ${shiftName}
-        </span>
-        <span class="employee-name" style="margin-right:6px;">
-          ${name}
-        </span>
-        <span class="text-muted">${extra}</span>
-      </li>`;
-  });
-  html += `</ul>`;
-}
+        <li class="employee-item d-flex align-items-center ${liClass}" data-employee="${name}">
+          <span class="badge badge-pill ${badgeClass}" style="margin-right:6px;">
+            ${shiftName}
+          </span>
+          <span class="employee-name">${name}</span>
+          <span class="status-indicator status-unknown" title="Loading..." style="margin-left:6px;"></span>
+        </li>
+      `;
+    });
+    html += `</ul>`;
+  }
 
   html += `</div>`;
-
-  // Вставляем в DOM и пересобираем статусы
   document.getElementById("platforms-container").innerHTML += html;
-    setTimeout(() => {
-    fetchAircallStatuses().catch(console.error);
-  }, 100);
+
+  // Через 100ms подтягиваем реальные статусы
+  setTimeout(() => fetchAircallStatuses().catch(console.error), 100);
 }
+
+
 
 const LAST_NOTHERE_KEY = 'lastNotHereCount';
 
@@ -3757,10 +3775,11 @@ async function fetchBreaksData() {
 // Подтягиваем реальные статусы вместо Checking...
 // ------------------
 async function fetchAircallStatuses() {
-  const spans = Array.from(document.querySelectorAll(".aircall-status"));
-  if (!spans.length) return;
+  // 1) Находим все индикаторы статуса
+  const indicators = Array.from(document.querySelectorAll(".status-indicator"));
+  if (!indicators.length) return;
 
-  // 1) вспомогалка для кривых имейлов
+  // Вспомогалка для «кривых» имейлов
   function normalizeEmail(email) {
     const aliases = {
       'ramil.guliyev@wolt.com':  'ramil.quliyev@wolt.com',
@@ -3769,50 +3788,54 @@ async function fetchAircallStatuses() {
     return aliases[email] || email;
   }
 
-  // Помечаем все спаны как «Loading…»
-  spans.forEach(span => span.textContent = "Loading…");
+  // Помечаем все индикаторы как «Loading…» (серый)
+  indicators.forEach(ind => {
+    ind.className  = "status-indicator status-unknown";
+    ind.title      = "Loading…";
+  });
 
-  // Собираем уникальные нормализованные email
-  const emails = [...new Set(spans.map(span => {
-    const name = span.closest("li[data-employee]")?.dataset.employee || "";
-    const raw = generateWoltEmail(name);
+  // Собираем уникальные имейлы
+  const emails = [...new Set(indicators.map(ind => {
+    const name = ind.closest("li[data-employee]")?.dataset.employee || "";
+    const raw  = generateWoltEmail(name);
     return normalizeEmail(raw);
   }))];
 
+  // Запрашиваем батчем у прокси
   let results = [];
   try {
     const res = await fetch("https://aircall-proxy.mikhail-garayev.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        secret: "superWoltKey42",
-        emails: emails
-      })
+      body: JSON.stringify({ secret: "superWoltKey42", emails })
     });
     const json = await res.json();
     results = Array.isArray(json.results) ? json.results : [];
-  } catch (e) {
-    console.error("Aircall batch error:", e);
+  } catch (err) {
+    console.error("Aircall batch error:", err);
   }
 
-  // Мапим реальные email → статус
+  // Строим мапу email → статус
   const statusMap = results.reduce((acc, { email, status, error }) => {
-    acc[email] = status ?? error ?? "Unknown";
+    acc[email] = status ?? error ?? "unknown";
     return acc;
   }, {});
 
-  // Обновляем каждый span
-  spans.forEach(span => {
-    const li = span.closest("li[data-employee]");
-    const raw = generateWoltEmail(li?.dataset.employee || "");
-    const email = normalizeEmail(raw);
-    const status = statusMap[email] || "Error";
+  // 2) Обновляем каждый индикатор
+  indicators.forEach(ind => {
+    const li        = ind.closest("li[data-employee]");
+    const raw       = generateWoltEmail(li.dataset.employee || "");
+    const email     = normalizeEmail(raw);
+    const statRaw   = (statusMap[email] || "offline").toString();
+    const statKey   = statRaw.toLowerCase().replace(/[\s_]+/g, "-");
+    const label     = statKey.charAt(0).toUpperCase() +
+                      statKey.slice(1).replace(/-/g, " ");
 
-    span.textContent = status;
-    const safeClass = "status-" + status.toLowerCase().replace(/\s+/g, "-");
-    span.className = `aircall-status ${safeClass}`;
+    ind.className = `status-indicator status-${statKey}`;
+    ind.title     = label;
   });
 }
+
 
 
 
