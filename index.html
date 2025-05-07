@@ -450,6 +450,7 @@
         filter: grayscale(100%);
         transition: filter 0.2s ease;
         cursor: pointer;
+        white-space: pre-line;
       }
       .stats-card .info-icon:hover {
         filter: none;
@@ -3282,7 +3283,7 @@ function renderShiftSummary(data) {
             src="https://www.svgrepo.com/show/474873/info.svg"
             data-toggle="tooltip"
             data-html="true"
-            title="${detail.join("<br/>")}"
+            title="${detail.join("\n")}"
             class="info-icon"
             style="width:16px; height:16px; cursor:pointer;"
           />
