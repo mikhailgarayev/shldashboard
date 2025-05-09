@@ -14,7 +14,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/css/bootstrap-select.min.css"
     />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -250,25 +250,29 @@ Enable maintenance
     </svg>
   </div>
   <div class="user-dropdown-menu" id="user-dropdown-menu">
-    <div class="dropdown-item">
-      <label class="toggle-container">
-        <span>Do not Disturb</span>
-        <label class="dnd-switch">
-          <input type="checkbox" id="dnd-toggle" />
-          <span class="slider"></span>
-        </label>
-      </label>
-    </div>
+    <div class="dropdown-item toggle-container">
+  <div class="item-content">
+    <img src="icons/dnd.svg" alt="Do not Disturb icon">
+    <span>Do not Disturb</span>
+  </div>
+  <label class="dnd-switch toggle-switch">
+    <input type="checkbox" id="dnd-toggle" />
+    <span class="slider"></span>
+  </label>
+</div>
+    <div class="dropdown-item toggle-container">
+  <div class="item-content">
+    <img src="icons/theme.svg" alt="Theme icon">
+    <span>Theme</span>
+  </div>
+  <label class="theme-switch toggle-switch mb-0">
+    <input type="checkbox" id="theme-checkbox" />
+    <span class="slider"></span>
+  </label>
+</div>
     <div class="dropdown-item" id="notif-settings-btn">
       <img src="https://www.svgrepo.com/show/355637/bell-2-slash-solid.svg" width="16" height="16" style="margin-right:8px;"/>
       <span>Notification settings</span>
-    </div>
-    <div class="dropdown-item">
-      <span>Theme</span>
-      <label class="theme-switch mb-0">
-        <input type="checkbox" id="theme-checkbox" />
-        <span class="slider"></span>
-      </label>
     </div>
     <div class="dropdown-divider"></div>
     <div class="dropdown-item" id="logout-btn">
@@ -750,7 +754,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
           PSR: "Click on the link to open the PSR platform.\nClick on employee name to open their profile.",
           SiMo: "Click on the link to open the Support Inbox.\nClick on employee name to open their profile.",
           Aircall:
-            "Click on the link to open the CS platform.\nClick on employee name to open their profile.\n You can see employee's status in the Aircall.\n🟢 - Available\n🔴 - Offline, Away other\n🟠 - In call, After call work",
+            "Click on the link to open the CS platform.\nClick on employee name to open their profile.\n You can see employee's status in the Aircall.",
           Venue:
             "Click on the link to open the Venue platform.\nClick on employee name to open their profile.",
           Trainee: "Click on employee name to open their profile.",
