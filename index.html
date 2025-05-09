@@ -1006,7 +1006,7 @@ async function openEmployeeModal(empName) {
     const br = window.allBreaksData.find(b =>
       b.Name?.trim().toLowerCase() === empName.trim().toLowerCase()
     );
-    if (br) breakTime = br["Break Time"] || "—";
+    if (br) breakTime = br.BreakTime || "—";
   }
   document.getElementById("modal-emp-break").textContent = breakTime;
 
