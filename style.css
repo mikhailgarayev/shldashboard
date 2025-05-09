@@ -1986,29 +1986,43 @@ body.dark-theme .user-menu-toggle:hover {
   transition: background 0.2s;
   font-size: 0.9rem;
 }
-
-.dropdown-item:hover {
-  background: rgba(0,0,0,0.05);
-}
-
-body.dark-theme .dropdown-item:hover {
-  background: rgba(255,255,255,0.1);
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--card-border-color);
-  margin: 4px 0;
-}
-
-.toggle-container {
+/* 1) Убираем глобальный space-between у всех пунктов */
+.user-dropdown-menu .dropdown-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  /* justify-content: space-between; <-- удаляем или закомментируем */
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+/* 2) Вводим обёртку для текста+иконки */
+.user-dropdown-menu .item-content {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
+/* 3) У toggle-пунктов сам переключатель отодвигаем вправо */
+.user-dropdown-menu .dropdown-item.toggle-container {
+  justify-content: flex-start; /* поехали все к началу… */
+}
+
+.user-dropdown-menu .dropdown-item.toggle-container .toggle-switch {
+  margin-left: auto;  /* …а этот элемент — прилипнет справа */
+}
+
+/* 4) Иконки всё так же стандартизируем */
+.user-dropdown-menu .dropdown-item img {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Пример divider’а, если нужен */
+.user-dropdown-menu .dropdown-divider {
+  margin: 4px 0;
+  border-top: 1px solid var(--card-border-color);
+}
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
