@@ -2533,9 +2533,10 @@ function findCandidate() {
       pk === targetKey || targetKey.includes(pk) || pk.includes(targetKey)
     ) ? 1 : 0;
 
-    const langCount = e.languages.trim()
-      ? e.languages.trim().split(/\s+/).length
-      : 0;
+    // Новая версия — ищем пары «региональных индикаторов» (флаги)
+    const flagRegex = /[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/g;
+    const flags = e.languages.match(flagRegex) || [];
+    const langCount = flags.length;
     const cap = e.maxChats || 0;
 
     const w = { t:0.2, pr:0.3, pf:0.2, lg:0.2, cp:0.1 };
@@ -2575,7 +2576,7 @@ function findCandidate() {
       const br = window.allBreaksData.find(b =>
         b.Name?.trim().toLowerCase() === best.name.trim().toLowerCase()
       );
-      if (br) breakTime = br['Break Time'] || '–';
+      if (br) breakTime = br.BreakTime || '–';
     }
 
     html += `
