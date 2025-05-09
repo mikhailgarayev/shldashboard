@@ -1,0 +1,2072 @@
+/* Скрываем страницу до проверки авторизации */
+body.hidden {
+  display: none;
+}
+
+/* Grid layout: header + sidebar + main + right panel */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+.dashboard-header {
+  grid-area: header;
+}
+.dashboard-layout {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 0 1fr 300px;
+  grid-template-areas: "header header header" "sidebar main right";
+  transition: grid-template-columns 0.3s;
+  padding-top: 60px;
+}
+aside.sidebar {
+  overflow: hidden;
+}
+main.main-content {
+  grid-area: main;
+  padding: 0.5rem 2rem;
+  overflow-y: auto;
+}
+aside.right-panel {
+  grid-area: right;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08);
+  border-radius: 16px 0 0 16px;
+  padding: 1rem;
+  overflow-y: auto;
+}
+.dashboard-layout.sidebar-open {
+  grid-template-columns: 250px 1fr 300px; /* при открытом меню */
+}
+
+/* Glass-card base */
+.glass-card,
+.stats-card,
+.platform-card,
+.alert-card,
+.filter-panel {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+.stats-card:hover,
+.platform-card:hover,
+.alert-card:hover,
+.filter-panel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.1);
+}
+
+/* Header styling */
+.dashboard-header nav.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Sidebar menu inside aside.sidebar */
+aside.sidebar #sidebar {
+  background: var(--menu-bg-color, #fff);
+  border-radius: 8px;
+  overflow: hidden;
+}
+aside.sidebar #sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  color: var(--text-color, #343a40);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+aside.sidebar #sidebar a:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Filter panel */
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: 16px 24px !important;
+  border-radius: 30px !important;
+}
+.filter-panel .filter-dropdown,
+.filter-panel .search-input {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px !important;
+  padding: 10px 16px !important;
+  min-width: 120px;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+  box-shadow: 0.2s;
+}
+.filter-panel .filter-dropdown:hover,
+.filter-panel .filter-dropdown:focus,
+.filter-panel .search-input:hover,
+.filter-panel .search-input:focus {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.6);
+  outline: none;
+}
+
+/* Stats cards grid */
+#summary-grid {
+  display: grid !important;
+  /* сколько угодно колонок, но минимум по 180px и максимум 1fr */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  /* тянем на всю ширину родителя */
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-bottom: 0;
+  justify-items: stretch;
+}
+
+.stats-title {
+  font-size: 0.75rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+}
+.stats-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0.3rem 0;
+}
+.stats-card.small-font-card .stats-value {
+  font-size: 1rem;
+}
+
+#find-candidate {
+  border-radius: 20px;
+}
+/* Platforms row */
+/* 1) Общие статы — пусть остаются flex’ом или как вам удобно */
+#summary-general {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  margin-bottom: 1.5rem;
+}
+
+/* 2) Платформенные статы — grid с тем же шаблоном, что и platform-card */
+#summary-platforms {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  margin: 0 0 1.5rem 0;
+}
+#summary-platforms .stats-card {
+  padding: 1rem 1rem !important;
+}
+/* 3) Платформенные карточки — тоже grid, точно по этим же колонкам */
+.platforms-row {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  margin: 0 !important;
+  align-items: start !important;
+}
+
+.platform-card {
+  flex: 1 1 220px;
+  min-width: 200px;
+  overflow-wrap: break-word;
+}
+.platform-card h5 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.platform-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.platform-card li {
+  padding: 0.25rem 0;
+}
+
+/* Alerts */
+#alerts-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+}
+.alert-card {
+  flex: 0 1 320px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: flex-start;
+}
+.alert-card h2 {
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+.alert-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas: "header" "main" "right" "sidebar";
+    height: auto;
+  }
+  aside.sidebar,
+  aside.right-panel {
+    width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+:root {
+  /* Светлая тема по умолчанию */
+  --bg-color: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+  --text-color: #343a40;
+  --card-bg-color: #ffffff;
+  --card-text-color: #495057;
+  --card-border-color: #dee2e6;
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --menu-bg-color: #ffffff;
+  --menu-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  --menu-width: 250px;
+  --transition-speed: 0.3s;
+}
+/* Тёмная тема */
+body.dark-theme {
+  --bg-color: linear-gradient(120deg, #252525 0%, #313131 100%);
+  --text-color: #f0f0f0;
+  --card-bg-color: #3a3a3a;
+  --card-text-color: #e5e5e5;
+  --card-border-color: #555555;
+  --card-shadow: 0 4px 16px rgba(255, 255, 255, 0.08);
+  --card-hover-shadow: 0 6px 20px rgba(255, 255, 255, 0.12);
+  --menu-bg-color: #3a3a3a;
+}
+
+body.dark-theme .stats-card.red-card {
+  background-color: #4a1f1f !important;
+  border: 1px solid #dc3545 !important;
+}
+
+/* Dark-theme support for candidate modal */
+body.dark-theme .modal-content {
+  background-color: var(--card-bg-color) !important;
+  color: var(--text-color) !important;
+}
+body.dark-theme .modal-content h5,
+body.dark-theme .modal-content p,
+body.dark-theme .modal-content li,
+body.dark-theme .modal-content ul {
+  color: var(--card-text-color) !important;
+}
+/* Кнопка Close */
+body.dark-theme .modal-content .btn-secondary {
+  background-color: #444 !important;
+  border-color: #666 !important;
+  color: #fff !important;
+}
+body.dark-theme .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* == What’s New? modal в dark-theme == */
+body.dark-theme #whats-new-modal > div > div {
+  /* перекрываем inline background:white */
+  background-color: var(--card-bg-color) !important;
+  color: var(--text-color) !important;
+  border-radius: 8px;
+  padding: 20px;
+}
+/* Заголовок и текст */
+body.dark-theme #whats-new-modal > div > div h2,
+body.dark-theme #whats-new-modal > div > div p {
+  color: var(--text-color) !important;
+}
+/* Кнопка OK */
+body.dark-theme #whats-new-modal > div > div button#close-update-modal {
+  background-color: var(--card-border-color) !important;
+  color: var(--card-text-color) !important;
+  border: 1px solid var(--card-text-color) !important;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+/* Усиленное затемнение фона, если нужно */
+body.dark-theme #whats-new-modal > div {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Общий сброс и фон */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-color);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;
+  color: var(--text-color);
+  transition:
+    background var(--transition-speed) ease,
+    color var(--transition-speed) ease;
+}
+
+/* Стиль для блока с информацией о пользователе и кнопкой выхода */
+#user-info {
+  text-align: right;
+  padding: 10px;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 20px); /* прямо под иконкой */
+  right: -135px; /* по правому краю контейнера */
+  width: 300px; /* или ваша ширина */
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--card-bg-color);
+  border: 1px solid var(--card-border-color);
+  box-shadow: var(--card-shadow);
+  border-radius: 8px;
+  z-index: 1000;
+  display: none;
+}
+.notifications-dropdown.show {
+  display: block;
+}
+.notifications-dropdown .unread {
+  background-color: rgba(220, 53, 69, 0.1);
+  font-weight: bold;
+}
+.notifications-dropdown .read {
+  background-color: transparent;
+  color: var(--text-color);
+}
+
+/* Сайдбар (меню) */
+.hamburger-menu {
+  margin-right: 12px;
+  cursor: pointer;
+}
+.hamburger-menu span {
+  font-size: 28px;
+  color: var(--text-color);
+}
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background: var(--menu-bg-color);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s;
+  z-index: 200 !important;
+  padding: 30px 20px;
+  transform: translate(-100%);
+}
+aside.sidebar #sidebar {
+  position: fixed; /* чтобы не зависело от потока */
+  top: 60px !important; /* под шапку */
+  height: calc(100% - 60px); /* занимать остальную высоту */
+  z-index: 90; /* чуть ниже шапки */
+}
+
+#sidebar.active {
+  transform: translateX(0);
+}
+#sidebar-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 91;
+}
+
+#sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  font-size: 1rem;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--card-border-color);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+  text-decoration: none;
+}
+
+#sidebar a:hover {
+  background: rgba(0, 123, 255, 0.05);
+  transform: translateX(4px);
+  border-radius: 6px;
+}
+
+#sidebar .close-btn {
+  font-size: 24px;
+  text-align: right;
+  cursor: pointer;
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+body.dark-theme #sidebar {
+  background: #2b2b2b;
+}
+
+body.dark-theme #sidebar a {
+  color: #f0f0f0;
+}
+
+body.dark-theme #sidebar a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-container {
+  width: 100%;
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 2rem;
+  color: var(--text-color);
+}
+
+/* Панель фильтров */
+.filter-panel {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 12px 24px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  max-width: 1200px;
+}
+.filter-panel .filter-dropdown {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 140px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+.filter-panel .filter-dropdown:hover,
+.filter-panel .filter-dropdown:focus,
+.filter-panel .search-input:hover,
+.filter-panel .search-input:focus {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(
+    255,
+    255,
+    255,
+    0.6
+  ); /* подчеркнём цветом при взаимодействии */
+  outline: none;
+}
+.filter-panel .bootstrap-select .dropdown-toggle {
+  height: 100% !important;
+  padding: 0 16px !important; /* слева-справа как у остальных */
+  display: flex;
+  align-items: center;
+  box-shadow: none !important;
+  border-radius: 20px !important;
+}
+.filter-panel .bootstrap-select .dropdown-toggle .filter-option-inner-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+/* выпадашка тоже закругляется */
+.filter-panel .bootstrap-select .dropdown-menu {
+  border-radius: 20px;
+}
+#summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 1rem !important;
+  width: 100% !important; /* тянем на всю ширину родителя */
+  margin: 0 !important; /* без авто-отступов */
+  padding: 0;
+}
+
+.stats-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center !important;
+  margin: 8px;
+  padding: 0.8rem 0.6rem !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  min-width: 180px;
+}
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+.stats-card .stats-title {
+  font-size: 0.75rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  margin-bottom: 0.3rem;
+}
+.stats-card .stats-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #343a40;
+  margin-bottom: 0.2rem;
+}
+.stats-card .small {
+  font-size: 0.75rem;
+  color: #868e96;
+  margin-top: 0.25rem;
+}
+.stats-card .info-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.5rem !important;
+  filter: grayscale(100%);
+  transition: filter 0.2s ease;
+  cursor: pointer;
+  white-space: pre-line;
+}
+.stats-card .info-icon:hover {
+  filter: none;
+}
+.stats-value.d-inline-flex {
+  gap: 0.25rem !important;
+  align-items: center !important;
+}
+.stats-card.red-card {
+  background-color: #fff5ff;
+  border: 1px solid #ff6b6b; /* красная граница */
+}
+.stats-title {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+.stats-value {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-top: 4px;
+}
+.stats-card .progress {
+  height: 24px;
+  margin: 0.5rem 0;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.stats-card .progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.red-card {
+  background-color: #ffe5e5;
+  border-color: #dc3545; /* красная граница */
+  border: 1px solid #ff6b6b;
+}
+.filter-section {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-dropdown {
+  padding: 8px 12px;
+  border: 1px solid var(--card-border-color);
+  border-radius: 6px;
+  background: var(--card-bg-color);
+  min-width: 120px;
+  color: var(--text-color);
+}
+.search-section {
+  display: flex;
+  margin-left: auto;
+}
+.search-input {
+  padding: 8px 12px;
+  border: 1px solid var(--card-border-color);
+  border-radius: 6px 0 0 6px;
+  background: var(--card-bg-color);
+  width: 150px;
+  color: var(--text-color);
+}
+
+/* Секция обновления страницы */
+.refresh-section {
+  margin-left: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.refresh-btn {
+  padding: 6px 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.refresh-btn,
+.refresh-section img {
+  transition: transform 0.2s ease;
+}
+.refresh-btn:hover,
+.refresh-section img:hover {
+  transform: scale(1.1);
+}
+.theme-switch .slider:before {
+  font-size: 14px;
+  line-height: 18px;
+}
+.refresh-btn:hover {
+  background-color: #218838;
+}
+.spinner-border {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.1em;
+}
+@media (max-width: 768px) {
+  .filter-panel {
+    justify-content: center;
+  }
+  .filter-panel .filter-dropdown,
+  .filter-panel .search-input {
+    min-width: 45%;
+  }
+}
+/* Сброс стилей для текста */
+.theme-text {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  font-size: 1rem;
+}
+/* Переключатель темы */
+.theme-toggle-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+.slider:before {
+  position: absolute;
+  content: "☀️";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  color: #f39c12;
+}
+input:checked + .slider {
+  background-color: #007bff;
+}
+input:checked + .slider:before {
+  transform: translateX(26px);
+  content: "🌙";
+  color: #f1c40f;
+}
+
+/* Карточки и таблицы */
+.platform-card {
+  flex: 1 1 220px;
+  min-width: 220px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--card-text-color);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  overflow-wrap: break-word;
+}
+.platform-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--card-hover-shadow);
+}
+.platform-card h5 {
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: var(--text-color);
+}
+.platform-card h5 .info-icon {
+  display: inline-block;
+  margin-left: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+.platform-card p {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+.platform-card ul {
+  list-style: none;
+  padding-left: 0;
+  font-size: 0.85rem;
+  color: var(--card-text-color);
+}
+.platform-card ul li {
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.platform-card ul li:not(:last-child) {
+  border-bottom: 1px solid var(--card-border-color);
+}
+.platform-card ul li:last-child {
+  border-bottom: none;
+}
+
+/* Стили для бейджей смены перед именем */
+.platform-card .badge {
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+.platform-card .badge-pill {
+  padding: 0.25em 0.6em;
+  margin-right: 0.4em;
+}
+
+.shift-summary-card {
+  background: none !important;
+  color: var(--card-text-color);
+  border: none !important;
+  box-shadow: none !important;
+  padding: 20px;
+  margin: 0 auto 40px;
+  text-align: center;
+  overflow-wrap: break-word;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-radius: 16px;
+}
+.shift-summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--card-hover-shadow);
+}
+.shift-summary-title {
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--text-color);
+}
+.shift-summary-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+  font-size: 2rem;
+}
+.shift-summary-grid th,
+.shift-summary-grid td {
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--card-text-color);
+}
+.shift-summary-grid th {
+  background: none !important;
+  font-weight: 600;
+}
+.shift-summary-grid td {
+  background: none !important;
+  border: 1px solid var(--card-border-color);
+  border-radius: 8px;
+}
+.small-font-card {
+  font-size: 0.9rem;
+}
+.shift-card-title {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+.shift-card-away {
+  font-size: 1.1rem;
+  color: #666;
+  text-align: center;
+}
+#breaks-section {
+  margin-top: 40px;
+}
+
+#alerts-section #breaks-section {
+  margin-top: 0;
+}
+
+#breaks-section h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 1.5rem;
+  color: var(--text-color);
+}
+/* Контейнер двух карточек */
+#alerts-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  align-items: stretch;
+  margin: 2rem 0;
+}
+
+/* Карточка внутри */
+.alert-card {
+  flex: 0 1 320px; /* не растягиваем карточку больше базисной ширины */
+  max-width: 400px; /* ограничиваем максимальную ширину */
+  align-self: stretch; /* заставляем все карточки быть одной высоты */
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--card-border-color);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+}
+
+#breaks-app .break-card {
+  margin-bottom: 0 !important;
+}
+
+.alert-content {
+  flex: 1; /* займёт всё оставшееся пространство */
+  overflow-y: auto; /* если много элементов — появится скролл */
+}
+
+/* Заголовок */
+.alert-card h2 {
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 1.5rem;
+  color: var(--text-color);
+}
+
+/* Контент-область */
+.alert-card > div {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.alert-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.alert-card li {
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+@media (max-width: 768px) {
+  .alert-card {
+    max-width: 100%;
+  }
+}
+
+.break-conflict > strong {
+  color: #dc3545;
+}
+
+/* контейнер списка внутри */
+#shift-overs-app ul,
+#breaks-app ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#shift-overs-app li,
+#breaks-app li {
+  margin-bottom: 0.75rem;
+}
+
+.break-card {
+  background: var(--card-bg-color);
+  color: var(--card-text-color);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+  margin: 0 auto 40px;
+  max-width: 600px;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+.break-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--card-hover-shadow);
+}
+.break-card h5 {
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+.break-card ul {
+  list-style: none;
+  padding-left: 0;
+  font-size: 0.85rem;
+  color: var(--card-text-color);
+}
+.break-card ul li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--card-border-color);
+}
+.break-card ul li:last-child {
+  border-bottom: none;
+}
+
+/* Модальное окно сотрудника */
+#modal-overlay {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+#employee-modal {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.95);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  background: var(--card-bg-color);
+  color: var(--card-text-color);
+  border: 1px solid var(--card-border-color);
+  box-shadow: var(--card-shadow);
+  border-radius: 8px;
+  padding: 20px;
+  z-index: 1001;
+  width: 330px;
+  pointer-events: none;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#employee-modal.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  pointer-events: auto;
+}
+
+#modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#employee-modal h3 {
+  margin: 0 0 8px 0;
+}
+#employee-modal .close-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  cursor: pointer;
+  font-size: 20px;
+}
+#employee-modal a {
+  color: #007bff;
+  text-decoration: underline;
+}
+#employee-modal a:hover {
+  color: #0056b3;
+}
+/* Контейнер с инфой и кнопками оставляем по контенту, а вот список делаем скроллимым */
+#employee-modal > div:nth-of-type(2) {
+  /* это как раз <div> с padding вокруг всей таблички инфы и списка */
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+/* Если хотите более точечно только список платформенных переходов: */
+#modal-platform-list {
+  max-height: 200px; /* или сколько вам нужно */
+  overflow-y: auto;
+  margin-left: 20px;
+  font-size: 0.9rem;
+}
+.dashboard-header {
+  position: fixed;
+  display: flex;
+  padding: 1rem 2rem;
+  min-height: 60px;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg-color);
+  border-bottom: 1px solid var(--card-border-color);
+  box-shadow: var(--card-shadow);
+  border-radius: 0 0 12px 12px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 100;
+}
+.filters-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-radius: 30px !important;
+  padding: 16px 24px !important;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--card-shadow);
+  background-filter: blur(10px);
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0.25rem auto 24px;
+  margin-top: -0.5rem;
+}
+.filters-wrapper .filter-dropdown {
+  box-sizing: border-box;
+  height: 40px;
+  padding: 8px 16px;
+  min-width: 120px; /* или любую вашу ширину */
+  background: var(--card-bg-color);
+  border: 1px solid var(--card-border-color);
+  border-radius: 20px;
+}
+
+.filters-wrapper .bootstrap-select {
+  width: auto !important;
+  flex-shrink: 0; /* не даём ужиматься */
+  margin-right: 0.5rem; /* чуть отступа справа */
+}
+
+/* Применяем тот же стиль к кнопке bootstrap-select */
+.filters-wrapper .bootstrap-select .dropdown-toggle.filter-dropdown {
+  flex: 0 0 auto !important;
+  box-sizing: border-box !important;
+  height: 40px !important;
+  padding: 8px 16px !important;
+  min-width: 120px !important;
+}
+.filters-wrapper .filter-dropdown,
+.filters-wrapper .search-input {
+  border-radius: 20px !important;
+  padding: 10px 16px !important;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.filters-wrapper select,
+.filters-wrapper input {
+  flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  .filters-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters-wrapper > * {
+    width: 100%;
+  }
+}
+.header-gap > * {
+  margin-right: 10px;
+  margin-bottom: 6px;
+}
+.header-gap > *:last-child {
+  margin-right: 0;
+}
+.info-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Зеленый для available */
+.aircall-status.status-available {
+  color: #35db00;
+  font-weight: bold; /* зелёный Bootstrap-style */
+}
+
+/* Оранжевый для разговорных статусов */
+.aircall-status.status-in_call,
+.aircall-status.status-calling,
+.aircall-status.status-ringing {
+  color: #fd7e14;
+  font-weight: bold; /* оранжевый */
+}
+
+/* Красный для остальных и офлайна */
+.aircall-status.status-offline,
+.aircall-status.status-other,
+.aircall-status.status-after_call_work {
+  color: #dc3545;
+  font-weight: bold; /* красный */
+}
+
+/* Если есть ещё какие-то статусы «other» */
+.aircall-status.status-away,
+.aircall-status.status-unknown {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #999; /* по-умолчанию «unknown» */
+  transition: background 0.3s;
+}
+
+/* Цвета статусов */
+.status-indicator.status-available {
+  background: #38e900;
+}
+.status-indicator.status-in-call {
+  background: #fd7e14;
+}
+.status-indicator.status-after-call-work {
+  background: #fddd14;
+}
+.status-indicator.status-calling {
+  background: #fd7e14;
+}
+.status-indicator.status-offline {
+  background: #dc3545;
+}
+.status-indicator.status-other {
+  background: #dc3545;
+}
+/* серый для «unknown» */
+.status-indicator.status-unknown {
+  background: #999;
+}
+
+/* 4) Скругляем само выпадающее меню */
+.filters-wrapper .bootstrap-select .dropdown-menu {
+  border-radius: 20px !important;
+  background: var(--card-bg-color) !important;
+  border: 1px solid var(--card-border-color) !important;
+  box-shadow: none !important;
+}
+/* Используем вашу переменную тёмного фона */
+.shift-summary-card,
+aside.right-panel .alert-card {
+  background: var(--card-bg-color) !important;
+  border: 1px solid var(--card-border-color) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* И чтобы текст внутри них тоже был читабельным */
+.shift-summary-card,
+aside.right-panel .alert-card {
+  color: var(--card-text-color) !important;
+}
+
+/* Переопределение ширины для поля Platform, используем bootstrap‑select */
+.btn-outline-primary:hover {
+  color: white !important;
+  background-color: #007bff !important;
+  border-color: #007bff !important;
+}
+
+body.dark-theme #employee-modal {
+  background-color: #2b2b2b;
+  color: #f0f0f0;
+  border: 1px solid #444;
+}
+
+body.dark-theme #employee-modal h5 {
+  color: #fff;
+}
+
+body.dark-theme #employee-modal small {
+  color: #aaa;
+}
+
+body.dark-theme #employee-modal strong {
+  color: #ddd;
+}
+
+body.dark-theme #employee-modal a,
+body.dark-theme #employee-modal .btn-outline-primary {
+  color: #66b0ff;
+  border-color: #66b0ff;
+}
+
+body.dark-theme #employee-modal .btn-outline-primary:hover {
+  background-color: #66b0ff;
+  color: white;
+}
+
+/* Стили для карточек в dark-theme */
+body.dark-theme .stats-card {
+  background: var(
+    --card-bg-color
+  ) !important; /* из ваших переменных тёмной темы */
+  border-color: var(--card-border-color) !important;
+  color: var(--card-text-color) !important; /* общий цвет текста */
+}
+
+/* Заголовки внутри карточек (stats-title) */
+body.dark-theme .stats-card .stats-title {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Основные большие цифры (stats-value) */
+body.dark-theme .stats-card .stats-value {
+  color: #ffffff !important;
+}
+
+/* Мелкий дополнительный текст (класс .small или inline) */
+body.dark-theme .stats-card .small,
+body.dark-theme .stats-card .stats-value small {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.dark-theme .platform-card,
+body.dark-theme .stats-card,
+body.dark-theme .alert-card {
+  box-shadow: none !important;
+}
+
+body.dark-theme .platform-card .text-muted {
+  color: #f1f1f1 !important;
+}
+/* Увеличиваем размер шрифта и делаем чуть погуще */
+#user-display-name {
+  font-size: 1.1rem; /* вы можете подправить под свой вкус */
+  font-weight: 500;
+}
+/* чтобы анимация была плавной */
+#notification-bell img {
+  transition: filter 0.3s ease;
+  position: relative;
+}
+
+/* в тёмной теме просто инвертируем изображение */
+body.dark-theme #notification-bell img {
+  filter: invert(1) brightness(1.5);
+}
+
+/* В светлой теме пусть остаётся ваш стандартный цвет */
+#user-display-name {
+  color: var(--text-color);
+}
+
+/* В тёмной теме — строгий белый */
+body.dark-theme #user-display-name {
+  color: #ffffff !important;
+}
+
+body.dark-theme #user-display-name.text-muted {
+  color: #ffffff !important;
+}
+
+/* для контейнера фильтров без тени в темной теме */
+body.dark-theme .filter-panel,
+body.dark-theme .filters-wrapper {
+  box-shadow: none !important;
+}
+
+/* Общие скругления для выпадашки */
+.bootstrap-select .dropdown-menu {
+  border-radius: 16px !important;
+}
+
+/* Светлая тема: белый фон и тонкая серая рамка */
+body:not(.dark-theme) .bootstrap-select .dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: none !important;
+}
+
+/* Тёмная тема: тёмный фон и рамка из переменной */
+body.dark-theme .bootstrap-select .dropdown-menu {
+  background: var(--card-bg-color) !important;
+  border: 1px solid var(--card-border-color) !important;
+  box-shadow: none !important;
+}
+
+/* — Скругляем и убираем белый фон у кнопки выпадашки — */
+.bootstrap-select .dropdown-toggle {
+  border-radius: 20px !important;
+  box-shadow: none !important;
+}
+
+/* — светлая тема для кнопки — */
+body:not(.dark-theme) .bootstrap-select .dropdown-toggle {
+  background-color: #fff !important;
+  border: 1px solid #dee2e6 !important;
+  color: #343a40 !important;
+}
+
+/* — тёмная тема для кнопки — */
+body.dark-theme .bootstrap-select .dropdown-toggle {
+  background-color: var(--card-bg-color) !important;
+  border: 1px solid var(--card-border-color) !important;
+  color: var(--text-color) !important;
+}
+
+/* — чуть скругляем стрелочку — */
+.bootstrap-select .dropdown-toggle .filter-option-inner-inner {
+  border-radius: 20px !important;
+}
+
+/* Текст пунктов */
+.bootstrap-select .dropdown-item {
+  border-radius: 12px; /* чуть скруглить сами пункты */
+  transition: background 0.2s ease;
+}
+
+/* Цвета пунктов в светлой теме */
+body:not(.dark-theme) .bootstrap-select .dropdown-item {
+  color: #343a40;
+}
+body:not(.dark-theme) .bootstrap-select .dropdown-item:hover,
+body:not(.dark-theme) .bootstrap-select .dropdown-item.active {
+  background-color: #f1f1f1 !important;
+}
+
+/* Цвета пунктов в тёмной теме */
+body.dark-theme .bootstrap-select .dropdown-item {
+  color: #e5e5e5;
+}
+body.dark-theme .bootstrap-select .dropdown-item:hover,
+body.dark-theme .bootstrap-select .dropdown-item.active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.break-overdue {
+  color: #dc3545 !important; /* Bootstrap red */
+  font-weight: bold;
+  animation: pulse 1s infinite;
+}
+.break-overdue .employee-name,
+.break-overdue .text-muted {
+  color: #dc3545 !important; /* Bootstrap red */
+  font-weight: bold;
+}
+.body.dark-theme .break-overdue {
+  color: #dc3545 !important; /* Bootstrap red */
+  font-weight: bold;
+  animation: pulse 1s infinite !important;
+}
+body.dark-theme .break-overdue .employee-name,
+body.dark-theme .break-overdue .text-muted {
+  color: #dc3545 !important;
+}
+.employee-item.king .employee-name {
+  color: gold !important;
+  font-weight: bold;
+}
+
+.employee-item.pink-name .employee-name {
+  color: hotpink !important;
+}
+
+.pink-name {
+  color: hotpink !important;
+}
+
+.employee-name {
+  transition:
+    transform 0.3s ease,
+    color 0.3 ease;
+}
+
+.employee-name:hover {
+  transition: scale(1.1);
+  color: #ff4500;
+  cursor: pointer;
+}
+
+/* точно такой же размер и отступы, как у обычных .filter-dropdown */
+.filters-wrapper .bootstrap-select .dropdown-toggle {
+  box-sizing: border-box !important;
+  height: 40px !important; /* совпадает с height .filter-dropdown */
+  padding: 8px 16px !important; /* совпадает с padding .filter-dropdown */
+  background: var(--card-bg-color) !important;
+  border: 1px solid var(--card-border-color) !important;
+  border-radius: 20px !important;
+}
+
+/* Сброс фонового цвета и установка белого текста для второго столбца таблицы в dark-theme */
+body.dark-theme .shift-summary-grid td:nth-child(2),
+body.dark-theme .shift-summary-grid th:nth-child(2) {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* Если внутри ячеек ещё есть span-элементы с фоном, сбросим и у них */
+body.dark-theme .shift-summary-grid td:nth-child(2) span {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* родительский контейнер — общий флекс со всеми переключателями */
+.toggle-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem; /* расстояние между текстом и слайдером */
+  margin-right: 1rem;
+}
+
+/* при необходимости подкорректируйте размер шрифта/отступ у лейбла */
+.toggle-container .toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+/* сам «слайдер» */
+.dnd-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+.dnd-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.dnd-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: background-color 0.3s;
+  border-radius: 24px;
+}
+.dnd-switch .slider:before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: transform 0.3s;
+  border-radius: 50%;
+}
+
+/* состояние «включено» */
+.dnd-switch input:checked + .slider {
+  background-color: #007bff;
+}
+.dnd-switch input:checked + .slider:before {
+  transform: translateX(26px);
+}
+/* 1) Отменяем у всех .stats-card */
+.stats-card {
+  align-items: center !important;
+}
+
+/* 2) Применяем только к платформенным summary-карточкам */
+#summary-platforms .stats-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch !important;
+}
+
+/* 3) Блок цифр и блок прогресса — full-width только внутри #summary-platforms */
+#summary-platforms .stats-counts,
+#summary-platforms .stats-progress {
+  width: 100% !important;
+}
+
+/* 4) Две цифры с отступом по краям */
+#summary-platforms .stats-counts {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5rem 0;
+}
+
+/* 5) Общие стили для элементов «stat» */
+#summary-platforms .stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25em; /* расстояние между цифрой и иконкой */
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #222;
+}
+
+/* 6) Иконка человека */
+#summary-platforms .stat-icon {
+  width: 1.2em;
+  height: 1.2em;
+  margin-left: 0.25em;
+}
+#summary-platforms .stat-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 7) Прогресс-бар внутри summary-platforms */
+#summary-platforms .stats-progress {
+  display: flex;
+  height: 6px; /* подбираешь под свой макет */
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.05);
+  margin-top: 0.5rem;
+}
+#summary-platforms .stats-progress-active,
+#summary-platforms .stats-progress-away {
+  height: 100%;
+  flex-shrink: 0;
+}
+#summary-platforms .stats-progress-active {
+  background: #28a745;
+}
+#summary-platforms .stats-progress-away {
+  background: #dc3545;
+}
+/* убираем старую в тёмной теме */
+body.dark-theme .stat-icon img {
+  display: none !important;
+}
+
+/* рендерим новую иконку как фон */
+body.dark-theme .stat-icon {
+  display: inline-block; /* чтобы работал фон */
+  width: 20px; /* под размер SVG */
+  height: 20px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23fff' viewBox='0 0 16 16'><path d='M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z'/><path d='M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+/* текст цифр и статусов */
+body.dark-theme .stat,
+body.dark-theme .stat-value,
+body.dark-theme .stats-title,
+body.dark-theme .stats-value {
+  color: #fff !important;
+}
+
+/* если у тебя остаются мелкие .small-тексты */
+body.dark-theme .stats-card .small {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+.global-notification {
+  position: fixed;
+  top: 15px;
+  right: 10px;
+  background: rgba(0, 123, 255, 0.9);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 2000;
+  max-width: 500px;
+  font-size: 1.2rem;
+}
+.global-notification a {
+  color: #ffc;
+  text-decoration: underline;
+  margin-left: 8px;
+}
+
+#notebook-icon {
+  position: fixed;
+  bottom: 40px;
+  right: 45px;
+  width: 60px;
+  height: 60px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+#notebook-icon:hover {
+  transform: scale(1.1);
+}
+#notebook-icon img {
+  width: 60%;
+  height: 60%;
+}
+body.dark-theme #notebook-icon {
+  background: #333;
+}
+body.dark-theme #notebook-icon img {
+  filter: invert(1) brightness(1.2);
+}
+
+/* Choice menu */
+#notebook-choice {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 240px; /* увеличить ширину */
+  padding: 12px; /* добавить отступы */
+  border-radius: 12px; /* скругления */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: var(--card-bg-color); /* в тёмной теме будет тёмный фон */
+  border: 1px solid var(--card-border-color);
+  display: none; /* по умолчанию скрыто */
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+  transition:
+    opacity 0.25s ease-out,
+    transform 0.25s ease-out;
+  z-index: 10002;
+}
+body.dark-theme #notebook-choice {
+  background: #2b2b2b;
+  border-color: #444;
+}
+#notebook-choice button {
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--menu-bg-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#notebook-choice button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+body.dark-theme #notebook-choice button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Notebook panel */
+#notebook-panel {
+  position: fixed;
+  width: 320px;
+  height: 400px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.dark-theme #notebook-panel {
+  background: #2b2b2b;
+  border-color: #444;
+}
+#notebook-panel header {
+  background: #007bff;
+  color: white;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: move;
+}
+body.dark-theme #notebook-panel header {
+  background: #444;
+}
+#notebook-panel header .close-btn {
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+#notebook-panel header #notebook-mode {
+  font-weight: bold;
+}
+#notebook-content {
+  flex: 1;
+  width: 100%;
+  border: none;
+  padding: 8px;
+  resize: none;
+  outline: none;
+  font-family: sans-serif;
+  font-size: 0.9rem;
+  color: #333;
+}
+body.dark-theme #notebook-content {
+  color: #eee;
+}
+/* Общий фон и цвета для textarea */
+#notebook-content {
+  background: var(--card-bg-color); /* в светлой — белый */
+  color: var(--card-text-color); /* в светлой — тёмно-серый */
+}
+
+/* Специфично для светлой темы */
+body:not(.dark-theme) #notebook-content {
+  background: #ffffff;
+  color: #333333;
+}
+
+/* Специфично для тёмной темы */
+body.dark-theme #notebook-content {
+  background: #3a3a3a; /* чуть светлее, чем панель */
+  color: #eeeeee; /* светлый текст */
+}
+
+/* Плейсхолдеры тоже настраиваем */
+#notebook-content::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body.dark-theme #notebook-content::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+/* Фон и рамка самого меню выбора */
+body.dark-theme #notebook-choice {
+  background: var(--card-bg-color); /* ваш тёмный фон, например #2b2b2b */
+  border-color: var(--card-border-color); /* например #444 */
+}
+
+/* Кнопки в меню: светлый текст */
+body.dark-theme #notebook-choice button {
+  color: var(--card-text-color); /* обычно #e5e5e5 или #fff */
+}
+
+/* При ховере, если нужно чуть подсветить */
+body.dark-theme #notebook-choice button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+/* Состояние «открыто» */
+#notebook-choice.show {
+  display: flex;
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Тёмная тема для кнопок меню */
+body.dark-theme #notebook-choice button {
+  background: #3a3a3a;
+  color: #fff;
+}
+body.dark-theme #notebook-choice button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Делать контейнер блочным flex-элементом и выравнивать его содержимое по центру */
+/* 1) Контейнер переключателя — flex-центр */
+#dnd-toggle-container {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Override положения кружка при включённом чекбоксе */
+#dnd-toggle-container .dnd-switch input:checked + .slider:before {
+  bottom: 3px !important; /* сохраняем смещение от низа */
+  transform: translateX(26px) !important; /* сдвигаем вправо */
+}
+
+/* Не даём треку «подпрыгивать» */
+#dnd-toggle-container .dnd-switch input:checked + .slider {
+  top: 0 !important;
+  bottom: 0 !important;
+}
+
+/* Вместо position:relative+top — просто поднимем/опустим весь лейбл чуть ниже */
+#dnd-toggle-container .dnd-switch {
+  /* экспериментируй с 1px–3px, пока не ляжет точно по центру */
+  margin-top: 8px !important;
+}
+/* Стили самого overlay */
+.maintenance-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: none; /* по умолчанию скрыт */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Показываем overlay через класс .show */
+.maintenance-overlay.show {
+  display: flex;
+  /* плавное проявление: */
+  animation: fadeInOverlay 0.6s ease-out forwards;
+}
+
+/* Контент внутри overlay с лёгким «выезжанием» */
+.maintenance-content {
+  text-align: center;
+  color: #fff;
+  max-width: 90%;
+  animation: popIn 0.5s ease-out;
+}
+
+/* Ваш gif */
+.maintenance-gif {
+  display: block;
+  margin: 20px auto 0;
+  max-width: 200px;
+  height: auto;
+}
+/* User dropdown styles */
+.user-dropdown {
+  position: relative;
+  display: inline-block;
+  margin-left: 1rem;
+}
+
+.user-menu-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 20px;
+  transition: all 0.2s;
+  gap: 6px;
+}
+
+.user-menu-toggle:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+body.dark-theme .user-menu-toggle:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s;
+  color: var(--text-color);
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 5px);
+  background: var(--card-bg-color);
+  border: 1px solid var(--card-border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 220px;
+  z-index: 1000;
+  display: none;
+  padding: 8px 0;
+  transform-origin: top right;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.user-dropdown-menu.show {
+  display: block;
+}
+
+.user-dropdown.show .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+body.dark-theme .dropdown-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--card-border-color);
+  margin: 4px 0;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+body.dark-theme .user-dropdown-menu {
+  background: #2b2b2b;
+  border-color: #444;
+}
+
+body.dark-theme .dropdown-item {
+  color: #f0f0f0;
+}
+/* Появление overlay */
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* «Поп-ин» контента */
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* класс, который будем вешать на иконку */
+.rotating {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
