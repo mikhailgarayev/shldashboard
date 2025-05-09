@@ -2027,14 +2027,21 @@ body.dark-theme .user-menu-toggle:hover {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
-body.dark-theme .user-dropdown-menu {
-  background: #2b2b2b;
-  border-color: #444;
+/* Для элементов выпадающего меню пользователя в тёмной теме */
+body.dark-theme .user-dropdown-menu .dropdown-item {
+  color: #ddd;
+  background-color: #2a2a2a;
+}
+body.dark-theme .user-dropdown-menu .dropdown-item:hover,
+body.dark-theme .user-dropdown-menu .dropdown-item:focus {
+  background-color: #3d3d3d; /* чуть светлее, чем фон основного меню */
+  color: #fff;               /* текст — белый контрастный */
+}
+/* Если иконки тоже «бледнеют», можно подменить их фильтром: */
+body.dark-theme .user-dropdown-menu .item-content img {
+  filter: brightness(0) invert(1);
 }
 
-body.dark-theme .dropdown-item {
-  color: #f0f0f0;
-}
 /* Появление overlay */
 @keyframes fadeInOverlay {
   from {
