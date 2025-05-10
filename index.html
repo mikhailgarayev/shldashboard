@@ -423,6 +423,10 @@ Enable maintenance
       <aside class="right-panel">
         <div id="shift-overs-section" class="alert-card"><h2>⏳ Upcoming Shift-Overs</h2><div id="shift-overs-app" class="alert-content">Loading...</div></div>
         <div id="breaks-section" class="alert-card"><h2>⏰ Breaks</h2><div id="breaks-app" class="alert-content">Loading...</div></div>
+        <div id="upcoming-shifts-section" class="alert-card">
+        <h2>🚀 Upcoming Shifts</h2>
+        <div id="upcoming-shifts-app" class="alert-content">Loading...</div>
+        </div>
       </aside>
 
     </div> <!-- /.dashboard-layout -->
@@ -2311,6 +2315,7 @@ renderBadge(loadNotifications());
           fetchAircallStatuses();
           applyFilters();
           checkEmptyPlatforms(data);
+          await fetchUpcomingShiftsData();
           
           // подключаем кнопку
           document.getElementById('find-candidate')
@@ -2724,7 +2729,65 @@ function findCandidate() {
     });
   });
         
-        
+  /**
+ * Загрузить все смены и отфильтровать те, 
+ * у кого **начало** смены в течение следующего часа.
+ */
+async function fetchUpcomingShiftsData() {
+  const container = document.getElementById("upcoming-shifts-app");
+
+  // 1) Забираем «сырые» данные из листа shiftsquinyx
+  const raw = await fetchSheetData("shiftsquinyx!A2:C");
+  if (!Array.isArray(raw) || raw.length === 0) {
+    container.textContent = "Error";
+    return;
+  }
+
+  // 2) Преобразуем в объекты { platform, name, shift }
+  const shifts = raw
+    .filter(r => r[0] && r[1] && r[2])
+    .map(r => ({
+      platform: r[0].trim(),
+      name:     r[1].trim(),
+      shift:    r[2].trim()    // "HH:mm-HH:mm"
+    }));
+
+  // 3) Оставляем только те, у кого начало смены в ближайший час
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 60*60*1000);
+
+  const upcoming = shifts.filter(({ name, shift, platform }) => {
+    const [startStr] = shift.split("-");
+    const [hh, mm] = startStr.split(":").map(Number);
+    if (isNaN(hh) || isNaN(mm)) return false;
+
+    const startDate = new Date(now);
+    startDate.setHours(hh, mm, 0, 0);
+    // если время уже прошло — переносим на завтра
+    if (startDate <= now) startDate.setDate(startDate.getDate() + 1);
+
+    return startDate > now && startDate <= oneHourLater;
+  });
+
+  // 4) Рендерим
+  if (upcoming.length === 0) {
+    container.innerHTML =
+      "<p style='text-align:center;color:#666;'>No upcoming shifts in the next hour</p>";
+  } else {
+    const html = "<ul>" + upcoming.map(r => {
+      const [start] = r.shift.split("-");
+      return `
+        <li>
+          <strong>${r.name}</strong><br/>
+          Shift at <em>${start}</em> | ${r.platform}
+        </li>
+      `;
+    }).join("") + "</ul>";
+
+    container.innerHTML = html;
+  }
+}
+
   // 2) Отметка, что пользователь «увидел» апдейт
   async function markSeenInRTDB(uid) {
     // update() — чтобы не затирать другие поля
