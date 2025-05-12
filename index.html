@@ -2315,6 +2315,7 @@ renderBadge(loadNotifications());
           fetchAircallStatuses();
           applyFilters();
           checkEmptyPlatforms(data);
+          await getUpcomingShiftOvers();
           await fetchUpcomingShiftsData();
           
           // подключаем кнопку
@@ -2733,60 +2734,110 @@ function findCandidate() {
  * Загрузить все смены и отфильтровать те, 
  * у кого **начало** смены в течение следующего часа.
  */
-async function fetchUpcomingShiftsData() {
-  const container = document.getElementById("upcoming-shifts-app");
-
-  // 1) Забираем «сырые» данные из листа shiftsquinyx
-  const raw = await fetchSheetData("shiftsquinyx!A2:C");
-  if (!Array.isArray(raw) || raw.length === 0) {
-    container.textContent = "Error";
+ async function fetchShiftOversData() {
+  const container = document.getElementById("shift-overs-app");
+  const raw = await fetchSheetData("shiftsquinyx!A:C");
+  if (!Array.isArray(raw) || raw.length < 2) {
+    container.textContent = "No data";
     return;
   }
 
-  // 2) Преобразуем в объекты { platform, name, shift }
-  const shifts = raw
-    .filter(r => r[0] && r[1] && r[2])
-    .map(r => ({
-      platform: r[0].trim(),
-      name:     r[1].trim(),
-      shift:    r[2].trim()    // "HH:mm-HH:mm"
-    }));
+  // 1) Мапим + фильтруем сразу «плохие» записи
+  const arr = raw
+    .slice(1)
+    .map(row => ({
+      ShiftName: row[0]?.trim() ?? "",
+      Name:      row[1]?.trim() ?? "",
+      Shift:     row[2]?.trim() ?? ""
+    }))
+    .filter(r =>
+      // должны быть непустые и содержать дефис
+      r.Name      !== "" &&
+      r.Shift     !== "" &&
+      r.Shift.includes("-")
+    );
 
-  // 3) Оставляем только те, у кого начало смены в ближайший час
-  const now = new Date();
-  const oneHourLater = new Date(now.getTime() + 60*60*1000);
+  const now  = new Date();
+  const next = new Date(now.getTime() + 60 * 60 * 1000);
 
-  const upcoming = shifts.filter(({ name, shift, platform }) => {
-    const [startStr] = shift.split("-");
-    const [hh, mm] = startStr.split(":").map(Number);
-    if (isNaN(hh) || isNaN(mm)) return false;
+  // 2) Фильтруем по времени окончания смены
+  const upcoming = arr.filter(r => {
+    // берём только часть после дефиса и превращаем её в часы/минуты
+    const [ , endStr = "" ] = r.Shift.split("-");
+    const [h, m] = endStr.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return false;
 
-    const startDate = new Date(now);
-    startDate.setHours(hh, mm, 0, 0);
-    // если время уже прошло — переносим на завтра
-    if (startDate <= now) startDate.setDate(startDate.getDate() + 1);
-
-    return startDate > now && startDate <= oneHourLater;
+    const end = new Date(now);
+    end.setHours(h, m, 0, 0);
+    if (end <= now) end.setDate(end.getDate() + 1);
+    return end > now && end <= next;
   });
 
-  // 4) Рендерим
+  // 3) Рендер
   if (upcoming.length === 0) {
-    container.innerHTML =
-      "<p style='text-align:center;color:#666;'>No upcoming shifts in the next hour</p>";
+    container.innerHTML = "<p style='text-align:center;color:#666;'>No shift-overs in the next hour</p>";
   } else {
     const html = "<ul>" + upcoming.map(r => {
-      const [start] = r.shift.split("-");
+      const [start = "", end = ""] = r.Shift.split("-").map(s => s.trim());
       return `
         <li>
-          <strong>${r.name}</strong><br/>
-          Shift at <em>${start}</em> | ${r.platform}
+          <strong>${r.Name}</strong><br/>
+          Ends at ${end}<br/>
+          Shift: ${start} | ${r.ShiftName}
         </li>
       `;
     }).join("") + "</ul>";
-
     container.innerHTML = html;
   }
 }
+
+async function fetchUpcomingShiftsData() {
+  // 1) берём все смены A:C через твой sheets-proxy
+  const raw = await fetchSheetData("shiftsquinyx!A:C");
+  const container = document.getElementById("upcoming-shifts-app");
+  if (!Array.isArray(raw) || raw.length < 2) {
+    container.innerHTML = "<p style='text-align:center;color:#666;'>No upcoming shifts</p>";
+    return;
+  }
+
+  // 2) преобразуем и фильтруем по старту смены в течение часа
+  const now  = new Date();
+  const next = new Date(now.getTime() + 60*60*1000);
+
+  const upcoming = raw
+    .slice(1)
+    .map(r => ({
+      name:      (r[1] || "").trim(),
+      shiftName: (r[0] || "").trim(),
+      times:     (r[2] || "").trim()
+    }))
+    .filter(({name, times}) => {
+      if (!name || !times.includes("-")) return false;
+      const [start] = times.split("-");
+      const [h, m] = start.split(":").map(Number);
+      if (isNaN(h) || isNaN(m)) return false;
+      const dt = new Date(now);
+      dt.setHours(h, m, 0, 0);
+      // если уже прошло — это на завтра
+      if (dt <= now) dt.setDate(dt.getDate() + 1);
+      return dt > now && dt <= next;
+    });
+
+  // 3) рендерим
+  if (upcoming.length === 0) {
+    container.innerHTML = "<p style='text-align:center;color:#666;'>No upcoming shifts</p>";
+  } else {
+    container.innerHTML = "<ul>" +
+      upcoming.map(u =>
+        `<li>
+           <strong>${u.name}</strong><br>
+           Starts at ${u.times.split("-")[0]} | ${u.shiftName}
+         </li>`
+      ).join("") +
+      "</ul>";
+  }
+}
+
 
   // 2) Отметка, что пользователь «увидел» апдейт
   async function markSeenInRTDB(uid) {
