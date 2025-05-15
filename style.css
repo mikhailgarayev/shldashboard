@@ -2125,33 +2125,16 @@ body.dark-theme #modal-copy-email-btn {
 /* === контекст-меню === */
 /* сам контейнер */
 .custom-menu {
-  position: absolute;
-  display: none;           /* показываем только по правому клику */
-  background: #fff;
-  border-radius: 8px;      /* скруглённые углы */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  padding: 4px 0;
-  min-width: 180px;
-  z-index: 10000;
-  list-style: none;
-  margin: 0;
+  background: #ffffff;
+  color: #333333;
+  /* …остальные ваши стили… */
 }
-
-/* каждый пункт */
 .custom-menu li {
-  padding: 8px 16px;
-  cursor: pointer;
-  color: #333;
-  white-space: nowrap;
-  text-align: center;
-  transition: background .2s;
+  padding: 8px 12px;
 }
-
-/* hover-эффект */
 .custom-menu li:hover {
-  background: #f0f0f0;
+  background: #f5f5f5;
 }
-
 .custom-menu.show {
   display: block;
 }
@@ -2201,31 +2184,44 @@ body.dark-theme #modal-copy-email-btn {
 @keyframes toast-fade-out {
   to { opacity: 0; }
 }
-#employee-context-menu {
+/* -------------------------------------------------- */
+/* 1) Базовые стили для кастомного меню */
+#custom-context-menu {
   position: absolute;
-  display: none;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  padding: 4px 0;
-  min-width: 180px;
-  z-index: 10000;
-  font-family: sans-serif;
-}
-#employee-context-menu ul {
+  display: none;               /* по умолчанию скрыто */
   margin: 0;
-  padding: 0;
+  padding: 4px 0;
   list-style: none;
+  background: #fff;            /* светлый фон по умолчанию */
+  border: 1px solid #ccc;
+  border-radius: 8px;          /* круглые углы */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 10000;
 }
-#employee-context-menu li {
+#custom-context-menu.show {
+  display: block;
+}
+#custom-context-menu li {
   padding: 8px 16px;
   cursor: pointer;
-  color: #333;
-  transition: background 0.2s;
-  text-align: center;        /* выравниваем по центру */
+  white-space: nowrap;
+  color: #333;                 /* тёмный текст на светлом фоне */
 }
-#employee-context-menu li:hover {
-  background: #f0f0f0;
+#custom-context-menu li:hover {
+  background: #f5f5f5;
+}
+
+/* -------------------------------------------------- */
+/* 2) Оверрайд для dark-theme */
+body.dark-theme #custom-context-menu {
+  background: #2c2c2c;          /* тёмный фон */
+  border-color: #444;
+}
+body.dark-theme #custom-context-menu li {
+  color: #eee;                  /* светлый текст */
+}
+body.dark-theme #custom-context-menu li:hover {
+  background: #3a3a3a;
 }
 
 
