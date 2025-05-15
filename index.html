@@ -3092,6 +3092,66 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
 }
 
   fetchData();
+  // 1) вспомогательная функция для тоаста
+function showToast(msg) {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  container.appendChild(t);
+  // после завершения анимации исчезновения – удаляем из DOM
+  t.addEventListener('animationend', e => {
+    if (e.animationName === 'toast-fade-out') t.remove();
+  });
+}
+
+// 2) работаем с меню
+const ctxMenu = document.getElementById('custom-context-menu');
+let ctxData = { name:'', email:'' };
+
+// Правый клик по элементу .employee-item
+document.addEventListener('contextmenu', e => {
+  const item = e.target.closest('.employee-item');
+  if (!item) {
+    ctxMenu.classList.remove('show');
+    return;
+  }
+  e.preventDefault();
+  // достаём имя
+  const name = item.querySelector('.employee-name').textContent.trim();
+  // формируем e-mail (по вашей логике)
+  const [first, last] = name.split(' ');
+  const email = `${first.toLowerCase()}.${last.toLowerCase()}@wolt.com`;
+
+  ctxData = { name, email };
+  ctxMenu.style.top  = `${e.pageY}px`;
+  ctxMenu.style.left = `${e.pageX}px`;
+  ctxMenu.classList.add('show');
+});
+
+// Скрыть меню при клике в любом месте
+document.addEventListener('click', () => {
+  ctxMenu.classList.remove('show');
+});
+
+// Обработка выбора в меню
+ctxMenu.addEventListener('click', e => {
+  const action = e.target.dataset.action;
+  ctxMenu.classList.remove('show');
+
+  if (action === 'copy-name') {
+    navigator.clipboard.writeText(ctxData.name)
+      .then(() => showToast('Name copied'));
+  }
+  else if (action === 'copy-email') {
+    navigator.clipboard.writeText(ctxData.email)
+      .then(() => showToast('Email copied'));
+  }
+  else if (action === 'send-email') {                    // ← вставьте это
+    window.location.href = `mailto:${ctxData.email}`;
+  }
+});
+
 });
      
       
@@ -3179,5 +3239,14 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
     />
   </div>
 </div>
+    <!-- custom context menu -->
+<ul id="custom-context-menu" class="custom-menu">
+  <li data-action="copy-name">Copy Name</li>
+  <li data-action="copy-email">Copy Email</li>
+  <li id="ctx-send-email" data-action="send-email">Send E-mail</li>
+</ul>
+
+<!-- toast container -->
+<div id="toast-container"></div>
 </body>
 </html>
