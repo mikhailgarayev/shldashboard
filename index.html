@@ -448,7 +448,13 @@ Enable maintenance
       />
         <div>
           <h5 id="modal-emp-name" style="margin: 0; font-weight: 600;">Employee Name</h5>
-          <small id="modal-emp-email" style="color: #888;">employee.email@wolt.com</small>
+          <div id="modal-emp-email-wrap" style="display:flex; align-items:center; gap:6px; position:relative;">
+          <small id="modal-emp-email" style="color:#888; cursor:pointer;" title="Click to copy"></small>
+          <img id="modal-copy-email-btn"
+               src="https://www.svgrepo.com/show/506467/copy.svg"
+               alt="Copy" width="16" height="16"
+               style="cursor:pointer" title="Copy e-mail" />
+        </div>
         </div>
       </div>
       <span class="close-btn" id="modal-close" style="cursor: pointer; font-size: 24px; color: #999;">&times;</span>
@@ -1016,16 +1022,12 @@ async function openEmployeeModal(empName) {
   }
   document.getElementById("modal-emp-break").textContent = breakTime;
 
-  // 3) Общая инфа
+  // 3) Общая инфа + e-mail
   const parts = empName.trim().split(" ");
-  // сначала генерируем «обычный»
   const rawEmail = parts.length >= 2
     ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com`
     : `${parts[0].toLowerCase()}@wolt.com`;
-
-  // а потом «нормализуем» под реальные записи Aircall
   const email = normalizeEmail(rawEmail);
-
 
   document.getElementById("modal-emp-name").textContent      = empName;
   document.getElementById("modal-emp-email").textContent     = email;
@@ -1048,20 +1050,74 @@ async function openEmployeeModal(empName) {
   countEl.textContent = "…";
   listEl.innerHTML    = "<li>Loading…</li>";
 
-  // Показываем модалку сразу
+  // 5) Показ модалки
   document.getElementById("modal-overlay").classList.add("show");
   document.getElementById("employee-modal").classList.add("show");
 
+  // 6) Кнопка копирования e-mail + анимация «Copied!» + тёмная/светлая иконка
+  const emailEl = document.getElementById("modal-emp-email");
+  let copyBtn   = document.getElementById("modal-copy-email-btn");
+
+  // сброс старых слушателей
+  copyBtn.replaceWith(copyBtn.cloneNode(true));
+  copyBtn = document.getElementById("modal-copy-email-btn");
+
+  // подстройка цвета иконки под тему
+  function updateCopyIconColor() {
+    if (document.body.classList.contains("dark-theme")) {
+      copyBtn.style.filter = "invert(1)";
+    } else {
+      copyBtn.style.filter = "";
+    }
+  }
+  updateCopyIconColor();
+  // если у вас есть переключатель темы
+  const themeToggle = document.getElementById("theme-checkbox");
+  if (themeToggle) {
+    themeToggle.addEventListener("change", updateCopyIconColor);
+  }
+
+  function copyEmailToClipboard() {
+    const text = emailEl.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      // убрать предыдущий фидбэк
+      const old = document.querySelector(".copy-feedback");
+      if (old) old.remove();
+
+      const wrapper = emailEl.parentElement;
+      wrapper.style.position = wrapper.style.position || "relative";
+
+      const fb = document.createElement("div");
+      fb.className = "copy-feedback";
+      fb.textContent = "Copied!";
+      wrapper.appendChild(fb);
+
+      // запустить анимацию
+      requestAnimationFrame(() => fb.classList.add("show"));
+
+      // убрать через 1.5 секунды
+      setTimeout(() => {
+        fb.classList.remove("show");
+        setTimeout(() => fb.remove(), 200);
+      }, 1500);
+    })
+    .catch(err => console.error("Copy failed:", err));
+  }
+
+  copyBtn.addEventListener("click", copyEmailToClipboard);
+  emailEl.addEventListener("click", copyEmailToClipboard);
+
+  // 7) Загрузка и рендер переходов
   try {
-    // **Важно**: передаём empName в запрос
     const url = `${TRANSITIONS_API}&name=${encodeURIComponent(empName)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(res.statusText);
-    const moves = await res.json(); // теперь только переходы данного сотрудника
+    const moves = await res.json();
 
-    countEl.textContent = moves.length;
-    if (moves.length > 0) {
+    countEl.textContent = moves.length || "0";
+    if (moves.length) {
       listEl.innerHTML = moves.map(r => {
+        // […, toPlatform, …, from, to, duration]
         const [, toPlat, , fromStr, toStr, durStr] = r;
         return `
           <li>
@@ -1079,6 +1135,8 @@ async function openEmployeeModal(empName) {
     listEl.innerHTML    = `<li class="text-danger">Error loading data</li>`;
   }
 }
+
+
 
 
 
@@ -1119,7 +1177,6 @@ async function openEmployeeModal(empName) {
             return null;
           }
         }
-
 
         async function getAircallAvailability(userId) {
           if (!userId) {
