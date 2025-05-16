@@ -330,6 +330,12 @@ Enable maintenance
         <!-- Filters -->
      <!-- Центр: фильтры -->
      <div class="filters-wrapper d-flex flex-wrap align-items-center flex-grow-1 justify-content-center header-gap">
+       <!-- иконка фильтров -->
+      <img
+        src="https://www.svgrepo.com/show/508058/filter.svg"
+        alt="Filter icon"
+        class="filter-icon"
+      />
       <!-- Статус -->
       <select id="status-filter" class="filter-dropdown">
         <option value="both">Status</option>
@@ -345,7 +351,7 @@ Enable maintenance
         data-live-search="true"
         title="Platform"
         data-width="auto"
-        data-style="filter-dropdown"
+        data-style="filter-dropdown platform-filter"
       >
         <option value="all" selected>All platforms</option>
         <option value="CS">CS</option>
@@ -388,7 +394,7 @@ Enable maintenance
     
       <!-- Новый селект для Find Candidate -->
       <select id="target-platform" class="filter-dropdown">
-        <option value="">→ Reallocate to..</option>
+        <option value="">Reallocate to..</option>
       </select>
       <button id="find-candidate" class="btn btn-outline-primary">Find candidate</button>
       <div id="candidate-result" style="margin:1rem 0;"></div>
@@ -3075,7 +3081,7 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
     // 1) Один раз заполняем dropdown платформ
   const sel = document.getElementById('target-platform');
   // очищаем (оставляем только заглушку)
-  sel.innerHTML = '<option value="">→ Reallocate to..</option>';
+  sel.innerHTML = '<option value="">Reallocate to..</option>';
   platforms.forEach(p => sel.add(new Option(p.name, p.name)));
 
   // Переключатель темы
