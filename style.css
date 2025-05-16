@@ -648,6 +648,7 @@ h1 {
   background: var(--card-bg-color);
   width: 150px;
   color: var(--text-color);
+  flex: 1 1 auto;
 }
 
 /* Секция обновления страницы */
@@ -2223,5 +2224,85 @@ body.dark-theme #custom-context-menu li {
 body.dark-theme #custom-context-menu li:hover {
   background: #3a3a3a;
 }
+/* 1) Прячем родную стрелку */
+.filters-wrapper .filter-dropdown {
+  /* убираем иконку браузера */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  
+  /* свой фон + стрелка через SVG */
+  background-color: var(--card-bg-color);
+  background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23666' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  /* позиция: от правого края 16px и по центру вертикали */
+  background-position: right 16px center;
+  background-size: 8px 5px;
+  
+  /* оставляем исходный padding слева, но не трогаем справа */
+  padding: 8px 12px 8px 12px !important;
+}
 
+/* 2) Аналогично для bootstrap-select (selectpicker) */
+.filters-wrapper .bootstrap-select .dropdown-toggle.filter-dropdown {
+  /* прячем встроенную стрелку bootstrap */
+  --bs-caret-width: 0;  /* если Bootstrap-5 */
+  /* либо */
+  background-image: none !important;
+  
+  /* теперь рисуем ту же нашу SVG */
+  background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23666' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 16px center !important;
+  background-size: 8px 5px !important;
+  
+  /* padding: сверху/снизу 8px, слева 12px, справа 12px — стрелка сама смещается фон-позиционированием */
+  padding: 8px 12px 8px 12px !important;
+}
+/* В конец вашего блока, где вы рисуете фон-стрелку */
+.filters-wrapper .filter-dropdown,
+.filters-wrapper .bootstrap-select .dropdown-toggle.filter-dropdown {
+  /* сохраним 12px слева, но справа сделаем 40px буфера */
+  padding: 8px 40px 8px 12px !important;
 
+  /* чтобы длинный текст обрезался и не налезал */
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+/* 1) Скрываем оба caret у именно этой кнопки */
+.dropdown-toggle.platform-filter .caret,
+.dropdown-toggle.platform-filter::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* 2) Увеличиваем правый padding текста, чтобы он не налезал на стрелку */
+.dropdown-toggle.platform-filter .filter-option-inner-inner {
+  padding-right: 2.5rem !important; /* подкорректируйте под вашу ширину */
+}
+/* общий стиль для SVG или IMG-иконки */
+.filters-wrapper .filter-icon {
+  flex-shrink: 0;           /* не сжимать */
+  margin-right: 0.75rem;    /* отступ вправо */
+  width: 20px;
+  height: 20px;
+  color: var(--text-color); /* для inline-SVG */
+  transition: color 0.3s;
+}
+
+/* если используете <img src="filter.svg">,
+   иконка не меняет цвет через currentColor,
+   можно применить фильтр в темной теме */
+body.dark-theme .filters-wrapper .filter-icon[src$=".svg"] {
+  filter: invert(1) brightness(1.2);
+}
+
+/* адаптация на мобильных */
+@media (max-width: 576px) {
+  .filters-wrapper .filter-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.5rem;
+  }
+}
