@@ -2364,3 +2364,43 @@ body.dark-theme .filters-wrapper .filter-icon[src$=".svg"] {
 .dark-theme .employee-item.break-soon .text-muted {
   color: #ced4da !important; /* чуть светлее обычного muted */
 }
+/* общий контейнер для псевдоэлементов */
+.employee-item.shift-soon,
+.employee-item.break-soon {
+  position: relative;
+  overflow: hidden;
+}
+
+/* «Shift over» справа по центру по вертикали */
+.employee-item.shift-soon::before {
+  content: "so";
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  color: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* «Break» справа по центру по вертикали */
+.employee-item.break-soon::before {
+  content: "⏰";
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  color: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* адаптация под тёмную тему */
+.dark-theme .employee-item.shift-soon::before,
+.dark-theme .employee-item.break-soon::before {
+  color: rgba(255, 255, 255, 0.05);
+}
+
+
