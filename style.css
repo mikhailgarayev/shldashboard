@@ -2306,3 +2306,61 @@ body.dark-theme .filters-wrapper .filter-icon[src$=".svg"] {
     margin-right: 0.5rem;
   }
 }
+.employee-item.shift-soon {
+  background-color: #fff3cd !important;
+  border-left: 4px solid #ffc107 !important;
+}
+/* В dark-theme переопределяем shift-soon */
+.dark-theme .employee-item.shift-soon {
+  background-color: #2a2a2a !important;   /* тёмный фон вместо светло-жёлтого */
+  color: #f1f1f1      !important;         /* светлый текст */
+  border-left: 4px solid #ffc107 !important;
+}
+/* И бейджи внутри */
+.dark-theme .employee-item.shift-soon .badge {
+  background-color: #444    !important;
+  color:            #fafafa !important;
+}
+/* Если есть muted-спан */
+.dark-theme .employee-item.shift-soon .text-muted {
+  color: #ccc !important;
+}
+/* За 10 минут до начала break — светло-голубой фон + акцент */
+.employee-item.break-soon {
+  background-color: #d1ecf1 !important;
+  border-left: 4px solid #0dcaf0 !important;
+}
+
+/* Если нужно, скорректируйте бейдж внутри */
+.employee-item.break-soon .badge {
+  background-color: #0c5460 !important;
+  color:            #fff     !important;
+}
+/* Dark theme overrides for “soon” highlights */
+
+/* 10 минут до конца смены — Shift Soon */
+.dark-theme .employee-item.shift-soon {
+  background-color: #3a3f44 !important;  /* тёмно-серый фон */
+  color:            #f1f1f1 !important;  /* светлый текст */
+  border-left:      4px solid #ffc107 !important; /* жёлтая полоска */
+}
+
+/* 10 минут до начала брейка — Break Soon */
+.dark-theme .employee-item.break-soon {
+  background-color: #2a393f !important;  /* тёмно-сине-серый фон */
+  color:            #f1f1f1 !important;  /* светлый текст */
+  border-left:      4px solid #17a2b8 !important; /* бирюзовая полоска */
+}
+
+/* Бейджи внутри “soon” элементов */
+.dark-theme .employee-item.shift-soon .badge,
+.dark-theme .employee-item.break-soon .badge {
+  background-color: rgba(255, 255, 255, 0.1) !important; /* полупрозрачный светлый фон */
+  color:            #f1f1f1           !important;       /* светлый текст */
+}
+
+/* Текст-muted внутри “soon” элементов */
+.dark-theme .employee-item.shift-soon .text-muted,
+.dark-theme .employee-item.break-soon .text-muted {
+  color: #ced4da !important; /* чуть светлее обычного muted */
+}
