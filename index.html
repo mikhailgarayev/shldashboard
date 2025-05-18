@@ -42,7 +42,7 @@
       const TRANSITIONS_API = 'https://script.google.com/macros/s/AKfycbwlp0Gsq8sVkI28nFW1TZvW_immH6PLrXejAeexj-48MhFtV7_uQ8SVjNi13RUfv_uj/exec?json=1';
 
 
-      window.CURRENT_UPDATE_ID = '2025-05-10-v3.1'; // обновление, которое сейчас на сайте
+      window.CURRENT_UPDATE_ID = '2025-05-18-v3.2'; // обновление, которое сейчас на сайте
 
         // --- Default settings ---
       const NOTIF_SETTINGS_KEY = 'notifSettings';
@@ -1245,34 +1245,64 @@ async function openEmployeeModal(empName) {
 function applyFilters() {
   const container = document.getElementById("platforms-container");
   const settings = loadNotifSettings();
-
   container.innerHTML = "";
 
-  platforms.forEach((platform) => {
-    if (
-      !currentPlatformFilter.includes("all") &&
-      !currentPlatformFilter.includes(platform.name)
-    ) {
+  const now = new Date();
+  const SOON_MS = 10 * 60 * 1000;
+
+  // 1) За 10 минут до конца смены
+  const endingSoon = new Set();
+  if (Array.isArray(window.shiftsQuinyxData)) {
+    window.shiftsQuinyxData.forEach(rec => {
+      const name     = rec.name?.trim();
+      const shiftStr = rec.shift;
+      if (!name || typeof shiftStr !== "string" || !shiftStr.includes("-")) return;
+      const endStr = shiftStr.split("-")[1];
+      const [h, m] = endStr.split(":").map(Number);
+      if (isNaN(h) || isNaN(m)) return;
+      const endDt = new Date(now);
+      endDt.setHours(h, m, 0, 0);
+      if (endDt > now && (endDt - now) <= SOON_MS) {
+        endingSoon.add(name);
+      }
+    });
+  }
+
+  // 2) За 10 минут до начала перерыва (BRB/Break)
+  const breakSoon = new Set();
+  if (Array.isArray(window.allBreaksData)) {
+    window.allBreaksData.forEach(r => {
+      const name    = r.Name?.trim();
+      const timeStr = r.BreakTime;
+      if (!name || !timeStr) return;
+      const [h, m] = timeStr.split(":").map(Number);
+      if (isNaN(h) || isNaN(m)) return;
+      let dtBreak = new Date(now);
+      dtBreak.setHours(h, m, 0, 0);
+      if (dtBreak <= now) dtBreak.setDate(dtBreak.getDate() + 1);
+      const delta = dtBreak - now;
+      if (delta > 0 && delta <= SOON_MS) {
+        breakSoon.add(name);
+      }
+    });
+  }
+
+  platforms.forEach(platform => {
+    if (!currentPlatformFilter.includes("all") &&
+        !currentPlatformFilter.includes(platform.name)) {
       return;
     }
 
+    // НЕ Aircall
     if (platform.name !== "Aircall") {
-      // Собираем active и away
+      // Собираем activeNames и awayData
       let activeNames = [];
-      for (
-        let r = platform.rowActiveNamesStart;
-        r <= platform.rowActiveNamesEnd;
-        r++
-      ) {
+      for (let r = platform.rowActiveNamesStart; r <= platform.rowActiveNamesEnd; r++) {
         const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
         if (nm) activeNames.push(nm);
       }
       let awayData = [];
-      for (
-        let r = platform.rowAwayNamesStart;
-        r <= platform.rowAwayNamesEnd;
-        r++
-      ) {
+      for (let r = platform.rowAwayNamesStart; r <= platform.rowAwayNamesEnd; r++) {
         const nm = fetchedData[r]?.[platform.colIndexNames]?.trim();
         if (!nm) continue;
         const rsn = fetchedData[r]?.[platform.colIndexData]?.trim() || "";
@@ -1282,21 +1312,16 @@ function applyFilters() {
       // Поиск
       if (currentSearchTerm) {
         const term = currentSearchTerm.toLowerCase();
-        activeNames = activeNames.filter((n) =>
-          n.toLowerCase().includes(term)
-        );
-        awayData = awayData.filter((a) =>
-          a.name.toLowerCase().includes(term)
-        );
+        activeNames = activeNames.filter(n => n.toLowerCase().includes(term));
+        awayData    = awayData.filter(a => a.name.toLowerCase().includes(term));
       }
 
       // realloc/lang
-      activeNames = activeNames.filter((n) => passReallocAndLang(n));
-      awayData = awayData.filter((a) => passReallocAndLang(a.name));
+      activeNames = activeNames.filter(n => passReallocAndLang(n));
+      awayData    = awayData.filter(a => passReallocAndLang(a.name));
 
       // Фильтр по статусу
-      let showActive = true,
-        showAway = true;
+      let showActive = true, showAway = true;
       if (currentStatusFilter === "active") showAway = false;
       else if (currentStatusFilter === "away") showActive = false;
 
@@ -1305,141 +1330,119 @@ function applyFilters() {
         <div class="platform-card">
           <h5>
             <a href="${platform.url}" target="_blank" rel="noopener">${platform.name}</a>
-            <span class="info-icon" data-toggle="tooltip" title="${
-              platformInfo[platform.name] || ""
-            }">
+            <span class="info-icon" title="${platformInfo[platform.name]||""}">
               <img src="https://www.svgrepo.com/show/474873/info.svg" width="16" height="16"/>
             </span>
           </h5>
       `;
 
-      // — Active
+      // Active
       if (showActive) {
         if (activeNames.length === 0) {
           html += `<p class="text-center text-warning">⚠️ No active employees</p>`;
         } else {
           html += `<p><small>Active (${activeNames.length})</small></p><ul>`;
-          activeNames.forEach((n) => {
-            const name = n.trim();
-            const isYou = name.toLowerCase() === "mikhail garayev";
-            const isNaziya = name.toLowerCase() === "naziya orujova";
-            const extraEmoji = isNaziya ? " 🎀" : "";
-            const crown = isYou ? "👑" : "";
-
-            const rawShift = getEmployeeShiftName(name);
-            const shiftName = shiftDisplayNames[rawShift] || rawShift;
-            const badgeClass =
-              shiftBadgeClasses[shiftName] || "badge-secondary";
+          activeNames.forEach(n => {
+            const name       = n.trim();
+            const rawShift   = getEmployeeShiftName(name);
+            const shiftName  = shiftDisplayNames[rawShift] || rawShift;
+            const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
+            // Подсветка
+            const isSoonShift = endingSoon.has(name);
+            const isSoonBrk   = breakSoon.has(name);
+            const soonClass   = `${isSoonShift ? " shift-soon" : ""}${isSoonBrk ? " break-soon" : ""}`;
+            // Корона для вас
+            const crown = name.toLowerCase() === "mikhail garayev" ? " 👑" : "";
 
             html += `
-              <li class="employee-item" data-employee="${name}">
+              <li class="employee-item${soonClass}" data-employee="${name}">
                 <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
-                <span class="employee-name">${name}${extraEmoji}</span>
-                ${crown}
-              </li>
-            `;
+                <span class="employee-name">${name}${crown}</span>
+              </li>`;
           });
           html += `</ul>`;
         }
       }
 
-// — Always render Away section, even if awayData.length === 0
-if (showAway) {
-  let brbCount = 0;
-  html += `<p><small>Away (${awayData.length})</small></p><ul>`;
-  awayData.forEach(({ name, reason }) => {
-    const txt = reason || "";
-    let reasonClass = "";
-    // mark overdue breaks
-    if (/(Break|BRB)/.test(txt) && /-\d{1,2}:\d{2}(?::\d{2})?/.test(txt)) {
-      reasonClass = "break-overdue";
-    }
-    if (txt.includes("BRB")) brbCount++;
+      // Away
+      if (showAway) {
+        let brbCount = 0;
+        html += `<p><small>Away (${awayData.length})</small></p><ul>`;
+        awayData.forEach(({name, reason}) => {
+          const txt = reason || "";
+          let reasonClass = "";
+          if (/(Break|BRB)/.test(txt) && /-\d{1,2}:\d{2}/.test(txt)) {
+            reasonClass = " break-overdue";
+          }
+          if (txt.includes("BRB")) brbCount++;
+          const rawShift   = getEmployeeShiftName(name);
+          const shiftName  = shiftDisplayNames[rawShift] || rawShift;
+          const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
+          // Подсветка тоже
+          const isSoonShift = endingSoon.has(name);
+          const isSoonBrk   = breakSoon.has(name);
+          const soonClass   = `${isSoonShift ? " shift-soon" : ""}${isSoonBrk ? " break-soon" : ""}`;
 
-    const rawShift   = getEmployeeShiftName(name);
-    const shiftName  = shiftDisplayNames[rawShift] || rawShift;
-    const badgeClass = shiftBadgeClasses[shiftName] || "badge-secondary";
+          html += `
+            <li class="employee-item${reasonClass}${soonClass}" data-employee="${name}">
+              <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
+              <span class="employee-name">${name}</span>
+              ${txt ? `<span class="text-muted">(${txt})</span>` : ""}
+            </li>`;
+        });
+        html += `</ul>`;
 
-    html += `
-      <li class="employee-item ${reasonClass}" data-employee="${name}">
-        <span class="badge badge-pill ${badgeClass}">${shiftName}</span>
-        <span class="employee-name">${name}</span>
-        ${txt ? `<span class="text-muted">(${txt})</span>` : ""}
-      </li>
-    `;
-  });
-  html += `</ul>`;
-  if (brbCount >= 2) {
-  // UI-подсказка остаётся всегда
-  html += `
-    <p style="text-align:center;color:red;font-size:0.95rem;">
-      <span title="2 or more on BRB">&#9888;</span>
-      <span style="margin-left:6px;">2 or more on BRB</span>
-    </p>
-  `;
-
-  // нотификация только если включена в настройках
-  if (settings.brbTwoOrMore) {
-    if (!brbAlertSent[platform.name]) {
-      const msg = `⚠️ ${brbCount} or more on BRB on ${platform.name}`;
-      showDesktopNotification('BRB Alert', msg);
-      addInPageNotification(msg);
-      brbAlertSent[platform.name] = true;
-    }
-  }
-} else {
-  // сбрасываем флаг, чтобы при следующем превышении порога вновь уведомить
-  brbAlertSent[platform.name] = false;
-}
-}
+        // BRB alert
+        if (brbCount >= 2) {
+          html += `
+            <p style="text-align:center;color:red;font-size:0.95rem;">
+              <span title="2 or more on BRB">&#9888;</span>
+              <span style="margin-left:6px;">2 or more on BRB</span>
+            </p>`;
+          if (settings.brbTwoOrMore && !brbAlertSent[platform.name]) {
+            const msg = `⚠️ ${brbCount} or more on BRB on ${platform.name}`;
+            showDesktopNotification("BRB Alert", msg);
+            addInPageNotification(msg);
+            brbAlertSent[platform.name] = true;
+          }
+        } else {
+          brbAlertSent[platform.name] = false;
+        }
+      }
 
       html += `</div>`;
       container.innerHTML += html;
-    } else {
-      // Aircall остаётся как было
-      let filteredActive = aircallActive.filter(
-        (n) => n.toLowerCase() !== "away"
-      );
-      let filteredAway = aircallAway.filter(
-        ({ name }) => name.toLowerCase() !== "away"
-      );
 
+    } else {
+      // Aircall рендер без изменений
+      let filteredActive = aircallActive.filter(n => n.toLowerCase() !== "away");
+      let filteredAway   = aircallAway.filter(a => a.name.toLowerCase() !== "away");
       if (currentSearchTerm) {
         const term = currentSearchTerm.toLowerCase();
-        filteredActive = filteredActive.filter((n) =>
-          n.toLowerCase().includes(term)
-        );
-        filteredAway = filteredAway.filter(({ name }) =>
-          name.toLowerCase().includes(term)
-        );
+        filteredActive = filteredActive.filter(n => n.toLowerCase().includes(term));
+        filteredAway   = filteredAway.filter(a => a.name.toLowerCase().includes(term));
       }
-      filteredActive = filteredActive.filter((n) => passReallocAndLang(n));
-      filteredAway = filteredAway.filter((a) => passReallocAndLang(a.name));
+      filteredActive = filteredActive.filter(n => passReallocAndLang(n));
+      filteredAway   = filteredAway.filter(a => passReallocAndLang(a.name));
 
       const showActive = currentStatusFilter !== "away";
-      const showAway = currentStatusFilter !== "active";
+      const showAway   = currentStatusFilter !== "active";
 
-      renderAircallCardWithStatuses(
-        filteredActive,
-        filteredAway,
-        showActive,
-        showAway
-      );
+      renderAircallCardWithStatuses(filteredActive, filteredAway, showActive, showAway);
     }
   });
 
-  // Навешиваем клик для модалки
-  container.querySelectorAll(".employee-item").forEach((item) => {
+  // Привязываем клики, обновляем статусы Aircall и проверяем просрочки
+  container.querySelectorAll(".employee-item").forEach(item => {
     item.addEventListener("click", () =>
       openEmployeeModal(item.getAttribute("data-employee"))
     );
   });
-
-  // Обновляем статусы Aircall
   setTimeout(() => fetchAircallStatuses().catch(console.error), 100);
-
   checkOverdueBRB();
 }
+
+
 
 
 function renderAircallCardWithStatuses(
@@ -2324,8 +2327,7 @@ document.getElementById('notification-bell').addEventListener('click', () => {
 
 // инициализация бейджа при загрузке
 renderBadge(loadNotifications());
-
-
+        
 
         async function fetchData() {
           const data = await fetchSheetData(RANGE);
@@ -2391,6 +2393,7 @@ renderBadge(loadNotifications());
           document.getElementById("refresh-icon").classList.remove('rotating');
           if (autoRefreshEnabled) resetAutoRefresh();
         }
+        
 
         function getPrimaryPlatform(empName) {
           if (!window.shiftsQuinyxData) return null;
@@ -2701,8 +2704,8 @@ function findCandidate() {
         ">
           <h2>What’s new?</h2>
           <p>New release <strong>${window.CURRENT_UPDATE_ID}</strong></p>
-          <p>Added Upcoming Shifts section on the right panel</p>
-          <p>Fixed bug with breaks in Find candidate feature</p>
+          <p>Added blue indicators for employees who go on break soon</p>
+          <p>Added yellow indicators for employees who is SO soon</p>
           <button id="close-update-modal">OK</button>
         </div>
       </div>
