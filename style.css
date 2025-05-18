@@ -2375,101 +2375,91 @@ body.dark-theme .filters-wrapper .filter-icon[src$=".svg"] {
     margin-right: 0.5rem;
   }
 }
+/* ——— Общие настройки для всех тем ——— */
+.employee-item {
+  position: relative;  /* для псевдоэлементов */
+  overflow: hidden;
+}
+
+/* псевдоэлементы «фоновых подписей» */
+.employee-item.shift-soon::before,
+.employee-item.break-soon::before {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%) rotate(0);
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 0.8rem;
+}
+
+/* контент псевдоэлементов */
+.employee-item.shift-soon::before { content: "so"; }
+.employee-item.break-soon::before  { content: "⏰"; }
+
+/* ——— Светлая тема ——— */
+/* Shift soon */
 .employee-item.shift-soon {
   background-color: #fff3cd !important;
   border-left: 4px solid #ffc107 !important;
 }
-/* В dark-theme переопределяем shift-soon */
-.dark-theme .employee-item.shift-soon {
-  background-color: #2a2a2a !important;   /* тёмный фон вместо светло-жёлтого */
-  color: #f1f1f1      !important;         /* светлый текст */
-  border-left: 4px solid #ffc107 !important;
-}
-/* И бейджи внутри */
-.dark-theme .employee-item.shift-soon .badge {
-  background-color: #444    !important;
-  color:            #fafafa !important;
-}
-/* Если есть muted-спан */
-.dark-theme .employee-item.shift-soon .text-muted {
-  color: #ccc !important;
-}
-/* За 10 минут до начала break — светло-голубой фон + акцент */
+
+/* Break soon */
 .employee-item.break-soon {
   background-color: #d1ecf1 !important;
   border-left: 4px solid #0dcaf0 !important;
 }
 
-/* Если нужно, скорректируйте бейдж внутри */
+/* бейджи внутри soon */
+.employee-item.shift-soon .badge,
 .employee-item.break-soon .badge {
-  background-color: #0c5460 !important;
-  color:            #fff     !important;
+  background-color: rgba(0,0,0,0.1) !important;
+  color: #000 !important;
 }
-/* Dark theme overrides for “soon” highlights */
 
-/* 10 минут до конца смены — Shift Soon */
+/* muted-текст */
+.employee-item.shift-soon .text-muted,
+.employee-item.break-soon .text-muted {
+  color: rgba(0,0,0,0.4) !important;
+}
+
+/* фоновые подписи — чуть контрастнее */
+.employee-item.shift-soon::before,
+.employee-item.break-soon::before {
+  color: rgba(0, 0, 0, 0.6) !important;
+  font-weight: 600 !important;
+  text-shadow: 0 0 2px rgba(255,255,255,0.8);
+}
+
+/* ——— Тёмная тема ——— */
 .dark-theme .employee-item.shift-soon {
-  background-color: #3a3f44 !important;  /* тёмно-серый фон */
-  color:            #f1f1f1 !important;  /* светлый текст */
-  border-left:      4px solid #ffc107 !important; /* жёлтая полоска */
+  background-color: #3a3f44 !important;
+  border-left: 4px solid #ffc107 !important;
 }
 
-/* 10 минут до начала брейка — Break Soon */
 .dark-theme .employee-item.break-soon {
-  background-color: #2a393f !important;  /* тёмно-сине-серый фон */
-  color:            #f1f1f1 !important;  /* светлый текст */
-  border-left:      4px solid #17a2b8 !important; /* бирюзовая полоска */
+  background-color: #2a393f !important;
+  border-left: 4px solid #17a2b8 !important;
 }
 
-/* Бейджи внутри “soon” элементов */
 .dark-theme .employee-item.shift-soon .badge,
 .dark-theme .employee-item.break-soon .badge {
-  background-color: rgba(255, 255, 255, 0.1) !important; /* полупрозрачный светлый фон */
-  color:            #f1f1f1           !important;       /* светлый текст */
+  background-color: rgba(255,255,255,0.1) !important;
+  color: #f1f1f1 !important;
 }
 
-/* Текст-muted внутри “soon” элементов */
 .dark-theme .employee-item.shift-soon .text-muted,
 .dark-theme .employee-item.break-soon .text-muted {
-  color: #ced4da !important; /* чуть светлее обычного muted */
-}
-/* общий контейнер для псевдоэлементов */
-.employee-item.shift-soon,
-.employee-item.break-soon {
-  position: relative;
-  overflow: hidden;
+  color: #ced4da !important;
 }
 
-/* «Shift over» справа по центру по вертикали */
-.employee-item.shift-soon::before {
-  content: "so";
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  font-size: 0.9rem;
-  color: rgba(0, 0, 0, 0.5);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-/* «Break» справа по центру по вертикали */
-.employee-item.break-soon::before {
-  content: "⏰";
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  font-size: 0.9rem;
-  color: rgba(0, 0, 0, 0.5);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-/* адаптация под тёмную тему */
+/* фоновые подписи в тёмной теме — усиленный контраст */
 .dark-theme .employee-item.shift-soon::before,
 .dark-theme .employee-item.break-soon::before {
-  color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-weight: 600;
+  text-shadow: none;
 }
+
 
 
