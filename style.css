@@ -349,30 +349,99 @@ body {
   font-size: 1rem;
   color: var(--text-color);
 }
+/* Контейнер выпадашки */
 .notifications-dropdown {
   position: absolute;
-  top: calc(100% + 20px); /* прямо под иконкой */
-  right: -135px; /* по правому краю контейнера */
-  width: 300px; /* или ваша ширина */
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
   max-height: 400px;
   overflow-y: auto;
+
+  /* фон и рамка */
   background: var(--card-bg-color);
   border: 1px solid var(--card-border-color);
-  box-shadow: var(--card-shadow);
-  border-radius: 8px;
+  border-radius: 12px;
+
+  /* мягкая тень */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+  /* плавный вход */
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity .2s ease, transform .2s ease;
   z-index: 1000;
-  display: none;
+  pointer-events: none;
 }
 .notifications-dropdown.show {
-  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
+
+/* Список и элементы */
+.notifications-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.notifications-dropdown li {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--card-border-color);
+  cursor: pointer;
+
+  /* чтобы текст не прилипал к граням */
+  word-break: break-word;
+  background: transparent;
+  transition: background .15s ease;
+}
+.notifications-dropdown li:last-child {
+  border-bottom: none;
+}
+
+/* Ховер и активное */
+.notifications-dropdown li:hover {
+  background: var(--hover-bg-color, rgba(0,0,0,0.03));
+}
+
+/* Состояние “непрочитано” выделяем чуть ярче */
 .notifications-dropdown .unread {
-  background-color: rgba(220, 53, 69, 0.1);
-  font-weight: bold;
+  font-weight: 500;
+  background: rgba(220, 53, 69, 0.08);
 }
+/* Прочитанные — чуть бледнее */
 .notifications-dropdown .read {
-  background-color: transparent;
-  color: var(--text-color);
+  color: var(--text-color-secondary);
+}
+
+/* Мелкие стили для времени */
+.notifications-dropdown li small {
+  margin-left: auto;
+  color: var(--text-color-muted);
+  font-size: 0.8rem;
+}
+
+/* Кастомный скроллбар */
+.notifications-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.notifications-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.notifications-dropdown::-webkit-scrollbar-thumb {
+  background: var(--card-border-color);
+  border-radius: 3px;
+}
+
+/* Тёмная тема — подсветка чуть светлее */
+.dark-theme .notifications-dropdown li:hover {
+  background: rgba(255,255,255,0.07);
+}
+.dark-theme .notifications-dropdown .unread {
+  background: rgba(220,53,69,0.15);
 }
 
 /* Сайдбар (меню) */
