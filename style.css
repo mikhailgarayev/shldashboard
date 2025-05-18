@@ -2460,6 +2460,17 @@ body.dark-theme .filters-wrapper .filter-icon[src$=".svg"] {
   font-weight: 600;
   text-shadow: none;
 }
+/* в самом низу вашего CSS */
+#maintenance-overlay .maintenance-content {
+  /* на всякий случай добавим !important, чтобы перебить всё */
+  color: #fff !important;
+}
+
+/* или более конкретно для заголовков и абзацев */
+#maintenance-overlay .maintenance-content h1,
+#maintenance-overlay .maintenance-content p {
+  color: #fff;
+}
 
 
 
