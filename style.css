@@ -2471,6 +2471,177 @@ body.dark-theme .filters-wrapper .filter-icon[src$=".svg"] {
 #maintenance-overlay .maintenance-content p {
   color: #fff;
 }
+/* ------------------ красная пульсация и подсветка ------------------ */
+@keyframes pulse-red {
+  0%   { box-shadow: 0 0 0 0 rgba(220,53,69, 0.7); }
+  70%  { box-shadow: 0 0 0 10px rgba(220,53,69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220,53,69, 0); }
+}
 
+.pulse-highlight {
+  /* сама анимация пульса */
+  animation: pulse-red 1.5s ease-out;
+  /* дополнительная подсветка карточки рамкой и фоном */
+  border: 2px solid #dc3545;
+  border-radius: 8px;             /* подгоните под ваши карточки */
+  background-color: rgba(220,53,69,0.1);
+  /* убедитесь, что карточка не «обрезается», если контейнер скрывает overflow */
+  overflow: visible;
+}
+/* Контейнер для подсказок */
+.autocomplete-items {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid #d4d4d4;
+  background-color: #fff;
+  z-index: 1000;
+  max-height: 200px;      /* фиксированная высота */
+  overflow-y: auto;       /* вертикальный скролл */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
 
+/* Одна подсказка */
+.autocomplete-items div {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+/* Ховер на подсказке */
+.autocomplete-items div:hover {
+  background-color: #e9e9e9;
+}
+/* 1) Чтобы инпут занимал всю ширину контейнера */
+.autocomplete .search-input {
+  width: 100% !important;
+  box-shadow: none !important;     /* убираем тень у самого поля */
+  border-radius: 4px;               /* при желании подровнять скругления */
+}
+
+/* 2) Чтобы у списка подсказок не было тени */
+.autocomplete .autocomplete-items {
+  box-shadow: none !important;
+  /* опционально: если вы хотите тонкую границу, а не дефолтную тень */
+  border: 1px solid #ddd;
+}
+/* 1) Сбрасываем тень в обычном состоянии */
+.autocomplete .search-input {
+  width: 100% !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 2) Сбрасываем тень на фокусе/активном состоянии */
+.autocomplete .search-input:focus,
+.autocomplete .search-input:active {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  outline: none !important;
+}
+input#employee-search.search-input.form-control {
+  box-shadow: none !important;
+  outline: none !important;
+}
+input#employee-search.search-input.form-control:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+/* 1) Скрываем контейнер подсказок, когда внутри нет <div>  
+   (тогда не будет «пустой полоски» под инпутом) */
+.autocomplete-items:empty {
+  display: none !important;
+}
+
+/* 2) Стили для темной темы — перебиваем белый фон и текст */
+body.dark-theme .autocomplete-items {
+  background: #2b2b2b !important;
+  border: 1px solid #444 !important;
+  box-shadow: none !important;
+  color: #eee !important;
+}
+
+/* 3) Пунты в списке подсказок */
+body.dark-theme .autocomplete-items div {
+  padding: 8px 12px;
+  border-bottom: 1px solid #444;
+  color: #eee;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+body.dark-theme .autocomplete-items div:hover {
+  background: #3d3d3d;
+}
+
+/* если у вас есть скругления на светлой теме — можно их сохранить */
+.autocomplete .autocomplete-items {
+  border-radius: 6px;
+  overflow: hidden;
+}
+/* ============ Унифицируем высоту поля поиска ============ */
+.filters-wrapper .autocomplete {
+  /* чтобы контейнер не тянулся по высоте сам */
+  display: flex;
+  align-items: center;
+}
+
+.filters-wrapper .autocomplete .search-input {
+  /* такие же отступы и высота, как у .filter-dropdown */
+  height: 40px !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+/* если в мобильной версии слишком широк, можно добавить */
+@media (max-width: 576px) {
+  .filters-wrapper .autocomplete .search-input {
+    height: 36px !important;
+    padding: 6px 12px !important;
+  }
+}
+/* контейнер автокомплита уже у вас position:relative */
+.autocomplete .clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #888;
+  cursor: pointer;
+  display: none;
+  user-select: none;
+}
+
+/* подсветка активного пункта при навигации стрелками */
+.autocomplete-items div.autocomplete-active {
+  background-color: #e9e9e9;
+  color: #000;
+}
+.clear-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: none; /* прячем по умолчанию */
+}
+/* обычная подсветка */
+.autocomplete-items div.autocomplete-active {
+  background-color: #e9e9e9;
+  color: #000;
+}
+
+/* подсветка в тёмной теме */
+.dark-theme .autocomplete-items div.autocomplete-active {
+  background-color: #444;  /* можете подобрать свой оттенок */
+  color: #fff;
+}
 
