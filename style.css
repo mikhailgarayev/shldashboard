@@ -2644,3 +2644,15 @@ body.dark-theme .autocomplete-items div:hover {
   background-color: #444;  /* можете подобрать свой оттенок */
   color: #fff;
 }
+/* предупреждение о сильном ветре */
+.wind-warning {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 235, 205, 0.8);
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.2;
+}
