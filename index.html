@@ -516,10 +516,12 @@ Enable maintenance
 
     </div>
     <!-- Кнопки -->
-    <div style="padding: 20px; text-align: right;">
-      <button id="modal-inbox-link" class="btn btn-primary" style="margin-right: 10px;">Open Inbox</button>
-      <button id="modal-admin-link" class="btn btn-outline-primary">Admin Panel</button>
-    </div>
+    <div class="d-flex justify-content-end modal-footer" style="gap:8px; padding:20px;">
+    <button id="modal-inbox-link" class="btn btn-primary btn-sm">Open Inbox</button>
+    <button id="modal-admin-link" class="btn btn-outline-primary btn-sm">Admin Panel</button>
+    <button id="brb-correct-btn"   class="btn btn-warning btn-sm">BRB Time c-on</button>
+    <button id="modal-end-shift"     class="btn btn-danger btn-sm">End Shift</button>
+  </div>
   </div>
 
 
@@ -1186,6 +1188,68 @@ async function openEmployeeModal(empName) {
   document.getElementById("modal-admin-link").onclick = () => {
     window.open(generateAdminLink(info.id), "_blank");
   };
+  // новый код:
+  // в самом верху openEmployeeModal, рядом с остальными ссылками:
+const endBtn = document.getElementById("modal-end-shift");           // ← поменял id (в HTML у вас button id="end-shift-btn")
+endBtn.addEventListener("click", async () => {
+  const employeeEmail = document.getElementById("modal-emp-email").textContent.trim();
+  const adminEmail    = auth.currentUser.email;
+  try {
+    await fetch(
+      "https://script.google.com/macros/s/AKfycbxVDXb7piIXJ8qhv8YPVLc0i08othqGVjcoIMsDxWveTBm95z1v6j4ZEQgEs-GN8EtC-w/exec",             // ← здесь ваш URL Google Apps Script
+      {
+        method:  "POST",
+        mode:    "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ admin: adminEmail, employee: employeeEmail })
+      }
+    );
+    alert("End shift workflow triggered ✅");
+    closeEmployeeModal();
+  } catch (err) {
+    console.error("End shift error:", err);
+    alert("Failed to trigger End shift: " + err.message);
+  }
+});
+
+// ↓↓↓ добавляем новый блок под ним — BRB time correction ↓↓↓
+
+// Во-первых, в HTML к модалке нужно добавить кнопку:
+//   <button id="brb-correct-btn" class="btn btn-secondary">BRB time correction</button>
+
+const brbBtn = document.getElementById("brb-correct-btn");
+brbBtn.addEventListener("click", async () => {
+  const employeeEmail = document.getElementById("modal-emp-email").textContent.trim();
+  const adminEmail    = auth.currentUser.email;
+  const minutesStr    = prompt("Enter BRB correction (minutes):", "0");
+  const minutes       = Number(minutesStr);
+  if (!minutesStr || isNaN(minutes) || minutes < 0) {
+    return alert("Invalid number of minutes");
+  }
+
+  try {
+    await fetch(
+      "https://script.google.com/macros/s/AKfycbxVDXb7piIXJ8qhv8YPVLc0i08othqGVjcoIMsDxWveTBm95z1v6j4ZEQgEs-GN8EtC-w/exec",             // ← тот же URL Apps Script
+      {
+        method:  "POST",
+        mode:    "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          admin:    adminEmail,
+          employee: employeeEmail,
+          minutes:  minutes
+        })
+      }
+    );
+    alert("BRB time correction sent ✅");
+    closeEmployeeModal();
+  } catch (err) {
+    console.error("BRB correction error:", err);
+    alert("Failed to send BRB correction: " + err.message);
+  }
+});
+
+
 
   // 4) Подготовка списка переходов
   const countEl = document.getElementById("modal-platform-count");
