@@ -2656,3 +2656,21 @@ body.dark-theme .autocomplete-items div:hover {
   text-align: center;
   line-height: 1.2;
 }
+/* сам футер с двумя рядами */
+#employee-modal .modal-footer {
+  display: grid !important;
+  justify-content: center !important;
+  grid-template-columns: repeat(2, max-content);
+  gap: 8px;
+  justify-content: center;
+  padding: 1rem 1.25rem;
+}
+
+/* делаем кнопки одинаковой ширины */
+#employee-modal .modal-footer .btn {
+  width: 120px;      /* здесь подберите нужное значение */
+  white-space: nowrap;
+  text-align: center;
+  margin: 4px;
+}
+
