@@ -42,7 +42,7 @@
       const TRANSITIONS_API = 'https://script.google.com/macros/s/AKfycbwlp0Gsq8sVkI28nFW1TZvW_immH6PLrXejAeexj-48MhFtV7_uQ8SVjNi13RUfv_uj/exec?json=1';
 
 
-      window.CURRENT_UPDATE_ID = '2025-05-18-v3.2'; // обновление, которое сейчас на сайте
+      window.CURRENT_UPDATE_ID = '2025-05-18-v3.3; // обновление, которое сейчас на сайте
 
         // --- Default settings ---
       const NOTIF_SETTINGS_KEY = 'notifSettings';
@@ -388,13 +388,18 @@ Enable maintenance
       </select>
     
       <!-- Поиск по имени -->
+      <div class="autocomplete flex-grow-1" style="position: relative;">
       <input
         type="text"
         id="employee-search"
-        placeholder="Search..."
+        placeholder="Global search..."
         class="search-input"
+        autocomplete="off"
       />
-    
+      <button id="clear-search-button" class="clear-btn">×</button>
+      <div id="autocomplete-list" class="autocomplete-items"></div>
+    </div>
+
       <!-- Новый селект для Find Candidate -->
       <select id="target-platform" class="filter-dropdown">
         <option value="">Reallocate to..</option>
@@ -599,6 +604,113 @@ Enable maintenance
     };
         // возвращает строку вида "06:00-15:00" для имени
         // вместо "getEmployeeShift" — возвращаем название смены, а не время
+        
+        function processEmployeeSelection(name) {
+          if (!name) return;
+          const items = Array.from(document.querySelectorAll('.employee-item'));
+          const el = items.find(li =>
+            li.dataset.employee.toLowerCase().includes(name.toLowerCase())
+          );
+
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.add("pulse-highlight");
+            setTimeout(() => el.classList.remove("pulse-highlight"), 3000);
+          } else {
+            openEmployeeModal(name);
+          }
+        }
+        
+      function initAutocomplete() {
+      const inp      = document.getElementById('employee-search');
+      const list     = document.getElementById('autocomplete-list');
+      const clearBtn = document.getElementById('clear-search-button');
+      const wrap     = inp.parentElement; // .autocomplete wrapper
+      let currentFocus = -1;               // для стрелочной навигации
+
+      // изначально скрываем крестик
+      clearBtn.style.display = inp.value.trim() ? 'block' : 'none';
+
+      // очистка по клику на ×
+      clearBtn.addEventListener('click', () => {
+        inp.value = '';
+        list.innerHTML = '';
+        clearBtn.style.display = 'none';
+        inp.focus();
+      });
+
+      // ввод в поле
+      inp.addEventListener('input', () => {
+        const val = inp.value.trim().toLowerCase();
+        clearBtn.style.display = val ? 'block' : 'none';
+        list.innerHTML = '';
+        if (!val) return;
+
+        const matches = Object.keys(employeeData)
+          .filter(name => name.toLowerCase().includes(val))
+          .slice(0, 10);
+
+        matches.forEach(name => {
+          const item = document.createElement('div');
+          item.textContent = name;
+          item.addEventListener('click', () => {
+            inp.value = name;
+            list.innerHTML = '';
+            clearBtn.style.display = 'block';
+            processEmployeeSelection(name);
+          });
+          list.appendChild(item);
+        });
+        currentFocus = -1;
+      });
+
+      // стрелки и Enter
+      inp.addEventListener('keydown', e => {
+        const items = list.getElementsByTagName('div');
+        if (e.key === 'ArrowDown') {
+          currentFocus++;
+          addActive(items);
+          e.preventDefault();
+        }
+        else if (e.key === 'ArrowUp') {
+          currentFocus--;
+          addActive(items);
+          e.preventDefault();
+        }
+        else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (currentFocus > -1 && items[currentFocus]) {
+            items[currentFocus].click();
+          } else {
+            processEmployeeSelection(inp.value.trim());
+          }
+        }
+      });
+
+      // клик вне автокомплита — закрыть список и спрятать ×
+      document.addEventListener('click', e => {
+        if (!wrap.contains(e.target)) {
+          list.innerHTML = '';
+          if (!inp.value.trim()) {
+            clearBtn.style.display = 'none';
+          }
+        }
+      });
+
+      // вспомогательные
+      function addActive(items) {
+        if (!items) return;
+        removeActive(items);
+        if (currentFocus >= items.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = items.length - 1;
+        items[currentFocus].classList.add('autocomplete-active');
+      }
+      function removeActive(items) {
+        Array.from(items).forEach(i => i.classList.remove('autocomplete-active'));
+      }
+    }
+
+
         function getEmployeeShiftName(empName) {
           const rec = window.shiftsQuinyxData.find(r =>
             r.name.toLowerCase() === empName.toLowerCase()
@@ -944,7 +1056,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
     };
   }
 }
-
+      
 
         function generateInboxLink(empId) {
           return (
@@ -959,7 +1071,8 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
             encodeURIComponent(empId)
           );
         }
-
+        
+        
         // Вставьте где-нибудь рядом с другими утилитами
 function normalize(str) {
   return String(str || "")
@@ -1312,12 +1425,6 @@ function applyFilters() {
         awayData.push({ name: nm, reason: rsn });
       }
 
-      // Поиск
-      if (currentSearchTerm) {
-        const term = currentSearchTerm.toLowerCase();
-        activeNames = activeNames.filter(n => n.toLowerCase().includes(term));
-        awayData    = awayData.filter(a => a.name.toLowerCase().includes(term));
-      }
 
       // realloc/lang
       activeNames = activeNames.filter(n => passReallocAndLang(n));
@@ -1420,11 +1527,6 @@ function applyFilters() {
       // Aircall рендер без изменений
       let filteredActive = aircallActive.filter(n => n.toLowerCase() !== "away");
       let filteredAway   = aircallAway.filter(a => a.name.toLowerCase() !== "away");
-      if (currentSearchTerm) {
-        const term = currentSearchTerm.toLowerCase();
-        filteredActive = filteredActive.filter(n => n.toLowerCase().includes(term));
-        filteredAway   = filteredAway.filter(a => a.name.toLowerCase().includes(term));
-      }
       filteredActive = filteredActive.filter(n => passReallocAndLang(n));
       filteredAway   = filteredAway.filter(a => passReallocAndLang(a.name));
 
@@ -2341,6 +2443,7 @@ renderBadge(loadNotifications());
           await fetchEmployeeList();
           await fetchShiftsQuinyxData();     
           await fetchShiftOversData();
+          initAutocomplete();
 
           // Переводим объект employeeData → массив для поиска кандидата
           window.empList = Object.entries(employeeData).map(([name, info]) => ({
@@ -2707,8 +2810,8 @@ function findCandidate() {
         ">
           <h2>What’s new?</h2>
           <p>New release <strong>${window.CURRENT_UPDATE_ID}</strong></p>
-          <p>Added blue indicators for employees who go on break soon</p>
-          <p>Added yellow indicators for employees who is SO soon</p>
+          <p>Added global search. You can search for offline employees now.</p>
+          <p>Small bug fixes</p>
           <button id="close-update-modal">OK</button>
         </div>
       </div>
@@ -3004,13 +3107,34 @@ $('#notif-settings-form input[type=checkbox]').on('change', () => {
   });
 
 
-  // Фильтры таблицы платформ
-  document
-    .getElementById("employee-search")
-    .addEventListener("input", (e) => {
-      currentSearchTerm = e.target.value;
-      applyFilters();
-    });
+  // Поиск и «×»-кнопка
+  const inpEl    = document.getElementById("employee-search");
+  const clearBtn = document.getElementById("clear-search-button");
+  // убираем, пока нет текста
+  clearBtn.style.display = "none";
+
+  inpEl.addEventListener("input", (e) => {
+    const v = e.target.value.trim();
+    // показываем или прячем крестик
+    clearBtn.style.display = v ? "block" : "none";
+    // фильтруем по новому значению
+    currentSearchTerm = v;
+    applyFilters();
+  });
+
+  clearBtn.addEventListener("click", () => {
+    // очистка поля
+    inpEl.value = "";
+    clearBtn.style.display = "none";
+    currentSearchTerm = "";
+    applyFilters();
+    // снимем пульсацию, если кто подсвечен
+    document.querySelectorAll(".pulse-highlight")
+            .forEach(el => el.classList.remove("pulse-highlight"));
+    // закроем модалку (если открыта для выбранного)
+    closeEmployeeModal();
+  });
+
 
   document
     .getElementById("status-filter")
@@ -3032,7 +3156,7 @@ $('#notif-settings-form input[type=checkbox]').on('change', () => {
       currentLangFilter = e.target.value;
       applyFilters();
     });
-
+  
   // Фильтр перерывов
   document
     .getElementById("break-filter")
@@ -3083,7 +3207,7 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
   const modalClose = document.getElementById("modal-close");
   overlay.addEventListener("click", closeEmployeeModal);
   modalClose.addEventListener("click", closeEmployeeModal);
-
+  
     // 1) Один раз заполняем dropdown платформ
   const sel = document.getElementById('target-platform');
   // очищаем (оставляем только заглушку)
@@ -3102,7 +3226,28 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
     console.log("Push permission:", p);
   });
 }
+  
+  // 1) Поиск-Enter: пульсируем или открываем модалку
+// Обрабатываем Enter в поле поиска
+    document
+      .getElementById("employee-search")
+      .addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        const name = e.target.value.trim();
+        processEmployeeSelection(name);
+      });
+    // Обрабатываем выбор варианта из datalist
+    document
+      .getElementById("employee-search")
+      .addEventListener("input", (e) => {
+        const name = e.target.value.trim();
+        // проверяем, есть ли такое точное имя в employeeData
+        if (employeeData[name]) {
+          processEmployeeSelection(name);
+        }
+      });
 
+  
   fetchData();
   // 1) вспомогательная функция для тоаста
 function showToast(msg) {
