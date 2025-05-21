@@ -856,7 +856,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
     switch(cond){
       case "Clear":       return "☀️";
       case "Clouds":      return "☁️";
-      case "Rain": 
+      case "Rain":
       case "Drizzle":     return "🌧️";
       case "Thunderstorm":return "⛈️";
       case "Snow":        return "❄️";
@@ -868,13 +868,33 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
     ? `${Math.round(tempRaw)} °C ${emoji}`
     : "-- °C";
   const windText = (typeof windRaw === "number")
-    ? `${Math.round(windRaw*10)/10} m/s`
+    ? `${Math.round(windRaw * 10) / 10} m/s`
     : "-- m/s";
 
   // Вставляем в DOM
-  document.getElementById(tempElemId).textContent = tempText;
-  document.getElementById(windElemId).textContent = windText;
+  const tempElem = document.getElementById(tempElemId);
+  const windElem = document.getElementById(windElemId);
+  tempElem.textContent = tempText;
+  windElem.textContent = windText;
+
+  // --- предупреждение при сильном ветре ---
+  const STRONG_WIND_THRESHOLD = 10; // м/с
+  const cardEl = tempElem.closest('.stats-card');
+  // удаляем старое предупреждение, если есть
+  const prevWarn = cardEl.querySelector('.wind-warning');
+  if (prevWarn) prevWarn.remove();
+
+  if (windRaw > STRONG_WIND_THRESHOLD) {
+    const warn = document.createElement('div');
+    warn.className = 'wind-warning';
+    warn.innerHTML = `
+      ⚠️ <strong>Strong wind!</strong><br>
+      City state needs to be turned on.
+    `;
+    cardEl.appendChild(warn);
+  }
 }
+
 
         
         // ===============================
@@ -888,7 +908,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
           PSR: "Click on the link to open the PSR platform.\nClick on employee name to open their profile.",
           SiMo: "Click on the link to open the Support Inbox.\nClick on employee name to open their profile.",
           Aircall:
-            "Click on the link to open the CS platform.\nClick on employee name to open their profile.\n You can see employee's status in the Aircall.",
+            "Click on the link to open the Snooze platform.\nClick on employee name to open their profile.\n You can see employee's status in the Aircall.",
           Venue:
             "Click on the link to open the Venue platform.\nClick on employee name to open their profile.",
           Trainee: "Click on employee name to open their profile.",
