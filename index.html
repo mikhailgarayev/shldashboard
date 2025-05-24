@@ -15,7 +15,20 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/css/bootstrap-select.min.css"
     />
     <link rel="stylesheet" href="style.css">
-    
+    <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      window.addEventListener('keydown', e => {
+        // Ctrl+F или ⌘+F
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.keyCode === 70)) {
+          const inp = document.getElementById('employee-search');
+          if (!inp) return;
+          e.preventDefault();   // отключаем штатный Find in page
+          inp.focus();          // ставим фокус в поле
+          inp.select();         // сразу выделяем текст (опционально)
+        }
+      }, true);                // capture= true, чтобы поймать до других хендлеров
+    });
+    </script>
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
