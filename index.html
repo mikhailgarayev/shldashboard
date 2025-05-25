@@ -14,6 +14,15 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/css/bootstrap-select.min.css"
     />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css"
+      integrity="sha512-CV+N+uI2M80xg6WylgIklCqnn60vXQGeC0TqxYFy7c+UEhuAEH5I2Kqnf7n5kH5hF+jeHaI/NM2FeJvK5UqZug=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
     <link rel="stylesheet" href="style.css">
     <script defer>
     document.addEventListener('DOMContentLoaded', () => {
@@ -450,15 +459,30 @@ Enable maintenance
 
       </main>
 
-      <!-- Right Panel: Breaks & Shift-Overs -->
       <aside class="right-panel">
-        <div id="shift-overs-section" class="alert-card"><h2>⏳ Upcoming Shift-Overs</h2><div id="shift-overs-app" class="alert-content">Loading...</div></div>
-        <div id="breaks-section" class="alert-card"><h2>⏰ Breaks</h2><div id="breaks-app" class="alert-content">Loading...</div></div>
-        <div id="upcoming-shifts-section" class="alert-card">
-        <h2>🚀 Upcoming Shifts</h2>
+      <div id="shift-overs-section" class="alert-card collapsed">
+        <h2>
+          ⏳ Upcoming Shift-Overs
+        </h2>
+        <div id="shift-overs-app" class="alert-content">Loading...</div>
+      </div>
+
+      <div id="breaks-section" class="alert-card collapsed">
+        <h2>
+          ⏰ Breaks
+        </h2>
+        <div id="breaks-app" class="alert-content">Loading...</div>
+      </div>
+
+      <div id="upcoming-shifts-section" class="alert-card collapsed">
+        <h2>
+          🚀 Upcoming Shifts
+        </h2>
         <div id="upcoming-shifts-app" class="alert-content">Loading...</div>
-        </div>
-      </aside>
+      </div>
+    </aside>
+
+
 
     </div> <!-- /.dashboard-layout -->
 
@@ -1173,8 +1197,8 @@ async function openEmployeeModal(empName) {
 
   // 2) Перерыв
   let breakTime = "—";
-  if (Array.isArray(window.allBreaksData)) {
-    const br = window.allBreaksData.find(b =>
+  if (Array.isArray(window.allBreaksFullData)) {
+    const br = window.allBreaksFullData.find(b =>
       b.Name?.trim().toLowerCase() === empName.trim().toLowerCase()
     );
     if (br) breakTime = br.BreakTime || "—";
@@ -2059,29 +2083,28 @@ function renderShiftOvers() {
 async function fetchBreaksData() {
   const raw = await fetchSheetData(BREAKS_RANGE);
   const container = document.getElementById("breaks-app");
+  const section   = container.parentElement;      // <div id="breaks-section">
+  const titleEl   = section.querySelector("h2");  // заголовок "Breaks"
+
   if (!Array.isArray(raw) || raw.length < 2) {
     container.textContent = "Error";
     return;
   }
 
-  // 1) Разбираем шапку
+  // --- 1) Разбираем шапку ---
   const header = raw[0].map(h => h.trim());
   const idxName  = header.indexOf("Name");
   const idxTime  = header.indexOf("Break Time");
   const idxShift = header.indexOf("Shift Start Time");
   const idxSpace = header.indexOf("Working Space");
-
   if ([idxName, idxTime, idxShift, idxSpace].some(i => i < 0)) {
     console.error("Bad header:", header);
     container.textContent = "Bad header";
     return;
   }
 
-  // 2) Собираем массив объектов
-  const now = new Date();
-  const nextHour = new Date(now.getTime() + 60*60*1000);
-
-  const list = raw
+  // --- 2) Собираем полный список и сортируем по времени ---
+  const fullList = raw
     .slice(1)
     .map(row => ({
       Name:         (row[idxName]  || "").trim(),
@@ -2089,46 +2112,65 @@ async function fetchBreaksData() {
       ShiftStart:   (row[idxShift] || "").trim(),
       WorkingSpace: (row[idxSpace] || "").trim()
     }))
-    // убираем строки без BreakTime
     .filter(r => r.BreakTime)
-    // фильтр upcoming vs all
-      .filter(r => {
-    if (currentBreakFilter === "upcoming") {
+    .sort((a, b) => {
+      const toMin = t => {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+      };
+      return toMin(a.BreakTime) - toMin(b.BreakTime);
+    });
+  window.allBreaksFullData = fullList;
+  // --- 3) Считаем дубли по fullList ---
+  const fullCounts = {};
+  fullList.forEach(r => {
+    const key = `${r.WorkingSpace}–${r.BreakTime}`;
+    fullCounts[key] = (fullCounts[key] || 0) + 1;
+  });
+
+  // --- 4) Удаляем предыдущие метки, ставим новые ---
+  section.classList.remove("break-mismatch");
+  section.querySelectorAll(".mismatch-info").forEach(el => el.remove());
+
+  const conflicts = Object.entries(fullCounts).filter(([_, cnt]) => cnt > 1);
+  if (conflicts.length) {
+    section.classList.add("break-mismatch");
+    conflicts.forEach(([key]) => {
+      const [space, time] = key.split("–");
+      const names = fullList
+        .filter(r => r.WorkingSpace === space && r.BreakTime === time)
+        .map(r => r.Name)
+        .join(", ");
+      const p = document.createElement("p");
+      p.className = "mismatch-info";
+      p.textContent = `Mismatch: ${time} — ${names}`;
+      titleEl.insertAdjacentElement("afterend", p);
+    });
+  }
+
+  // --- 5) Применяем фильтр upcoming (если нужен) ---
+  let list = fullList;
+  if (currentBreakFilter === "upcoming") {
+    const now = new Date();
+    const nextHour = new Date(now.getTime() + 60 * 60 * 1000);
+    list = fullList.filter(r => {
       const [h, m] = r.BreakTime.split(":").map(Number);
       if (isNaN(h) || isNaN(m)) return false;
       const dt = new Date(now);
       dt.setHours(h, m, 0, 0);
-      // если получилось время раньше now, это уже завтра
       if (dt <= now) dt.setDate(dt.getDate() + 1);
       return dt > now && dt <= nextHour;
-    }
-    return true;
-  })
-    // сортируем по времени BreakTime
-    .sort((a, b) => {
-      const toMin = t => {
-        const [h,m] = t.split(":").map(Number);
-        return h*60 + m;
-      };
-      return toMin(a.BreakTime) - toMin(b.BreakTime);
     });
-
+  }
   window.allBreaksData = list;
 
-  // 3) Рендер
+  // --- 6) Рендерим список ---
   if (list.length === 0) {
     container.innerHTML = "<p>No breaks</p>";
   } else {
-    // подсчёт конфликтов
-    const counts = {};
-    list.forEach(r => {
-      const key = `${r.WorkingSpace}–${r.BreakTime}`;
-      counts[key] = (counts[key]||0) + 1;
-    });
-
     container.innerHTML = "<ul>" + list.map(r => {
       const key = `${r.WorkingSpace}–${r.BreakTime}`;
-      const conflict = counts[key] > 1 ? "break-conflict" : "";
+      const conflict = fullCounts[key] > 1 ? "break-conflict" : "";
       return `
         <li class="${conflict}">
           <strong>${r.Name}</strong><br/>
@@ -2138,8 +2180,10 @@ async function fetchBreaksData() {
                 data-time="${r.BreakTime}">
             ${r.BreakTime}
           </span>
-          <button class="edit-btn" title="Edit time" style="border:none;background:none;cursor:pointer;">
-            <img src="https://www.svgrepo.com/show/502640/edit-1.svg" width="16" height="16"/>
+          <button class="edit-btn" title="Edit time"
+                  style="border:none;background:none;cursor:pointer;">
+            <img src="https://www.svgrepo.com/show/502640/edit-1.svg"
+                 width="16" height="16"/>
           </button><br/>
           Shift: ${r.ShiftStart} | ${r.WorkingSpace}
         </li>`;
@@ -2181,72 +2225,65 @@ async function fetchBreaksData() {
 
   // ===== Проверяем просроченные перерывы и уведомляем =====
   (function checkOverdueBreaks() {
-  const ALLOWED_BREAK_MINUTES = 60;
-  const now = new Date();
+    const ALLOWED_BREAK_MINUTES = 60;
+    const now = new Date();
 
-  // 1) Сотрудники, помеченные active по листу
-  const activeSet = new Set();
-  platforms.forEach(p => {
-    for (let r = p.rowActiveNamesStart; r <= p.rowActiveNamesEnd; r++) {
-      const nm = fetchedData[r]?.[p.colIndexNames]?.trim();
-      if (nm) activeSet.add(nm.toLowerCase());
-    }
-  });
-
-  // 2) Проходим по всем перерывам
-  (window.allBreaksData || []).forEach(r => {
-    const name = r.Name?.trim();
-    if (!name) return;
-    const key = name.toLowerCase();
-
-    // Если человек снова active — очищаем флаг и не уведомляем
-    if (activeSet.has(key)) {
-      if (overdueBreakNotified[key]) {
-        delete overdueBreakNotified[key];
-        localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
+    const activeSet = new Set();
+    platforms.forEach(p => {
+      for (let r = p.rowActiveNamesStart; r <= p.rowActiveNamesEnd; r++) {
+        const nm = fetchedData[r]?.[p.colIndexNames]?.trim();
+        if (nm) activeSet.add(nm.toLowerCase());
       }
-      return;
-    }
+    });
 
-    // **НОВЫЙ БЛОК**: проверяем, не закончилась ли у него смена
-    // ищем в данных по сменам
-    const shiftRec = (window.shiftsQuinyxData || [])
-      .find(x => x.name.trim().toLowerCase() === key);
-    if (shiftRec) {
-      const [, endStr] = shiftRec.shift.split('-');
-      const [eh, em] = endStr.split(':').map(Number);
-      const endDate = new Date(now);
-      endDate.setHours(eh, em, 0, 0);
-      // если сейчас уже после конца смены — пропускаем
-      if (now > endDate) {
-        // и очищаем флаг в случае, если когда-то было уведомление
+    (window.allBreaksData || []).forEach(r => {
+      const name = r.Name?.trim();
+      if (!name) return;
+      const key = name.toLowerCase();
+
+      if (activeSet.has(key)) {
         if (overdueBreakNotified[key]) {
           delete overdueBreakNotified[key];
           localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
         }
         return;
       }
-    }
 
-    // 3) Проверяем длительность break-а
-    const [h, m, s = 0] = (r.BreakTime || "").split(":").map(Number);
-    const breakDate = new Date(now);
-    breakDate.setHours(h, m, s, 0);
-    const durationMins = (now - breakDate) / 60000;
-    const settings = loadNotifSettings();
-    if (durationMins > ALLOWED_BREAK_MINUTES && settings.breakOverdue) {
-      if (!overdueBreakNotified[key]) {
-        const lateMin = Math.floor(durationMins);
-        const msg = `❗ ${name} is late from break for ${lateMin} min.`;
-        showDesktopNotification("Break overdue", msg);
-        addInPageNotification(msg);
-        overdueBreakNotified[key] = true;
-        localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
+      const shiftRec = (window.shiftsQuinyxData || [])
+        .find(x => x.name.trim().toLowerCase() === key);
+      if (shiftRec) {
+        const [, endStr] = shiftRec.shift.split('-');
+        const [eh, em] = endStr.split(':').map(Number);
+        const endDate = new Date(now);
+        endDate.setHours(eh, em, 0, 0);
+        if (now > endDate) {
+          if (overdueBreakNotified[key]) {
+            delete overdueBreakNotified[key];
+            localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
+          }
+          return;
+        }
       }
-    }
-  });
-})();
+
+      const [h, m, s = 0] = (r.BreakTime || "").split(":").map(Number);
+      const breakDate = new Date(now);
+      breakDate.setHours(h, m, s, 0);
+      const durationMins = (now - breakDate) / 60000;
+      const settings = loadNotifSettings();
+      if (durationMins > ALLOWED_BREAK_MINUTES && settings.breakOverdue) {
+        if (!overdueBreakNotified[key]) {
+          const lateMin = Math.floor(durationMins);
+          const msg = `❗ ${name} is late from break for ${lateMin} min.`;
+          showDesktopNotification("Break overdue", msg);
+          addInPageNotification(msg);
+          overdueBreakNotified[key] = true;
+          localStorage.setItem(BREAK_NOTIF_KEY, JSON.stringify(overdueBreakNotified));
+        }
+      }
+    });
+  })();
 }
+
 
         function checkOverdueBRB() {
   // найдём все li, помеченные классом break-overdue и содержащие "BRB"
@@ -2862,8 +2899,8 @@ function findCandidate() {
     const shiftInfo = `${rec.platform || '–'} (${rec.shift || '–'})`;
 
     let breakTime = '–';
-    if (Array.isArray(window.allBreaksData)) {
-      const br = window.allBreaksData.find(b =>
+    if (Array.isArray(window.allBreaksFullData)) {
+      const br = window.allBreaksFullData.find(b =>
         b.Name?.trim().toLowerCase() === best.name.trim().toLowerCase()
       );
       if (br) breakTime = br.BreakTime || '–';
@@ -3001,6 +3038,34 @@ function findCandidate() {
       if(!noteRef) return;
       timeout=setTimeout(()=>noteRef.set(textarea.value),500);
     });
+    // делаем все карточки .alert-card сворачиваемыми
+    document.querySelectorAll('.alert-card').forEach(card => {
+      const hdr = card.querySelector('h2');
+      if (!hdr) return;
+
+      // 1) Создаём <i> с нужными классами
+      const arrow = document.createElement('i');
+      arrow.classList.add('bi', 'bi-chevron-right', 'toggle-arrow');
+      hdr.appendChild(arrow);
+
+      // 2) Тогглим .collapsed по клику
+      hdr.addEventListener('click', () => {
+        card.classList.toggle('collapsed');
+      });
+
+      // 3) По умолчанию — скрываем содержимое
+      card.classList.add('collapsed');
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.alert-card h2').forEach(h2 => {
+    h2.addEventListener('click', () => {
+      const card = h2.closest('.alert-card');
+      card.classList.toggle('collapsed');
+    });
+  });
+});
+
   });
         
   /**
