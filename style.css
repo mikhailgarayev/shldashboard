@@ -2679,3 +2679,112 @@ input.search-input:focus {
   outline: 2px solid #007bff !important;
   box-shadow: 0 0 8px rgba(0,123,255,0.7) !important;
 }
+#breaks-section.break-mismatch,  /* если у вас именно такой ID */
+.card.break-mismatch {            /* или если класс навешиваем на .card */
+  border: 2px solid #dc3545 !important;
+  background-color: #ffe6e6 !important;
+}
+
+/* стиль текста «Mismatch» */
+.mismatch-info {
+  color: #dc3545;
+  font-size: 0.95rem;
+  font-weight: bold;
+  margin: 0.25rem 0 0.75rem;
+}
+/* 1) Делаем заголовок flex-контейнером, чтобы стрелочка слева выровнялась */
+.alert-card h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;  /* если у вас отступы */
+}
+
+/* 2) Сама стрелочка через псевдоэлемент */
+.toggle-arrow::before {
+  content: "▼";              /* ▼ вниз */
+  display: inline-block;
+  transition: transform 0.3s ease;
+  font-size: 1em;
+  margin-left: 0.5rem;
+}
+
+/* 3) При collapsed-состоянии поворачиваем стрелку */
+.alert-card.collapsed .toggle-arrow::before {
+  transform: rotate(-90deg);
+}
+
+/* 4) Скрываем тело карточки, когда collapsed */
+.alert-card .alert-content {
+  /* по-умолчанию показываем */
+}
+.alert-card.collapsed .alert-content {
+  display: none;
+}
+/* == Полный оверрайд для break-mismatch в dark-theme == */
+body.dark-theme .alert-card.break-mismatch,
+body.dark-theme #breaks-section.break-mismatch {
+  /* непрозрачный красный фон */
+  background-color: rgba(220, 53, 69, 0.85) !important;
+  /* сбросим размытие, чтобы фон был ровным */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* яркая красная рамка */
+  border-color: #ff4d4d !important;
+}
+
+/* == Для break-mismatch тот же стиль, что у red-card (Not here) в dark-theme == */
+body.dark-theme .alert-card.break-mismatch,
+body.dark-theme #breaks-section.break-mismatch {
+  background-color: #4a1f1f !important;  /* тёмно-бордовый фон */
+  border: 1px solid #dc3545 !important;  /* ярко-красная рамка */
+}
+
+/* Белый контрастный текст и стрелочка */
+body.dark-theme .alert-card.break-mismatch h2,
+body.dark-theme .alert-card.break-mismatch .toggle-arrow::before,
+body.dark-theme .alert-card.break-mismatch .mismatch-info,
+body.dark-theme .alert-card.break-mismatch .alert-content,
+body.dark-theme .alert-card.break-mismatch .alert-content li {
+  color: #ffffff !important;
+}
+/* ————————————————————————————
+   Свертываемые карточки .alert-card
+   ———————————————————————————— */
+/* 1) Делаем заголовок флексом, чтобы текст был слева, а стрелка — справа */
+.alert-card h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin: 0;  /* сброс любых внешних отступов */
+}
+
+/* 1) Обязательно делаем .toggle-arrow inline-block */
+.toggle-arrow {
+  display: inline-block;
+  font-size: 0.75rem;       /* или 0.8rem, 12px и т. д. — подберите под себя */
+  line-height: 1;  
+}
+
+/* 2) Если это SVG — указываем, что точка вращения внутри viewBox */
+.toggle-arrow svg {
+  width: 1em;               /* растянется под font-size контейнера */
+  height: 1em;
+  transform-box: fill-box;           /* берём во внимание всю рамку SVG */
+  transform-origin: center center;   /* вращаем относительно центра */
+  transition: transform 0.25s ease;
+}
+
+/* 3) По умолчанию — collapsed ⇒ стрелка вправо */
+.alert-card.collapsed .toggle-arrow svg {
+  transform: rotate(0deg);
+}
+
+/* 4) Когда карточка открыта (collapsed убран) ⇒ повернуть вниз */
+.alert-card:not(.collapsed) .toggle-arrow svg {
+  transform: rotate(90deg);
+}
+
