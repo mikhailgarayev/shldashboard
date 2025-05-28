@@ -519,6 +519,10 @@ Enable maintenance
         <span id="modal-emp-role">Support Associate</span>
       </div>
       <div style="margin-bottom: 10px;">
+      <strong>Start date:</strong>
+      <span id="modal-emp-start">—</span>
+      </div>
+      <div style="margin-bottom: 10px;">
         <strong>Prime platform:</strong>
         <span id="modal-emp-prime">CS</span>
       </div>
@@ -545,6 +549,10 @@ Enable maintenance
       <div style="margin-bottom: 10px;">
         <strong>Break:</strong>
         <span id="modal-emp-break">—</span>
+      </div>
+      <div style="margin-bottom: 10px;">
+      <strong>BRB left today:</strong>
+      <span id="modal-emp-brb-left">—</span>
       </div>
       <div style="margin-bottom: 10px;">
         <strong>Platform changes today:</strong>
@@ -969,8 +977,10 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
         const RESPONSIBLES_RANGE = "responsiblepeople!A:B";
         const BREAKS_RANGE = "prebreaks!A1:D80";
         const SHIFT_QUINYX_RANGE = "shiftsquinyx!B3:C"; 
+        const BRB_RANGE = "BRB!A:D";
 
         let employeeData = {};
+        let brbData = [];
 
         const platforms = [
           {
@@ -1086,7 +1096,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
         }
       }
 
-
+        
         async function fetchEmployeeList() {
   // теперь A–H: A: Name, B: ID, C: CanReallocate, D: Prime, E: Pref, F: Languages, G: Capacity, H: StartDate
   const data = await fetchSheetData("emplist!A1:H");
@@ -1117,7 +1127,19 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
   }
 }
       
-
+        async function fetchBRBData() {
+          const rows = await fetchSheetData(BRB_RANGE);
+          if (!rows) return;
+          // пропускаем заголовок
+          brbData = rows.slice(1)
+            .filter(r => r[0]?.trim())
+            .map(r => ({
+              name:  r[0].trim(),
+              total: r[1] || "0",
+              used:  r[2] || "0",
+              left:  r[3] || "0",
+            }));
+        }
         function generateInboxLink(empId) {
           return (
             "https://ops.wolt.com/support/converse/users/conversations?assigneeIds=" +
@@ -1211,7 +1233,7 @@ async function openEmployeeModal(empName) {
     ? `${parts[0].toLowerCase()}.${parts[1].toLowerCase()}@wolt.com`
     : `${parts[0].toLowerCase()}@wolt.com`;
   const email = normalizeEmail(rawEmail);
-
+  document.getElementById("modal-emp-start").textContent     = info.startDate || "—";
   document.getElementById("modal-emp-name").textContent      = empName;
   document.getElementById("modal-emp-email").textContent     = email;
   document.getElementById("modal-emp-realloc").textContent   = info.canReallocate || "N/A";
@@ -1219,6 +1241,10 @@ async function openEmployeeModal(empName) {
   document.getElementById("modal-emp-pref").textContent      = info.pref          || "N/A";
   document.getElementById("modal-emp-languages").textContent = info.languages     || "N/A";
   document.getElementById("modal-emp-capacity").textContent  = info.capacity      || "N/A";
+  
+  const brbRec = brbData.find(r => r.name.toLowerCase() === empName.toLowerCase());
+  document.getElementById("modal-emp-brb-left").textContent =
+  brbRec ? brbRec.left : "—";
 
   document.getElementById("modal-inbox-link").onclick = () => {
     window.open(generateInboxLink(info.id), "_blank");
@@ -2578,6 +2604,7 @@ renderBadge(loadNotifications());
           window.allShiftData = shiftData;
 
           await fetchEmployeeList();
+          await fetchBRBData();  
           await fetchShiftsQuinyxData();     
           await fetchShiftOversData();
           initAutocomplete();
