@@ -64,7 +64,7 @@
       const TRANSITIONS_API = 'https://script.google.com/macros/s/AKfycbwlp0Gsq8sVkI28nFW1TZvW_immH6PLrXejAeexj-48MhFtV7_uQ8SVjNi13RUfv_uj/exec?json=1';
 
 
-      window.CURRENT_UPDATE_ID = '2025-05-18-v3.3'; // обновление, которое сейчас на сайте
+      window.CURRENT_UPDATE_ID = '2025-05-29-v3.4'; // обновление, которое сейчас на сайте
 
         // --- Default settings ---
       const NOTIF_SETTINGS_KEY = 'notifSettings';
@@ -1285,26 +1285,32 @@ endBtn.addEventListener("click", async () => {
 
 const brbBtn = document.getElementById("brb-correct-btn");
 brbBtn.addEventListener("click", async () => {
-  const employeeEmail = document.getElementById("modal-emp-email").textContent.trim();
-  const adminEmail    = auth.currentUser.email;
-  const minutesStr    = prompt("Enter BRB correction (minutes):", "0");
-  const minutes       = Number(minutesStr);
-  if (!minutesStr || isNaN(minutes) || minutes < 0) {
-    return alert("Invalid number of minutes");
+  const employeeEmail = document
+    .getElementById("modal-emp-email")
+    .textContent.trim();
+  const adminEmail = auth.currentUser.email;
+
+  // —–––––––– prompt and validation –––––––––—
+  const minutesStr = prompt("Enter BRB correction (minutes):", "0");
+  if (minutesStr === null) {
+    // пользователь нажал Cancel
+    return;
+  }
+  const minutes = Number(minutesStr.trim());
+  if (minutesStr.trim() === "" || isNaN(minutes) || minutes < 0) {
+    alert("Invalid number of minutes");
+    return;
   }
 
+  // —–––––––– отправляем запрос –––––––––—
   try {
     await fetch(
-      "https://script.google.com/macros/s/AKfycbxVDXb7piIXJ8qhv8YPVLc0i08othqGVjcoIMsDxWveTBm95z1v6j4ZEQgEs-GN8EtC-w/exec",             // ← тот же URL Apps Script
+      "https://script.google.com/macros/s/AKfycbxVDXb7piIXJ8qhv8YPVLc0i08othqGVjcoIMsDxWveTBm95z1v6j4ZEQgEs-GN8EtC-w/exec",
       {
-        method:  "POST",
-        mode:    "no-cors",
+        method: "POST",
+        mode: "no-cors",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          admin:    adminEmail,
-          employee: employeeEmail,
-          minutes:  minutes
-        })
+        body: JSON.stringify({ admin: adminEmail, employee: employeeEmail, minutes })
       }
     );
     alert("BRB time correction sent ✅");
@@ -2979,8 +2985,9 @@ function findCandidate() {
         ">
           <h2>What’s new?</h2>
           <p>New release <strong>${window.CURRENT_UPDATE_ID}</strong></p>
-          <p>Added global search. You can search for offline employees now.</p>
-          <p>Small bug fixes</p>
+          <p>Fixed responsible people section.</p>
+          <p>Fixed Aircall statuses.</p>
+          <p>Other small bug fixes.</p>
           <button id="close-update-modal">OK</button>
         </div>
       </div>
