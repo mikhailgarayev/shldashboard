@@ -227,14 +227,13 @@ async function fetchStatusChanges() {
     Send update notification
     </button>
     <!-- Кнопка “Maintenance Mode” -->
-<button
-id="maintenance-btn"
-class="btn btn-outline-danger btn-sm rounded-pill ml-2"
-style="display:none;"
->
-Enable maintenance
-</button>
-
+    <button
+    id="maintenance-btn"
+    class="btn btn-outline-danger btn-sm rounded-pill ml-2"
+    style="display:none;"
+    >
+    Enable maintenance
+    </button>
     <!-- Bell -->
     <div id="notification-bell" style="position:relative; cursor:pointer; margin-right:1rem;">
       <img
@@ -975,7 +974,9 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
         const SPREADSHEET_ID = "1dICKOxxz9R3x8MY3FKQ9I-IwR9fBUDfMOT9PFDLloAE";
         const SHIFT_RANGE = "list1!AT5:BH47";
         const RANGE = "list1!A1:BJ100";
-        const RESPONSIBLES_RANGE = "responsiblepeople!A:B";
+        // URL вашего Apps Script-WebApp, развернутого как “Anyone, even anonymous”
+        const RESPONSIBLES_URL = 'https://script.google.com/macros/s/AKfycbxEEoCfxmENNUb04Bk0LbjlXZpxeX1ICijadZ6xbOZYyuw6EZI-Jxp0OLcqn54j4QRqgg/exec';
+
         const BREAKS_RANGE = "prebreaks!A1:D80";
         const SHIFT_QUINYX_RANGE = "shiftsquinyx!B3:C"; 
         const BRB_RANGE = "BRB!A:D";
@@ -1939,48 +1940,49 @@ function renderShiftSummary(data) {
 
 
 
+/**
+ * Рисует карточку Responsible People перед блоком Shift-Overs.
+ * Ожидает data = [{name, role}, …].
+ */
 function renderResponsiblePeople(data) {
   if (!Array.isArray(data) || data.length === 0) return;
 
-  // Удаляем старую карточку, если она есть
+  // 1) Удаляем старую карточку, если она уже есть
   const existing = document.getElementById("responsible-card");
   if (existing) existing.remove();
 
-  // Оставляем только роли "Shift Lead…" и "In charge…"
-  const responsibleRows = data.filter(([name, role]) =>
-  /shift\s+lead/i.test(role) || /in\s+charge/i.test(role)
-);
+  // 2) Фильтруем только нужные статусы
+  const responsibleRows = data.filter(r =>
+    r.name && r.role &&
+    (/shift\s*lead/i.test(r.role) || /in\s*charge/i.test(r.role))
+  );
   if (responsibleRows.length === 0) return;
 
-  // Начало HTML
+  // 3) Собираем HTML
   let html = `
     <div class="shift-summary-card" id="responsible-card">
       <div class="shift-summary-title">👥 Responsible People</div>
       <table class="shift-summary-grid" style="max-width:500px; margin:0 auto;">
-        <thead><tr><th>Name</th><th>Position</th></tr></thead>
-        <tbody>`;
+        <thead>
+          <tr><th>Name</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+  `;
 
-  // Заполняем строки
-  responsibleRows.forEach(([rawName, rawRole]) => {
+  responsibleRows.forEach(({name: rawName, role: rawRole}) => {
     const name = rawName.trim();
     const role = rawRole.trim();
-    const lowerName = name.toLowerCase();
 
-    // Специальные эмодзи для пользователей
-    const isNaziya = lowerName === 'naziya orujova';
-    const isRafig  = lowerName === 'rafig huseynov';
-    let extraEmoji = '';
-    if (isNaziya) extraEmoji = ' 🎀';
-    else if (isRafig)  extraEmoji = ' (˵ ͡° ͜ʖ ͡°˵)';
-
-    const nameClass = isNaziya ? 'pink-name' : '';
+    // Особые эмодзи для некоторых людей
+    const lower = name.toLowerCase();
+    let extra = "";
+    if (lower === "naziya orujova") extra = " 🎀";
+    else if (lower === "rafig huseynov") extra = " (˵ ͡° ͜ʖ ͡°˵)";
 
     html += `
       <tr>
         <td>
-          <span class="${nameClass}" style="font-weight:bold;">
-            ${name}${extraEmoji}
-          </span>
+          <strong>${name}${extra}</strong>
         </td>
         <td>
           <span style="
@@ -1989,23 +1991,23 @@ function renderResponsiblePeople(data) {
             padding: 2px 6px;
             border-radius: 6px;
             font-size: 0.85rem;
-          ">
-            ${role}
-          </span>
+          ">${role}</span>
         </td>
       </tr>`;
   });
 
-  // Закрываем таблицу и вставляем в DOM
   html += `
         </tbody>
       </table>
-    </div>`;
+    </div>
+  `;
 
+  // 4) Вставляем перед блоком Shift-Overs
   document
-    .getElementById('shift-overs-section')
-    .insertAdjacentHTML('beforebegin', html);
+    .getElementById("shift-overs-section")
+    .insertAdjacentHTML("beforebegin", html);
 }
+
 
 
 function renderShiftOvers() {
@@ -2648,7 +2650,8 @@ renderBadge(loadNotifications());
           }
 
           renderShiftSummary(data);
-          const responsiblesData = await fetchSheetData(RESPONSIBLES_RANGE);
+          const resp = await fetch(RESPONSIBLES_URL);
+          const responsiblesData = await resp.json();
           renderResponsiblePeople(responsiblesData);
           await fetchBreaksData();
           await fetchStatusChanges();
@@ -3504,7 +3507,7 @@ ctxMenu.addEventListener('click', e => {
 });
 
 });
-     
+
       
       </script>
     </div>
