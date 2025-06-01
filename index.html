@@ -200,13 +200,15 @@ async function fetchStatusChanges() {
         // 2) Загружаем текущие настройки из localStorage:
         const settings = loadNotifSettings();
         // 3) Устанавливаем начальное состояние чекбокса (включено/выключено):
-        brbToggle.checked = !!settings.brbTwoOrMore;
+        brbToggle.checked = !settings.brbTwoOrMore;
         // 4) Повесим обработчик на событие «change» (когда пользователь кликает тумблер):
         brbToggle.addEventListener('change', () => {
-          const curSettings = loadNotifSettings();           // читаем ещё раз (на всякий случай)
-          curSettings.brbTwoOrMore = brbToggle.checked;      // меняем поле в объекте
-          saveNotifSettings(curSettings);                    // сохраняем в localStorage
-          applyFilters();                                    // пересобираем карточки сразу после клика
+          const curSettings = loadNotifSettings();
+          // Когда юзер ставит чекбокс в true → мы в настройках ставим brbTwoOrMore = false (т. е. ОТКЛЮЧАЕМ уведомления).
+          // И наоборот: флаг brbTwoOrMore = !brbToggle.checked.
+          curSettings.brbTwoOrMore = !brbToggle.checked;
+          saveNotifSettings(curSettings);
+          applyFilters();
         });
       });
       // === КОНЕЦ: Инициализация переключателя «2 BRB mode» ===
