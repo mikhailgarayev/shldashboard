@@ -2787,4 +2787,118 @@ body.dark-theme .alert-card.break-mismatch .alert-content li {
 .alert-card:not(.collapsed) .toggle-arrow svg {
   transform: rotate(90deg);
 }
+/* === 1. Базовые стили для brb-toggle (если вы их ещё не вставили) */
+.brb-toggle {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  cursor: pointer;
+}
+
+.brb-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Фон «корпуса» */
+.brb-toggle .slider {
+  position: absolute;
+  inset: 0;
+  background-color: #ccc;
+  border-radius: 34px;
+  transition: background-color 0.3s ease;
+}
+
+/* Круг «ползунок» */
+.brb-toggle .slider::before {
+  content: "";
+  position: absolute;
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Когда включили — фон становится зелёным, кружок уходит вправо */
+.brb-toggle input:checked + .slider {
+  background-color: #4CAF50;
+}
+.brb-toggle input:checked + .slider::before {
+  transform: translateX(26px);
+}
+
+/* === 2. «Зачистка» любых старых иконок/контента из других стилей === */
+
+/* Если где-то в ваших стилях или в библиотеке прописано что-то вроде .toggle-switch .slider::after { content: url('moon.svg'); } — оно будет перекрыто этим */
+.brb-toggle .slider::after,
+.brb-toggle .slider::before {
+  /* Сбрасываем всё, что могло быть задано где-то выше */
+  content: "" !important;
+  background-image: none !important;
+}
+
+/* На всякий случай, чтобы никакие «hover:checked» стили с иконками не проявлялись */
+.brb-toggle input:checked + .slider::after,
+.brb-toggle input:checked + .slider::before {
+  content: "" !important;
+  background-image: none !important;
+}
+
+/* Дополнительно можно сделать чуть ярче фон при hover */
+.brb-toggle:hover .slider {
+  background-color: #bbb;
+}
+/* 1) Убедимся, что обёртка точно центрирует всех детей */
+.filters-wrapper,
+.toggle-container {
+  display: inline-flex;      /* или просто flex, если это блочный элемент */
+  align-items: center;       /* вертикально центрируем всё, что внутри */
+}
+
+/* 2) Помещаем сам лейбл-переключатель в flex-контекст и центрируем «ползунок» */
+.brb-toggle {
+  display: inline-flex;      /* вместо inline-block: flex позволит выровнять содержимое */
+  align-items: center;       /* центрируем слайдер внутри самого <label> */
+  vertical-align: middle;    /* на всякий случай для inline-контекста */
+  margin: 0;                 /* убираем лишние отступы сверху/снизу */
+}
+
+/* 3) Сбрасываем (если где-то прописаны) псевдоэлементы с иконками */
+.brb-toggle .slider::before,
+.brb-toggle .slider::after {
+  content: "" !important;
+  background-image: none !important;
+}
+
+/* 4) (Опционально) Если у вас есть «ломающее» выравнивание margin-ом у .slider, сбросим его */
+.brb-toggle .slider {
+  margin: 0;
+}
+
+/* 5) Устанавливаем высоту самого <label> и слайдера так, чтобы они совпадали по центру с соседними .search-input, .filter-dropdown и .btn */
+.brb-toggle {
+  height: 34px;              /* то же, что и высота .slider у вас */
+  /* width: 60px;  — если нужно, можно задать ширину, как раньше */
+}
+.brb-toggle .slider {
+  height: 100%;
+}
+.brb-toggle .slider::before {
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+}
+
+/* 6) Если нужно чуть «подправить» точную вертикальную позицию (например, переключатель всё ещё на 1–2px ниже),
+     можно слегка сдвинуть его вверх: */
+/* .brb-toggle {
+     margin-top: -1px; 
+} */
 
