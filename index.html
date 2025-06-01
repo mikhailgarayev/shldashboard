@@ -64,7 +64,7 @@
       const TRANSITIONS_API = 'https://script.google.com/macros/s/AKfycbwlp0Gsq8sVkI28nFW1TZvW_immH6PLrXejAeexj-48MhFtV7_uQ8SVjNi13RUfv_uj/exec?json=1';
 
 
-      window.CURRENT_UPDATE_ID = '2025-05-29-v3.4'; // обновление, которое сейчас на сайте
+      window.CURRENT_UPDATE_ID = '2025-06-1-v3.5'; // обновление, которое сейчас на сайте
 
         // --- Default settings ---
       const NOTIF_SETTINGS_KEY = 'notifSettings';
@@ -192,6 +192,24 @@ async function fetchStatusChanges() {
     });
   }
 });
+      
+      // === НАЧАЛО: Инициализация переключателя «2 BRB mode» ===
+      document.addEventListener('DOMContentLoaded', () => {
+        // 1) Получаем элемент переключателя по его id:
+        const brbToggle = document.getElementById('brb-mode-toggle');
+        // 2) Загружаем текущие настройки из localStorage:
+        const settings = loadNotifSettings();
+        // 3) Устанавливаем начальное состояние чекбокса (включено/выключено):
+        brbToggle.checked = !!settings.brbTwoOrMore;
+        // 4) Повесим обработчик на событие «change» (когда пользователь кликает тумблер):
+        brbToggle.addEventListener('change', () => {
+          const curSettings = loadNotifSettings();           // читаем ещё раз (на всякий случай)
+          curSettings.brbTwoOrMore = brbToggle.checked;      // меняем поле в объекте
+          saveNotifSettings(curSettings);                    // сохраняем в localStorage
+          applyFilters();                                    // пересобираем карточки сразу после клика
+        });
+      });
+      // === КОНЕЦ: Инициализация переключателя «2 BRB mode» ===
 
 
       // Обработчик для кнопки Log Out
@@ -422,6 +440,18 @@ async function fetchStatusChanges() {
       <button id="clear-search-button" class="clear-btn">×</button>
       <div id="autocomplete-list" class="autocomplete-items"></div>
     </div>
+      <!-- ============== НАЧАЛО: ПЕРЕКЛЮЧАТЕЛЬ «2 BRB mode» ============== -->
+      <div class="d-flex align-items-center toggle-container" style="margin-left: 1rem;">
+        <div class="item-content" style="display: flex; align-items: center; margin-right: 0.5rem;">
+          <span style="font-size: 1rem;">2 BRB mode</span>
+        </div>
+        <label class="toggle-switch brb-toggle">
+          <input type="checkbox" id="brb-mode-toggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+    <!-- ============== КОНЕЦ: ПЕРЕКЛЮЧАТЕЛЬ «2 BRB mode» ============== -->
 
       <!-- Новый селект для Find Candidate -->
       <select id="target-platform" class="filter-dropdown">
@@ -1659,21 +1689,26 @@ function applyFilters() {
         html += `</ul>`;
 
         // BRB alert
-        if (brbCount >= 2) {
+        // === ОБНОВЛЁННЫЙ ФРАГМЕНТ BRB-ALERT ===
+        if (brbCount >= 2 && !settings.brbTwoOrMore) {
+          // 1) Отрисовываем красный текст «⚠ 2 or more on BRB» в карточке (только если флаг включён)
           html += `
             <p style="text-align:center;color:red;font-size:0.95rem;">
               <span title="2 or more on BRB">&#9888;</span>
               <span style="margin-left:6px;">2 or more on BRB</span>
             </p>`;
-          if (settings.brbTwoOrMore && !brbAlertSent[platform.name]) {
+          // 2) Если уведомление ещё не отправлено для этой платформы — шлём desktop- и in-page уведомления
+          if (!brbAlertSent[platform.name]) {
             const msg = `⚠️ ${brbCount} or more on BRB on ${platform.name}`;
             showDesktopNotification("BRB Alert", msg);
             addInPageNotification(msg);
             brbAlertSent[platform.name] = true;
           }
         } else {
+          // Если brbCount < 2 ИЛИ режим выключен, сбросим флаг — чтобы при следующем ≥2 (и включённом флаге) уведомы шли заново
           brbAlertSent[platform.name] = false;
         }
+        // === КОНЕЦ ОБНОВЛЁННОГО ФРАГМЕНТА BRB-ALERT ===
       }
 
       html += `</div>`;
@@ -2985,9 +3020,7 @@ function findCandidate() {
         ">
           <h2>What’s new?</h2>
           <p>New release <strong>${window.CURRENT_UPDATE_ID}</strong></p>
-          <p>Fixed responsible people section.</p>
-          <p>Fixed Aircall statuses.</p>
-          <p>Other small bug fixes.</p>
+          <p>Added 2 BRB mode in the filters section</p>
           <button id="close-update-modal">OK</button>
         </div>
       </div>
