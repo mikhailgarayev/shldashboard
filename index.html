@@ -1831,29 +1831,32 @@ function saveLastNotHereCount(count) {
 }
 
 function renderShiftSummary(data) {
-  const generalContainer  = document.getElementById("summary-general");
+  const generalContainer = document.getElementById("summary-general");
   const platformContainer = document.getElementById("summary-platforms");
-  generalContainer.innerHTML  = "";
+  generalContainer.innerHTML = "";
   platformContainer.innerHTML = "";
 
   // Загрузка настроек уведомлений (для Not here)
   let settings = { notHere: false };
-  if (typeof loadNotifSettings === 'function') {
-    try { settings = loadNotifSettings(); }
-    catch (e) { console.warn('loadNotifSettings error', e); }
+  if (typeof loadNotifSettings === "function") {
+    try {
+      settings = loadNotifSettings();
+    } catch (e) {
+      console.warn("loadNotifSettings error", e);
+    }
   }
 
   const summaryCards = [
-    { title: "On shift now",  value: data[6][27] || "" },
-    { title: "Should be",     value: data[6][29] || "" },
-    { title: "CS",            value: data[6][31] || "", away: data[8][31] || "" },
+    { title: "On shift now", value: data[6][27] || "" },
+    { title: "Should be", value: data[6][29] || "" },
+    { title: "CS", value: data[6][31] || "", away: data[8][31] || "" },
     { title: "CS/Post Order", value: data[6][33] || "", away: data[8][33] || "" },
-    { title: "PSR",           value: data[6][35] || "", away: data[8][35] || "" },
-    { title: "SiMo",          value: data[6][41] || "", away: data[8][41] || "" },
-    { title: "Aircall",       value: data[6][39] || "", away: data[8][39] || "" },
-    { title: "Venue",         value: data[6][37] || "", away: data[8][37] || "" },
-    { title: "Trainee",       value: data[11][41] || "", away: data[13][41] || "" },
-    { title: "ST",            value: data[6][43] || "", away: data[8][43] || "" },
+    { title: "PSR", value: data[6][35] || "", away: data[8][35] || "" },
+    { title: "SiMo", value: data[6][41] || "", away: data[8][41] || "" },
+    { title: "Aircall", value: data[6][39] || "", away: data[8][39] || "" },
+    { title: "Venue", value: data[6][37] || "", away: data[8][37] || "" },
+    { title: "Trainee", value: data[11][41] || "", away: data[13][41] || "" },
+    { title: "ST", value: data[6][43] || "", away: data[8][43] || "" },
     {
       title: "Not here",
       value: (data[8][29] || "") + (data[10][29] ? "," + data[10][29] : "")
@@ -1865,12 +1868,17 @@ function renderShiftSummary(data) {
   ];
 
   const platformTitles = [
-    "CS","CS/Post Order","PSR",
-    "SiMo","Aircall","Venue",
-    "Trainee","ST"
+    "CS",
+    "CS/Post Order",
+    "PSR",
+    "SiMo",
+    "Aircall",
+    "Venue",
+    "Trainee",
+    "ST"
   ];
 
-  summaryCards.forEach(card => {
+  summaryCards.forEach((card) => {
     if (!card.value) return;
 
     const div = document.createElement("div");
@@ -1879,73 +1887,83 @@ function renderShiftSummary(data) {
     // 1) PLATFORM CARD: progress-bar + цифры
     if (platformTitles.includes(card.title)) {
       const active = parseInt(card.value, 10) || 0;
-      const away   = parseInt(card.away  || "0", 10);
-      const total  = active + away || 1;
-      const pctA   = Math.round(active/total * 100);
-      const pctB   = 100 - pctA;
+      const away = parseInt(card.away || "0", 10);
+      const total = active + away || 1;
+      const pctA = Math.round((active / total) * 100);
+      const pctB = 100 - pctA;
 
       div.innerHTML = `
-  <div class="stats-title">${card.title}</div>
-  <div class="stats-counts">
-    <!-- Левый счётчик: число + иконка -->
-    <div class="stat stat-active">
-      <span class="stat-value">${active}</span>
-      <span class="stat-icon">
-        <img src="https://www.svgrepo.com/show/436843/person-fill.svg" 
-             alt="user" width="20" height="20"/>
-      </span>
-    </div>
-    <!-- Правый счётчик: только число -->
-    <div class="stat stat-away">
-      <span class="stat-value">${away}</span>
-    </div>
-  </div>
-  <div class="stats-progress">
-    <div class="stats-progress-active" style="width:${pctA}%;"></div>
-    <div class="stats-progress-away"  style="width:${pctB}%;"></div>
-  </div>
-`;
-
-
+        <div class="stats-title">${card.title}</div>
+        <div class="stats-counts">
+          <div class="stat stat-active">
+            <span class="stat-value">${active}</span>
+            <span class="stat-icon">
+              <img
+                src="https://www.svgrepo.com/show/436843/person-fill.svg"
+                alt="user"
+                width="20"
+                height="20"
+              />
+            </span>
+          </div>
+          <div class="stat stat-away">
+            <span class="stat-value">${away}</span>
+          </div>
+        </div>
+        <div class="stats-progress">
+          <div class="stats-progress-active" style="width:${pctA}%;"></div>
+          <div class="stats-progress-away" style="width:${pctB}%;"></div>
+        </div>
+      `;
       platformContainer.appendChild(div);
       return;
     }
 
-    // 2) SPECIAL CARDS: Not here / WNATS
+    // 2) Блок для «Not here» и «WNATS»
     if (card.title === "Not here" || card.title === "WNATS") {
-      const parts  = card.value.split(",").map(s => s.trim()).filter(Boolean);
-      const count  = parts.shift();
-      const detail = parts;
+      // Разбираем value: первый элемент — это count, остальные — детали ( "HH:mm – HH:mm – Имя Фамилия" )
+      const parts = card.value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const count = parts.shift(); // e.g. "2"
+      const detail = parts; // e.g. ["09:00 – 18:00 – Qadir Vazirov", "08:00 – 17:00 – Maryam Hamidova"]
 
-      if (card.title === "Not here") {
-        if (count !== "0") {
-          div.classList.add("red-card");
-          const last = loadLastNotHereCount();
-          if (settings.notHere && last === "0") {
-            const msg = `${count} emps are Not Here`;
-            showDesktopNotification('Not Here', msg);
-            addInPageNotification(msg);
-          }
-          saveLastNotHereCount(count);
+      // Сначала отображаем цифру под заголовком
+      let html = `<div class="stats-title">${card.title}</div>`;
+      html += `<div class="stats-value">${count}</div>`;
+
+      // Если есть сотрудники, показываем список в обрамлении
+      if (detail.length > 0) {
+        // Условно назначим цвет: если title === "Not here" — красный, иначе (WNATS) — серый
+        if (card.title === "Not here") {
+          html += `<div style="
+                      margin-top:0.5rem;
+                      border:1px solid #e74c3c;
+                      background: rgba(231, 76, 60, 0.05);
+                      color: #e74c3c;
+                      border-radius: 6px;
+                      padding: 8px;
+                    ">`;
         } else {
-          saveLastNotHereCount("0");
+          // WNATS → серый цвет
+          html += `<div style="
+                      margin-top:0.5rem;
+                      border:1px solid #7f8c8d;
+                      background: rgba(127, 140, 141, 0.05);
+                      color: #7f8c8d;
+                      border-radius: 6px;
+                      padding: 8px;
+                    ">`;
         }
+
+        detail.forEach((line) => {
+          html += `<div>${line}</div>`;
+        });
+        html += `</div>`;
       }
 
-      div.innerHTML = `
-        <div class="stats-title">${card.title}</div>
-        <div class="stats-value d-inline-flex align-items-center gap-1">
-          ${count}
-          <img
-            src="https://www.svgrepo.com/show/474873/info.svg"
-            data-toggle="tooltip"
-            data-html="true"
-            title="${detail.join("\n")}"
-            class="info-icon"
-            style="width:16px; height:16px; cursor:pointer;"
-          />
-        </div>
-      `;
+      div.innerHTML = html;
       generalContainer.appendChild(div);
       return;
     }
@@ -1960,11 +1978,11 @@ function renderShiftSummary(data) {
 
   // 4) WEATHER CARDS (не меняем)
   const weatherCities = [
-    { city: "Baku,AZ",        title: "Baku Weather",       tempId: "temp-baku",  windId: "wind-baku" },
-    { city: "Ganja,AZ",       title: "Ganja Weather",      tempId: "temp-ganja", windId: "wind-ganja" },
-    { city: "Lankaran,AZ",    title: "Lankaran Weather",   tempId: "temp-lank",  windId: "wind-lank" },
-    { city: "Nakhchivan,AZ",  title: "Nakhchivan Weather", tempId: "temp-nakh",  windId: "wind-nakh" },
-    { city: "Mingachevir,AZ", title: "Mingachevir Weather",tempId: "temp-ming",  windId: "wind-ming" }
+    { city: "Baku,AZ", title: "Baku Weather", tempId: "temp-baku", windId: "wind-baku" },
+    { city: "Ganja,AZ", title: "Ganja Weather", tempId: "temp-ganja", windId: "wind-ganja" },
+    { city: "Lankaran,AZ", title: "Lankaran Weather", tempId: "temp-lank", windId: "wind-lank" },
+    { city: "Nakhchivan,AZ", title: "Nakhchivan Weather", tempId: "temp-nakh", windId: "wind-nakh" },
+    { city: "Mingachevir,AZ", title: "Mingachevir Weather", tempId: "temp-ming", windId: "wind-ming" }
   ];
 
   weatherCities.forEach(({ city, title, tempId, windId }) => {
@@ -1980,6 +1998,7 @@ function renderShiftSummary(data) {
     fetchWeatherFor(city, tempId, windId);
   });
 }
+
 
 
 
