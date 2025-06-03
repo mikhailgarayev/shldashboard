@@ -2900,5 +2900,21 @@ body.dark-theme .alert-card.break-mismatch .alert-content li {
      можно слегка сдвинуть его вверх: */
 /* .brb-toggle {
      margin-top: -1px; 
-} */
-
+.stats-card {
+  background-color: var(--card-bg); /* обычно белый или чуть-серый */
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+  text-align: center;
+}
+.stats-title {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.stats-value {
+  font-size: 1.25rem;
+  color: var(--text-color);
+  margin: 4px 0;
+}
