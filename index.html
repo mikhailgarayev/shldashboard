@@ -1937,29 +1937,34 @@ function renderShiftSummary(data) {
       if (detail.length > 0) {
         // Условно назначим цвет: если title === "Not here" — красный, иначе (WNATS) — серый
         if (card.title === "Not here") {
-          html += `<div style="
-                      margin-top:0.5rem;
-                      border:1px solid #e74c3c;
-                      background: rgba(231, 76, 60, 0.05);
-                      color: #e74c3c;
-                      border-radius: 9px;
-                      padding: 8px;
-                      max-height: 72px;
-                      font-size: 14px;  
-                    ">`;
-        } else {
-          // WNATS → серый цвет
-          html += `<div style="
-                      margin-top:0.5rem;
-                      border:1px solid #7f8c8d;
-                      background: rgba(127, 140, 141, 0.05);
-                      color: #7f8c8d;
-                      border-radius: 9px;
-                      padding: 8px;
-                      max-height: 72px;
-                      font-size: 14px;  
-                    ">`;
-        }
+        html += `<div style="
+                    margin-top: 0.5rem;
+                    border: 1px solid #e74c3c;
+                    background: rgba(231, 76, 60, 0.05);
+                    color: #e74c3c;
+                    border-radius: 9px;
+                    padding: 8px;
+                    font-size: 14px;
+                    max-height: 72px;
+                    overflow-y: auto;
+                    white-space: normal;
+                    word-break: break-word;
+                  ">`;
+      } else {
+        html += `<div style="
+                    margin-top: 0.5rem;
+                    border: 1px solid #7f8c8d;
+                    background: rgba(127, 140, 141, 0.05);
+                    color: #7f8c8d;
+                    border-radius: 9px;
+                    padding: 8px;
+                    font-size: 14px;
+                    max-height: 72px;
+                    overflow-y: auto;
+                    white-space: normal;
+                    word-break: break-word;
+                  ">`;
+      }
 
         detail.forEach((line) => {
           html += `<div>${line}</div>`;
