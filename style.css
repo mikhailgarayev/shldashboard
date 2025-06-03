@@ -2228,7 +2228,7 @@ body.dark-theme #modal-copy-email-btn {
   color: #fff;
   padding: 12px 16px;        /* чуть побольше */
   margin-top: 8px;
-  border-radius: 6px;
+  border-radius: 15px;
   font-size: 1rem;           /* чуть крупнее */
   opacity: 0;
   min-width: 200px;
