@@ -1692,7 +1692,7 @@ function applyFilters() {
 
         // BRB alert
         // === ОБНОВЛЁННЫЙ ФРАГМЕНТ BRB-ALERT ===
-        if (brbCount >= 2 && !settings.brbTwoOrMore) {
+        if (brbCount >= 2 && settings.brbTwoOrMore) {
           // 1) Отрисовываем красный текст «⚠ 2 or more on BRB» в карточке (только если флаг включён)
           html += `
             <p style="text-align:center;color:red;font-size:0.95rem;">
