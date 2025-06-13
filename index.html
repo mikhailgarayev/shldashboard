@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
   <head>
@@ -549,6 +550,10 @@ async function fetchStatusChanges() {
       <div style="margin-bottom: 10px;">
         <strong>Role:</strong>
         <span id="modal-emp-role">Support Associate</span>
+      </div>
+      <div style="margin-bottom: 10px;">
+      <strong>Team Lead:</strong>
+      <span id="modal-emp-tl">Unknown</span>
       </div>
       <div style="margin-bottom: 10px;">
       <strong>Start date:</strong>
@@ -1133,7 +1138,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
         
         async function fetchEmployeeList() {
   // теперь A–H: A: Name, B: ID, C: CanReallocate, D: Prime, E: Pref, F: Languages, G: Capacity, H: StartDate
-  const data = await fetchSheetData("emplist!A1:H");
+  const data = await fetchSheetData("emplist!A1:I");
   if (!data || data.length < 2) return;
 
   for (let i = 1; i < data.length; i++) {
@@ -1148,6 +1153,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
     const languages         = row[5]?.trim() || "";
     const capacity          = row[6]?.trim() || "";
     const startDateRaw      = row[7]?.trim() || "";
+    const teamLead     = row[8]?.trim() || "";
 
     employeeData[empName] = {
       id:            empId,
@@ -1156,7 +1162,8 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
       pref:          preferredPlatform,
       languages:     languages,
       capacity:      capacity,
-      startDate:     startDateRaw
+      startDate:     startDateRaw,
+      teamLead:      teamLead
     };
   }
 }
@@ -1275,6 +1282,7 @@ async function openEmployeeModal(empName) {
   document.getElementById("modal-emp-pref").textContent      = info.pref          || "N/A";
   document.getElementById("modal-emp-languages").textContent = info.languages     || "N/A";
   document.getElementById("modal-emp-capacity").textContent  = info.capacity      || "N/A";
+  document.getElementById("modal-emp-tl").textContent = info.teamLead || "—";
   
   const brbRec = brbData.find(r => r.name.toLowerCase() === empName.toLowerCase());
   document.getElementById("modal-emp-brb-left").textContent =
