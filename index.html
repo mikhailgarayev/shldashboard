@@ -241,21 +241,6 @@ async function fetchStatusChanges() {
   <!-- 2) Центральная часть: переключатели + таймер -->
   <div class="d-flex align-items-center flex-wrap header-gap flex-grow-1 justify-content-end">
     <!-- кнопка массовой рассылки — видна только вам -->
-    <button
-    id="send-update-notif"
-    class="btn btn-outline-primary btn-sm rounded-pill ml-2"
-    style="display: none;"
-    >
-    Send update notification
-    </button>
-    <!-- Кнопка “Maintenance Mode” -->
-    <button
-    id="maintenance-btn"
-    class="btn btn-outline-danger btn-sm rounded-pill ml-2"
-    style="display:none;"
-    >
-    Enable maintenance
-    </button>
     <!-- Bell -->
     <div id="notification-bell" style="position:relative; cursor:pointer; margin-right:1rem;">
       <img
@@ -642,6 +627,38 @@ async function fetchStatusChanges() {
         </div>
       </div>
     </div>
+      
+      <div id="notebook-icon">
+  <img id="notebook-icon-img" src="https://www.svgrepo.com/show/495547/note-favorite.svg" alt="Notebook">
+</div>
+
+<div id="notebook-choice">
+  <button data-mode="personal">Personal Notepad</button>
+  <button data-mode="general">General Notepad</button>
+      <button
+    id="send-update-notif"
+    class="btn btn-outline-primary btn-sm rounded-pill ml-2"
+    style="display: none;"
+    >
+    Send update notification
+    </button>
+    <!-- Кнопка “Maintenance Mode” -->
+    <button
+    id="maintenance-btn"
+    class="btn btn-outline-danger btn-sm rounded-pill ml-2"
+    style="display:none;"
+    >
+    Enable maintenance
+    </button>
+</div>
+
+<div id="notebook-panel">
+  <header>
+    <span id="notebook-mode">Notebook</span>
+    <span class="close-btn">&times;</span>
+  </header>
+  <textarea id="notebook-content" placeholder="Write your notes..."></textarea>
+</div>
     <!-- ================================================== -->
       
       
@@ -3098,32 +3115,50 @@ function findCandidate() {
     });
 
     // handle selection
-    choice.querySelectorAll('button').forEach(btn=>{
-      btn.addEventListener('click',async()=>{
-        currentMode = btn.getAttribute('data-mode');
-        modeLabel.textContent = currentMode==='personal'? 'Personal Notebook':'General Notebook';
-        choice.classList.remove('show');
-        choice.style.removeProperty('display');
-        // show panel
-        panel.style.display='flex';
-        const rect = icon.getBoundingClientRect();
-        let left = rect.left;
-        let top = rect.top - panel.offsetHeight -8;
-        const pos = clampPosition(left,top);
-        panel.style.left=pos.left+'px';
-        panel.style.top=pos.top+'px';
-        // attach to firebase
-        const user = firebase.auth().currentUser;
-        if(!user) return;
-        if(currentMode==='personal') {
-          noteRef = firebase.database().ref('users/'+user.uid+'/note');
-        } else {
-          noteRef = firebase.database().ref('generalNote');
-        }
-        // load
-        noteRef.once('value',snap=>{ textarea.value = snap.val()||''; });
+// Навешиваем обработчик только на кнопки с атрибутом data-mode
+choice
+  .querySelectorAll('button[data-mode]')
+  .forEach(btn => {
+    btn.addEventListener('click', async () => {
+      // читаем режим из data-mode
+      currentMode = btn.getAttribute('data-mode');
+
+      // ставим заголовок в шапке панели
+      modeLabel.textContent = currentMode === 'personal'
+        ? 'Personal Notebook'
+        : 'General Notebook';
+
+      // прячем меню выбора
+      choice.classList.remove('show');
+      choice.style.removeProperty('display');
+
+      // показываем сам блокнот
+      panel.style.display = 'flex';
+      const rect = icon.getBoundingClientRect();
+      let left = rect.left;
+      let top  = rect.top - panel.offsetHeight - 8;
+      const pos = clampPosition(left, top);
+      panel.style.left = pos.left + 'px';
+      panel.style.top  = pos.top  + 'px';
+
+      // подключаемся к Firebase
+      const user = firebase.auth().currentUser;
+      if (!user) return;
+
+      // выбираем ветку в БД
+      if (currentMode === 'personal') {
+        noteRef = firebase.database().ref('users/' + user.uid + '/note');
+      } else {
+        noteRef = firebase.database().ref('generalNote');
+      }
+
+      // и загружаем в textarea
+      noteRef.once('value', snap => {
+        textarea.value = snap.val() || '';
       });
     });
+  });
+
 
     // close panel
     closeBtn.addEventListener('click',()=> panel.style.display='none');
@@ -3641,24 +3676,6 @@ ctxMenu.addEventListener('click', e => {
     </div>
   </div>
 </div>
-<!-- Add inside <body> -->
-<div id="notebook-icon">
-  <img id="notebook-icon-img" src="https://www.svgrepo.com/show/495547/note-favorite.svg" alt="Notebook">
-</div>
-
-<div id="notebook-choice">
-  <button data-mode="personal">Personal Notepad</button>
-  <button data-mode="general">General Notepad</button>
-</div>
-
-<div id="notebook-panel">
-  <header>
-    <span id="notebook-mode">Notebook</span>
-    <span class="close-btn">&times;</span>
-  </header>
-  <textarea id="notebook-content" placeholder="Write your notes..."></textarea>
-</div>
-<!-- Полноэкранный оверлей техработ -->
 <!-- Полноэкранный оверлей техработ -->
 <div id="maintenance-overlay" class="maintenance-overlay">
   <div class="maintenance-content">
