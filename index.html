@@ -389,10 +389,9 @@ async function fetchStatusChanges() {
       >
         <option value="all" selected>All platforms</option>
         <option value="CS">CS</option>
-        <option value="CS/Post order">CS/Post order</option>
         <option value="PSR">PSR</option>
         <option value="SiMo">SiMo</option>
-        <option value="Aircall">Aircall</option>
+        <option value="CFC">CFC</option>
         <option value="Venue">Venue</option>
         <option value="Trainee">Trainee</option>
         <option value="ST">ST</option>
@@ -1052,16 +1051,6 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
             rowAwayNamesEnd: 47
           },
           {
-            name: "CS/Post order",
-            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=664324a0510ac011feaa798c",
-            colIndexNames: 5,
-            colIndexData: 6,
-            rowActiveNamesStart: 4,
-            rowActiveNamesEnd: 27,
-            rowAwayNamesStart: 28,
-            rowAwayNamesEnd: 47
-          },
-          {
             name: "PSR",
             url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6567a44af7d470550b11dc68",
             colIndexNames: 7,
@@ -1082,8 +1071,8 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
             rowAwayNamesEnd: 47
           },
           {
-            name: "Aircall",
-            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=671a26a2a5b9ae4a2ca603fb",
+            name: "CFC",
+            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=66fd51e7f68d48c37484824f",
             colIndexNames: 11,
             colIndexData: 12,
             rowActiveNamesStart: 4,
@@ -1877,10 +1866,9 @@ function renderShiftSummary(data) {
     { title: "On shift now", value: data[6][27] || "" },
     { title: "Should be", value: data[6][29] || "" },
     { title: "CS", value: data[6][31] || "", away: data[8][31] || "" },
-    { title: "CS/Post Order", value: data[6][33] || "", away: data[8][33] || "" },
     { title: "PSR", value: data[6][35] || "", away: data[8][35] || "" },
     { title: "SiMo", value: data[6][41] || "", away: data[8][41] || "" },
-    { title: "Aircall", value: data[6][39] || "", away: data[8][39] || "" },
+    { title: "CFC", value: data[6][39] || "", away: data[8][39] || "" },
     { title: "Venue", value: data[6][37] || "", away: data[8][37] || "" },
     { title: "Trainee", value: data[11][41] || "", away: data[13][41] || "" },
     { title: "ST", value: data[6][43] || "", away: data[8][43] || "" },
@@ -1896,10 +1884,9 @@ function renderShiftSummary(data) {
 
   const platformTitles = [
     "CS",
-    "CS/Post Order",
     "PSR",
     "SiMo",
-    "Aircall",
+    "CFC",
     "Venue",
     "Trainee",
     "ST"
@@ -2786,10 +2773,9 @@ function checkEmptyPlatforms(data) {
   // summaryCards в renderShiftSummary — в data[6] строчка «On shift now» в 6-м ряду, но нам проще руками перебрать
   const platformCols = {
     "CS": 31,
-    "CS/Post Order": 33,
     "PSR": 35,
     "SiMo": 41,
-    "Aircall": 39,
+    "CFC": 39,
     "Venue": 37,
     "Trainee": 41,   // тут в вашем summaryCards они брали data[11][41]
     "ST": 43
