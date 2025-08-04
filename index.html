@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
   <head>
@@ -98,7 +97,7 @@
       function saveNotifSettings(settings) {
         localStorage.setItem(NOTIF_SETTINGS_KEY, JSON.stringify(settings));
       }
-      
+
 
 async function fetchStatusChanges() {
   try {
@@ -195,7 +194,7 @@ async function fetchStatusChanges() {
     });
   }
 });
-      
+
       // === НАЧАЛО: Инициализация переключателя «2 BRB mode» ===
       document.addEventListener('DOMContentLoaded', () => {
         // 1) Получаем элемент переключателя по его id:
@@ -376,7 +375,7 @@ async function fetchStatusChanges() {
         <option value="active">Active</option>
         <option value="away">Away</option>
       </select>
-    
+
       <!-- Платформы (bootstrap-select) -->
       <select
         id="platform-dropdown"
@@ -389,34 +388,35 @@ async function fetchStatusChanges() {
       >
         <option value="all" selected>All platforms</option>
         <option value="CS">CS</option>
+        <option value="CS/Post order">CS/Post order</option>
         <option value="PSR">PSR</option>
         <option value="SiMo">SiMo</option>
-        <option value="CFC">CFC</option>
+        <option value="Aircall">Aircall</option>
         <option value="Venue">Venue</option>
         <option value="Trainee">Trainee</option>
         <option value="ST">ST</option>
       </select>
-    
+
       <!-- Reallocate фильтр -->
       <select id="realloc-filter" class="filter-dropdown">
         <option value="all">Reallocate: All</option>
         <option value="Yes">Yes</option>
         <option value="No">No</option>
       </select>
-    
+
       <!-- Language фильтр -->
       <select id="lang-filter" class="filter-dropdown">
         <option value="all">Language: All</option>
         <option value="two">Bilingual</option>
         <option value="three">Trilingual</option>
       </select>
-    
+
       <!-- Breaks фильтр -->
       <select id="break-filter" class="filter-dropdown">
         <option value="upcoming">Breaks: Upcoming</option>
         <option value="all">Breaks: All</option>
       </select>
-    
+
       <!-- Поиск по имени -->
       <div class="autocomplete flex-grow-1" style="position: relative;">
       <input
@@ -594,7 +594,7 @@ async function fetchStatusChanges() {
   </div>
 
 
-  
+
     <!-- Секция с двумя карточками: Shift-Overs и Breaks -->
     <div
   id="alerts-section"
@@ -627,7 +627,7 @@ async function fetchStatusChanges() {
         </div>
       </div>
     </div>
-      
+
       <div id="notebook-icon">
   <img id="notebook-icon-img" src="https://www.svgrepo.com/show/495547/note-favorite.svg" alt="Notebook">
 </div>
@@ -660,8 +660,8 @@ async function fetchStatusChanges() {
   <textarea id="notebook-content" placeholder="Write your notes..."></textarea>
 </div>
     <!-- ================================================== -->
-      
-      
+
+
       <!-- Подключаем jQuery, Bootstrap JS и Bootstrap-Select JS -->
       <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -707,7 +707,7 @@ async function fetchStatusChanges() {
     };
         // возвращает строку вида "06:00-15:00" для имени
         // вместо "getEmployeeShift" — возвращаем название смены, а не время
-        
+
         function processEmployeeSelection(name) {
           if (!name) return;
           const items = Array.from(document.querySelectorAll('.employee-item'));
@@ -723,7 +723,7 @@ async function fetchStatusChanges() {
             openEmployeeModal(name);
           }
         }
-        
+
       function initAutocomplete() {
       const inp      = document.getElementById('employee-search');
       const list     = document.getElementById('autocomplete-list');
@@ -999,7 +999,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
 }
 
 
-        
+
         // ===============================
 
         // Информация по платформам
@@ -1051,6 +1051,16 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
             rowAwayNamesEnd: 47
           },
           {
+            name: "CS/Post order",
+            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=664324a0510ac011feaa798c",
+            colIndexNames: 5,
+            colIndexData: 6,
+            rowActiveNamesStart: 4,
+            rowActiveNamesEnd: 27,
+            rowAwayNamesStart: 28,
+            rowAwayNamesEnd: 47
+          },
+          {
             name: "PSR",
             url: "https://ops.wolt.com/support/converse/conversations?conversationListId=6567a44af7d470550b11dc68",
             colIndexNames: 7,
@@ -1071,8 +1081,8 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
             rowAwayNamesEnd: 47
           },
           {
-            name: "CFC",
-            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=66fd51e7f68d48c37484824f",
+            name: "Aircall",
+            url: "https://ops.wolt.com/support/converse/conversations?conversationListId=671a26a2a5b9ae4a2ca603fb",
             colIndexNames: 11,
             colIndexData: 12,
             rowActiveNamesStart: 4,
@@ -1143,7 +1153,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
         }
       }
 
-        
+
         async function fetchEmployeeList() {
   // теперь A–H: A: Name, B: ID, C: CanReallocate, D: Prime, E: Pref, F: Languages, G: Capacity, H: StartDate
   const data = await fetchSheetData("emplist!A1:I");
@@ -1175,7 +1185,7 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
     };
   }
 }
-      
+
         async function fetchBRBData() {
           const rows = await fetchSheetData(BRB_RANGE);
           if (!rows) return;
@@ -1202,8 +1212,8 @@ async function fetchWeatherFor(city, tempElemId, windElemId) {
             encodeURIComponent(empId)
           );
         }
-        
-        
+
+
         // Вставьте где-нибудь рядом с другими утилитами
 function normalize(str) {
   return String(str || "")
@@ -1291,7 +1301,7 @@ async function openEmployeeModal(empName) {
   document.getElementById("modal-emp-languages").textContent = info.languages     || "N/A";
   document.getElementById("modal-emp-capacity").textContent  = info.capacity      || "N/A";
   document.getElementById("modal-emp-tl").textContent = info.teamLead || "—";
-  
+
   const brbRec = brbData.find(r => r.name.toLowerCase() === empName.toLowerCase());
   document.getElementById("modal-emp-brb-left").textContent =
   brbRec ? brbRec.left : "—";
@@ -1483,22 +1493,22 @@ brbBtn.addEventListener("click", async () => {
                 email: email
               })
             });
-        
+
             if (!res.ok) {
               logDebug(`Ошибка при проксированном запросе Aircall: ${res.statusText}`);
               return null;
             }
-        
+
             const data = await res.json();
-        
+
             if (!data?.user?.id) {
               logDebug("Aircall API вернул пустой результат");
               return null;
             }
-        
+
             logDebug(`Получен Aircall ID: ${data.user.id}`);
             return data.user.id;
-        
+
           } catch (err) {
             logDebug("Ошибка getAircallUserId через Worker: " + err.message);
             return null;
@@ -1510,7 +1520,7 @@ brbBtn.addEventListener("click", async () => {
             logDebug("getAircallAvailability: userId не передан");
             return "No ID";
           }
-        
+
           try {
             const res = await fetch("https://aircall-proxy.mikhail-garayev.workers.dev", {
               method: "POST",
@@ -1521,20 +1531,20 @@ brbBtn.addEventListener("click", async () => {
                 action: "availability"
               })
             });
-        
+
             if (!res.ok) {
               logDebug("Ошибка при получении статуса через Worker: " + res.statusText);
               return "Error";
             }
-        
+
             const data = await res.json();
-        
+
             const status =
               data?.user_availability?.availability_status || data?.availability;
-        
+
             logDebug(`Статус через Worker: ${status}`);
             return status || "Unknown";
-        
+
           } catch (err) {
             logDebug("Исключение в getAircallAvailability через Worker: " + err.message);
             return "Error";
@@ -1866,9 +1876,10 @@ function renderShiftSummary(data) {
     { title: "On shift now", value: data[6][27] || "" },
     { title: "Should be", value: data[6][29] || "" },
     { title: "CS", value: data[6][31] || "", away: data[8][31] || "" },
+    { title: "CS/Post Order", value: data[6][33] || "", away: data[8][33] || "" },
     { title: "PSR", value: data[6][35] || "", away: data[8][35] || "" },
     { title: "SiMo", value: data[6][41] || "", away: data[8][41] || "" },
-    { title: "CFC", value: data[6][39] || "", away: data[8][39] || "" },
+    { title: "Aircall", value: data[6][39] || "", away: data[8][39] || "" },
     { title: "Venue", value: data[6][37] || "", away: data[8][37] || "" },
     { title: "Trainee", value: data[11][41] || "", away: data[13][41] || "" },
     { title: "ST", value: data[6][43] || "", away: data[8][43] || "" },
@@ -1884,9 +1895,10 @@ function renderShiftSummary(data) {
 
   const platformTitles = [
     "CS",
+    "CS/Post Order",
     "PSR",
     "SiMo",
-    "CFC",
+    "Aircall",
     "Venue",
     "Trainee",
     "ST"
@@ -2193,7 +2205,7 @@ function renderShiftOvers() {
 
 
 
-        
+
 async function fetchBreaksData() {
   const raw = await fetchSheetData(BREAKS_RANGE);
   const container = document.getElementById("breaks-app");
@@ -2425,7 +2437,7 @@ async function fetchBreaksData() {
     }
   });
 }
-        
+
         // кладём в глобальную window.shiftsQuinyxData
         async function fetchShiftsQuinyxData() {
           const raw = await fetchSheetData("shiftsquinyx!A2:C");
@@ -2684,7 +2696,7 @@ document.getElementById('notification-bell').addEventListener('click', () => {
 
 // инициализация бейджа при загрузке
 renderBadge(loadNotifications());
-        
+
 
         async function fetchData() {
           const data = await fetchSheetData(RANGE);
@@ -2745,23 +2757,23 @@ renderBadge(loadNotifications());
           checkEmptyPlatforms(data);
           await getUpcomingShiftOvers();
           await fetchUpcomingShiftsData();
-          
+
           // подключаем кнопку
           document.getElementById('find-candidate')
           .addEventListener('click', findCandidate);
-          
+
           document.getElementById("refresh-icon").classList.remove('rotating');
           if (autoRefreshEnabled) resetAutoRefresh();
         }
-        
+
 
         function getPrimaryPlatform(empName) {
           if (!window.shiftsQuinyxData) return null;
-        
+
           const found = window.shiftsQuinyxData.find(row =>
             row.name.toLowerCase() === empName.toLowerCase()
           );
-        
+
           return found?.platform || null;
         }
 
@@ -2773,9 +2785,10 @@ function checkEmptyPlatforms(data) {
   // summaryCards в renderShiftSummary — в data[6] строчка «On shift now» в 6-м ряду, но нам проще руками перебрать
   const platformCols = {
     "CS": 31,
+    "CS/Post Order": 33,
     "PSR": 35,
     "SiMo": 41,
-    "CFC": 39,
+    "Aircall": 39,
     "Venue": 37,
     "Trainee": 41,   // тут в вашем summaryCards они брали data[11][41]
     "ST": 43
@@ -2803,7 +2816,7 @@ function checkEmptyPlatforms(data) {
 
 // …внутри fetchData(), сразу после renderShiftSummary(data):
 
-        
+
         function generateWoltEmail(name) {
           if (!name) return "";
           const parts = name.split(" ");
@@ -2860,7 +2873,7 @@ function checkEmptyPlatforms(data) {
 
 
 
-        
+
       function toggleTheme(e) {
   const isDark = e.target.checked;
   document.body.classList.toggle("dark-theme", isDark);
@@ -3202,7 +3215,7 @@ choice
 });
 
   });
-        
+
   /**
  * Загрузить все смены и отфильтровать те, 
  * у кого **начало** смены в течение следующего часа.
@@ -3454,7 +3467,7 @@ $('#notif-settings-form input[type=checkbox]').on('change', () => {
       currentLangFilter = e.target.value;
       applyFilters();
     });
-  
+
   // Фильтр перерывов
   document
     .getElementById("break-filter")
@@ -3505,7 +3518,7 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
   const modalClose = document.getElementById("modal-close");
   overlay.addEventListener("click", closeEmployeeModal);
   modalClose.addEventListener("click", closeEmployeeModal);
-  
+
     // 1) Один раз заполняем dropdown платформ
   const sel = document.getElementById('target-platform');
   // очищаем (оставляем только заглушку)
@@ -3524,7 +3537,7 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
     console.log("Push permission:", p);
   });
 }
-  
+
   // 1) Поиск-Enter: пульсируем или открываем модалку
 // Обрабатываем Enter в поле поиска
     document
@@ -3545,7 +3558,7 @@ document.getElementById('notif-settings-btn').addEventListener('click', () => {
         }
       });
 
-  
+
   fetchData();
   // 1) вспомогательная функция для тоаста
 function showToast(msg) {
@@ -3609,7 +3622,7 @@ ctxMenu.addEventListener('click', e => {
 
 });
 
-      
+
       </script>
     </div>
     <!-- Notification Settings Modal -->
@@ -3654,7 +3667,7 @@ ctxMenu.addEventListener('click', e => {
               Notifications for 2 or more BRB
             </label>
           </div>
-                
+
         </form>
       </div>
       <div class="modal-footer">
