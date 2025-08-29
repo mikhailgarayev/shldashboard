@@ -1,131 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in with Google</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login • Support Monitoring Dashboard</title>
   <link rel="icon" type="image/png" href="favicon.png" />
-  <!-- Подключаем Firebase через CDN (compat-версия для простоты) -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <!-- Подключаем Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- Подключаем Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Material Icons & Inter -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <style>
-    :root {
-      --primary-color: rgba(255, 255, 255, 0.6);
-      --accent-gradient: linear-gradient(90deg, rgb(0, 191, 255) 0%, rgb(0, 191, 255) 33%, rgb(0, 191, 255) 66%, rgb(0, 191, 255) 100%);
-      --error-color: #EA4335;
-      --text-color: #FFFFFF;
-      --text-secondary: rgba(255, 255, 255, 0.7);
-      --border-radius: 16px;
-      --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      --transition: all 0.3s ease;
+    :root{
+      /* Брендовые цвета */
+      --wolt-blue: #00c2ff;
+      --wolt-blue-600:#00a9e0;
+      --wolt-blue-700:#0097c8;
+
+      /* Текст/фон */
+      --text: #0b1b2b;
+      --text-on-dark: #ffffff;
+      --muted: rgba(255,255,255,0.8);
+
+      /* Стекло и границы */
+      --glass-bg: rgba(255,255,255,0.55);
+      --glass-border: rgba(255,255,255,0.35);
+      --shadow: 0 12px 40px rgba(2, 24, 43, 0.25);
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --trans: all .25s ease;
+
+      /* Кнопки/состояния */
+      --ring: 0 0 0 4px rgba(0, 194, 255, .25);
+      --error: #ea4335;
+      --error-bg: rgba(234,67,53,.12);
+      --ok: #10b981;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: url('https://d21buns5ku92am.cloudfront.net/69274/images/392252-1e3c8484-4949-4221-aad8-8264a694f2e9_pattern_wolt_2020-9e5b35-original-1622463715.jpeg') no-repeat center center/cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      color: var(--text-color);
-      line-height: 1.6;
+
+    * { box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol", sans-serif;
+      color: var(--text-on-dark);
+      background:
+        linear-gradient(180deg, rgba(0, 24, 43, 0.65), rgba(0, 24, 43, 0.85)),
+        url("https://d21buns5ku92am.cloudfront.net/69274/images/392252-1e3c8484-4949-4221-aad8-8264a694f2e9_pattern_wolt_2020-9e5b35-original-1622463715.jpeg") center/cover no-repeat fixed;
+      display:grid;
+      place-items:center;
+      padding: 24px;
     }
-    .login-container {
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: var(--border-radius);
-      box-shadow: var(--box-shadow);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 40px;
-      width: 100%;
-      max-width: 420px;
-      text-align: center;
-      position: relative;
+
+    /* Декоративные мягкие блюры */
+    .bg-bubbles::before,
+    .bg-bubbles::after{
+      content:"";
+      position:fixed;
+      z-index:-1;
+      filter: blur(60px);
+      opacity:.45;
+      border-radius:50%;
+      animation: float 16s ease-in-out infinite;
+    }
+    .bg-bubbles::before{
+      width:420px;height:420px;
+      left:-120px;top:-80px;
+      background: radial-gradient(closest-side, rgba(0,194,255,.6), transparent);
+    }
+    .bg-bubbles::after{
+      width:520px;height:520px;
+      right:-160px;bottom:-140px;
+      background: radial-gradient(closest-side, rgba(0,168,224,.5), transparent);
+      animation-duration: 20s;
+      animation-delay: -4s;
+    }
+    @keyframes float{
+      0%,100%{ transform: translateY(0) }
+      50%{ transform: translateY(-18px) }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .bg-bubbles::before,.bg-bubbles::after{ animation:none }
+    }
+
+    .card{
+      position:relative;
+      width:min(460px, 92vw);
+      border-radius: var(--radius-xl);
+      padding: 36px 28px 28px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      color:#0b1b2b;
       overflow: hidden;
     }
-    .login-container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 6px;
-      background: linear-gradient(90deg, #27DDF5 0%, #4DDDF0 33%, #4DDDF0 66%, #7FE3F0 100%);
+
+.card::before{
+  content:"";
+  position:absolute;
+  top:-1.5px;                  /* растягиваем за пределы на толщину бордера */
+  left:-1px;
+  right:-1px;
+  height:7px;                /* +1px, чтобы перекрыть бордер */
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  background: linear-gradient(90deg, var(--wolt-blue), #59e0ff 33%, var(--wolt-blue) 66%, #a9eeff 100%);
+  background-size: 200% 100%;
+  animation: shimmer 7s linear infinite;
+}
+    @keyframes shimmer{ to { background-position: 200% 0 } }
+    @media (prefers-reduced-motion: reduce){
+      .card::before{ animation: none }
     }
-    .logo { margin-bottom: 24px; display: flex; justify-content: center; }
-    .logo svg { width: 48px; height: 48px; fill: #FFFFFF; }
-    h1 { margin-bottom: 24px; font-size: 1.75rem; font-weight: 600; }
-    .subtitle { color: var(--text-secondary); margin-bottom: 32px; font-size: 1rem; font-weight: 400; }
-    .google-btn {
-      width: 100%;
-      padding: 12px 24px;
-      margin: 10px 0;
-      background: rgba(255, 255, 255, 0.25);
-      color: var(--text-color);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      border-radius: var(--border-radius);
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: var(--transition);
+
+    /* Лого */
+    .logo{
+      display:flex; justify-content:center; margin-bottom: 18px;
     }
-    .google-btn:hover {
-      background: rgba(255, 255, 255, 0.35);
+    .logo img{
+      width:auto; height:42px; display:block;
+      filter: drop-shadow(0 2px 10px rgba(0, 194, 255, .35));
     }
-    .google-btn:active {
-      background: rgba(255, 255, 255, 0.45);
+
+    h1{
+      margin: 6px 0 6px;
+      font-size: clamp(20px, 3.2vw, 24px);
+      font-weight: 700;
+      letter-spacing:.2px;
+      text-align:center;
+      color:#0b1b2b;
     }
-    .google-icon { width: 20px; height: 20px; margin-right: 12px; filter: invert(1); }
-    .error-message {
-      color: var(--error-color);
-      font-size: 0.9rem;
-      margin-top: 16px;
-      padding: 12px;
-      background-color: rgba(234, 67, 53, 0.1);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+    .subtitle{
+      text-align:center;
+      color: rgba(11,27,43,.72);
+      margin: 6px 0 22px;
+      font-size: 14.5px;
     }
-    .error-message i { font-size: 1.1rem; }
-    .footer { margin-top: 32px; color: var(--text-secondary); font-size: 0.8rem; }
-    @media (max-width: 480px) {
-      .login-container { padding: 32px 24px; margin: 0 16px; }
-      h1 { font-size: 1.5rem; }
+
+    /* Кнопка Google */
+    .btn{
+      width:100%;
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
+      font-weight: 600;
+      font-size: 15px;
+      border: 1px solid rgba(11,27,43,.08);
+      background:#ffffff;
+      color:#0b1b2b;
+      transition: var(--trans);
+      cursor:pointer;
+      position:relative;
+      box-shadow: 0 2px 0 rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.08);
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 2px 0 rgba(0,0,0,.06), 0 14px 32px rgba(0,0,0,.12) }
+    .btn:active{ transform: translateY(0); box-shadow: 0 2px 0 rgba(0,0,0,.06), 0 8px 20px rgba(0,0,0,.10) }
+    .btn:focus-visible{ outline:none; box-shadow: var(--ring) }
+
+    .btn .g{
+      width:20px; height:20px; display:block;
+    }
+
+    /* Состояние загрузки */
+    .btn.loading{
+      pointer-events:none; opacity:.9;
+    }
+    .spinner{
+      width:18px; height:18px; border-radius:50%;
+      border:2px solid rgba(11,27,43,.18);
+      border-top-color: var(--wolt-blue);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin{ to { transform: rotate(360deg) } }
+    @media (prefers-reduced-motion: reduce){
+      .spinner{ animation: none; border-top-color: var(--wolt-blue-600) }
+    }
+
+    /* Разделитель */
+    .sep{
+      display:flex; align-items:center; gap:12px; margin: 18px 0;
+      color: rgba(11,27,43,.45); font-size: 12.5px; letter-spacing:.3px;
+    }
+    .sep::before,.sep::after{
+      content:""; flex:1; height:1px; background: linear-gradient(to right, rgba(11,27,43,.1), rgba(11,27,43,.04));
+    }
+
+    /* Ошибки */
+    .error{
+      display:none; align-items:center; gap:10px;
+      margin-top:14px; padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: var(--error-bg);
+      color: var(--error);
+      border: 1px solid rgba(234,67,53,.22);
+      font-size: 14px;
+    }
+    .error i{ font-size: 18px }
+
+    /* Низ карточки */
+    .meta{
+      margin-top: 22px;
+      display:flex; align-items:center; justify-content:space-between;
+      font-size: 12.5px; color: rgba(11,27,43,.55);
+    }
+    .links{
+      display:flex; gap:14px;
+    }
+    .links a{
+      color: var(--wolt-blue-700); text-decoration:none; transition: var(--trans);
+    }
+    .links a:hover{ color: var(--wolt-blue) }
+
+    /* Мелочи адаптива */
+    @media (max-width: 420px){
+      .card{ padding: 28px 18px 20px }
+      .meta{ flex-direction: column; gap:6px }
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
-  <div class="logo">
-    <img src="https://pplwise.com/wp-content/uploads/wolt-logo-white.png" 
-         alt="Wolt Logo" 
-         style="max-width: 120px; height: auto;">
-  </div>
-    <h1>Login to Support Monitoring Dashboard</h1>
+  <div class="bg-bubbles"></div>
+
+  <main class="card" role="main" aria-labelledby="title">
+    <div class="logo" aria-hidden="true">
+      <!-- Белый логотип Wolt -->
+      <img src="https://pplwise.com/wp-content/uploads/wolt-logo-white.png" alt="Wolt" />
+    </div>
+
+    <h1 id="title">Login to Support Monitoring Dashboard</h1>
     <p class="subtitle">Sign in with your company account to continue</p>
-    <button id="google-signin-btn" class="google-btn">
-      <img src="https://www.svgrepo.com/show/380993/google-logo-search-new.svg" alt="Google logo" class="google-icon">
-      Sign in with Google
+
+    <button id="google-signin-btn" class="btn" aria-label="Sign in with Google">
+      <img class="g" src="https://www.svgrepo.com/show/380993/google-logo-search-new.svg" alt="" />
+      <span class="btn-text">Sign in with Google</span>
     </button>
-    <div class="error-message" id="login-error" style="display: none;">
-      <i class="material-icons">error_outline</i>
+
+    <div class="sep" aria-hidden="true">secure sign-in</div>
+
+    <div id="login-error" class="error" role="alert" aria-live="polite">
+      <i class="material-icons" aria-hidden="true">error_outline</i>
       <span id="error-text"></span>
     </div>
-    <div class="footer">
-      © 2025 Mikhail Garayev. All rights reserved.
+
+    <div class="meta">
+      <span>© 2025 Mikhail Garayev</span>
+      <nav class="links" aria-label="Auxiliary">
+        <a href="#" tabindex="0">Help</a>
+        <a href="#" tabindex="0">Privacy</a>
+      </nav>
     </div>
-  </div>
+  </main>
+
   <script>
+    // === Firebase init ===
     const firebaseConfig = {
       apiKey: "AIzaSyAHyxC12UaO6QU_nCiWFnegul1Vix5skm8",
       authDomain: "shldashboard.firebaseapp.com",
@@ -136,62 +267,73 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-      const allowedEmails = [
-        "mikhail.garayev@wolt.com",
-        "elshan.tahmazov@wolt.com",
-        "inara.mammadzada@wolt.com",
-        "mayya.mirzayeva@wolt.com",
-        "mikayil.alizada@wolt.com",
-        "pasha.chiragov@wolt.com",
-        "rahim.mammadov@wolt.com",
-        "toghrul.mirzali@wolt.com",
-        "amaliya.rizvanova@wolt.com",
-        "anar.mikayilov@wolt.com",
-        "arif.guliyev@wolt.com",
-        "ratemikhail@gmail.com",
-        "farid.hajiyev@wolt.com",
-        "naziya.orujova@wolt.com",
-        "murad.ismayilov@wolt.com",
-        "sabina.amirova@wolt.com",
-        "terlan.mammedov@wolt.com",
-        "rafig.huseynov@wolt.com",
-        "sama.akbarzadegan@wolt.com",
-        "mursal.askarov@wolt.com",
-        "saleh.salehli@wolt.com",
-        "pavlos.vasilakis@wolt.com"
-      ];
-    const googleBtn = document.getElementById("google-signin-btn");
-    const errorDiv = document.getElementById("login-error");
+
+    // === Allowlist ===
+    const allowedEmails = [
+      "mikhail.garayev@wolt.com",
+      "inara.mammadzada@wolt.com",
+      "mayya.mirzayeva@wolt.com",
+      "rahim.mammadov@wolt.com",
+      "toghrul.mirzali@wolt.com",
+      "amaliya.rizvanova@wolt.com",
+      "arif.guliyev@wolt.com",
+      "ratemikhail@gmail.com",
+      "farid.hajiyev@wolt.com",
+      "naziya.orujova@wolt.com",
+      "murad.ismayilov@wolt.com",
+      "sabina.amirova@wolt.com",
+      "rafig.huseynov@wolt.com",
+      "mursal.askarov@wolt.com",
+      "saleh.salehli@wolt.com",
+      "pavlos.vasilakis@wolt.com"
+    ];
+
+    // === UI refs ===
+    const btn = document.getElementById("google-signin-btn");
+    const errorBox = document.getElementById("login-error");
     const errorText = document.getElementById("error-text");
-    googleBtn.addEventListener("click", () => {
-      errorDiv.style.display = "none";
-      googleBtn.disabled = true;
-      googleBtn.innerHTML = `<span class=\"material-icons\" style=\"margin-right: 8px;\">hourglass_empty</span> Signing in...`;
+
+    function setLoading(state){
+      if(state){
+        btn.classList.add("loading");
+        btn.innerHTML = '<span class="spinner" aria-hidden="true"></span><span>Signing in…</span>';
+      }else{
+        btn.classList.remove("loading");
+        btn.innerHTML = '<img class="g" src="https://www.svgrepo.com/show/380993/google-logo-search-new.svg" alt="" /><span class="btn-text">Sign in with Google</span>';
+      }
+    }
+
+    function showError(msg){
+      errorText.textContent = msg;
+      errorBox.style.display = "flex";
+    }
+
+    btn.addEventListener("click", () => {
+      errorBox.style.display = "none";
+      setLoading(true);
+
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithPopup(provider)
         .then((result) => {
           const user = result.user;
-          if (allowedEmails.includes(user.email)) {
+          if(allowedEmails.includes(user.email)){
             window.location.href = "index.html";
-          } else {
-            errorText.textContent = "Access denied. Your account is not authorized.";
-            errorDiv.style.display = "flex";
+          }else{
+            showError("Access denied. Your account is not authorized.");
             auth.signOut();
           }
         })
-        .catch((error) => {
-          errorText.textContent = error.message;
-          errorDiv.style.display = "flex";
+        .catch((err) => {
+          showError(err.message || "Something went wrong. Try again.");
         })
-        .finally(() => {
-          googleBtn.disabled = false;
-          googleBtn.innerHTML = `<img src=\"https://www.svgrepo.com/show/380993/google-logo-search-new.svg\" alt=\"Google logo\" class=\"google-icon\"> Sign in with Google`;
-        });
+        .finally(() => setLoading(false));
     });
+
+    // If already signed in and allowed, forward to app
     auth.onAuthStateChanged((user) => {
-      if (user && allowedEmails.includes(user.email)) {
+      if(user && allowedEmails.includes(user.email)){
         window.location.href = "index.html";
-      } else if (user) {
+      }else if(user){
         auth.signOut();
       }
     });
